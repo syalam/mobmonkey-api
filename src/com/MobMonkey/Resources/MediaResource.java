@@ -8,38 +8,16 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import com.MobMonkey.Models.Media;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.PropertiesCredentials;
-import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 @Path("/media")
-public class MediaResource {
+public class MediaResource extends ResourceHelper {
 
-	AmazonS3Client s3cli;
-	private AWSCredentials credentials;
-	private AmazonDynamoDBClient ddb;
-	private DynamoDBMapper mapper;
-	
+
 	public MediaResource() {
-		try {
-			credentials = new PropertiesCredentials(getClass().getClassLoader()
-					.getResourceAsStream("AwsCredentials.properties"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		s3cli = new AmazonS3Client();
-		ddb = new AmazonDynamoDBClient(credentials);
-		ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
-				"us-west-1");
-
-		mapper = new DynamoDBMapper(ddb);
+		super();
 	}
 
 	@POST
@@ -61,14 +39,14 @@ public class MediaResource {
 		
 		PutObjectRequest putObjectRequest = new PutObjectRequest(
 				"mobmonkeyimages", keyName , bais, objmeta);
-		putObjectRequest.setRequestCredentials(credentials);
+		putObjectRequest.setRequestCredentials(super.credentials());
 		
 		putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
 	
-		s3cli.putObject(putObjectRequest);
+		super.s3cli().putObject(putObjectRequest);
 	
 
-		mapper.save(media);
+		super.mapper().save(media);
 		String result = "Successfully uploaded image. https://s3-us-west-1.amazonaws.com/mobmonkeyimages/" + keyName;
 		return Response.status(201).entity(result).build();
 
