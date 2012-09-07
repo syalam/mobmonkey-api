@@ -9,10 +9,9 @@ public class SignUp extends Message {
 	public SignUp()
 	{
 	}
-	String eMailAddress;
+	String password;
 	String firstName;
 	String lastName;
-	String password;
 	Date birthday;
 	int gender;
 	String phoneNumber;
@@ -25,18 +24,27 @@ public class SignUp extends Message {
 	@DynamoDBRangeKey(attributeName = "partnerId")
 	public String getPartnerId()
 	{
-		return this.PartnerId.toString();	
+		return super.getPartnerId();	
 	}
 	
 	@DynamoDBHashKey(attributeName = "eMailAddress")
 	public String geteMailAddress() {
-		return eMailAddress;
+		return super.geteMailAddress();
 	}
 	
 	public void seteMailAddress(String eMailAddress) {
-		this.eMailAddress = eMailAddress;
+		super.seteMailAddress(eMailAddress);
 	}
 	
+	@DynamoDBHashKey(attributeName = "password")
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
 	@DynamoDBAttribute(attributeName = "firstName")
 	public String getFirstName() {
 		return firstName;
@@ -53,16 +61,6 @@ public class SignUp extends Message {
 
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
-	}
-
-	@DynamoDBAttribute(attributeName = "password")
-	public String getPassword() {
-		return password;
-	}
-
-	
-	public void setPassword(String password) {
-		this.password = password;
 	}
 
 	@DynamoDBAttribute(attributeName = "birthday")

@@ -1,7 +1,8 @@
 package com.MobMonkey.Models;
 
 public class Message {
-	String PartnerId;
+	private String PartnerId;
+	private String eMailAddress;
 	
 	public String getPartnerId(){
 		return PartnerId;
@@ -10,5 +11,14 @@ public class Message {
 	public void setPartnerId(String PartnerId){
 		this.PartnerId = PartnerId;
 	}
+
+	public String geteMailAddress() {
+		return eMailAddress;
+	}
+
+	public void seteMailAddress(String eMailAddress) {
+		this.eMailAddress = eMailAddress;
+	}
+
 }
 

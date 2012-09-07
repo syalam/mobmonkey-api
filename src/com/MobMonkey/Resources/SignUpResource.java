@@ -12,8 +12,10 @@ import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
+import javax.enterprise.context.RequestScoped;
 
 @Path("/signup")
+@RequestScoped
 public class SignUpResource {
 
 	private AWSCredentials credentials;
