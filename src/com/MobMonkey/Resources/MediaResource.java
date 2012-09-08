@@ -3,6 +3,7 @@ package com.MobMonkey.Resources;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.UUID;
+import javax.xml.bind.*;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
@@ -27,8 +28,9 @@ public class MediaResource extends ResourceHelper {
 
 		media.setId(UUID.randomUUID().toString());
 		String keyName = "img-" + media.getId() + ".png";
-		byte[] btDataFile = new sun.misc.BASE64Decoder().decodeBuffer(media
-				.getMediaData());
+		
+		byte[] btDataFile = DatatypeConverter.parseBase64Binary(media.getMediaData());
+		
 		ByteArrayInputStream bais = new ByteArrayInputStream(btDataFile);
 		
 		ObjectMetadata objmeta = new ObjectMetadata();

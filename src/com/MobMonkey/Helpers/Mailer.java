@@ -27,21 +27,21 @@ public class Mailer {
       
 	}
 
-	public void sendMail(String to) {
+	public void sendMail(String to, String subject, String body) {
 
-		SendEmailRequest sendEmailRequest = constructMail(to);
+		SendEmailRequest sendEmailRequest = constructMail(to, subject, body);
 
 		ses.sendEmail(sendEmailRequest);
 	}
 
-	private SendEmailRequest constructMail(String to) {
+	private SendEmailRequest constructMail(String to, String subject, String bdy) {
 
 		//Construct email request and set creds
 		SendEmailRequest msg = new SendEmailRequest();
 		msg.setRequestCredentials(credentials);
 
 		
-		msg.setSource("mobmonkeyapi@mobmonkey.com");
+		msg.setSource("The Big Chimp <bigchimp@mobmonkey.com>");
 		
 		// Setup the To: field
 		Destination dest = new Destination();
@@ -64,17 +64,17 @@ public class Mailer {
 		// replyToAddresses.add("tim.baldin@mobmonkey.com");
 		// replyToAddresses.add("syalam@gmail.com");
 		// replyToAddresses.add("reyad.sidique@gmail.com");
-		msg.setReplyToAddresses(replyToAddresses);
+		//msg.setReplyToAddresses(replyToAddresses);
 
 		// Create the message
 		Message message = new Message();
 		Body body = new Body();
 		Content html = new Content();
-		html.setData("<html><h1>Hi there!</h1><br>Thank's for registering!</html>");
+		html.setData("<html><body><center><h1>Header - Official MobMonkey Parcel</h1><p>" + bdy + "<p><font size=\"2\">MobMonkey Footer, &copy; 2012. All rights reserved.</font><center></body></html>");
 		body.setHtml(html);
 		message.setBody(body);
 		Content sub = new Content();
-		sub.setData("MobMonkey API - Testing");
+		sub.setData("MobMonkey " + subject);
 		message.setSubject(sub);
 		msg.setMessage(message);
 

@@ -9,25 +9,20 @@ public class SignUp extends Message {
 	public SignUp()
 	{
 	}
-	String password;
-	String firstName;
-	String lastName;
-	Date birthday;
-	int gender;
-	String phoneNumber;
-	String city;
-	String state;
-	String zip;
-	boolean verified;
-	boolean acceptedtos;
-
-	@DynamoDBRangeKey(attributeName = "partnerId")
-	public String getPartnerId()
-	{
-		return super.getPartnerId();	
-	}
+	private String password;
+	private String firstName;
+	private String lastName;
+	private Date birthday;
+	private int gender;
+	private String phoneNumber;
+	private String city;
+	private String state;
+	private String zip;
+	private boolean verified;
+	private boolean acceptedtos;
+	private Date dateRegistered;
 	
-	@DynamoDBHashKey(attributeName = "eMailAddress")
+	@DynamoDBHashKey
 	public String geteMailAddress() {
 		return super.geteMailAddress();
 	}
@@ -35,8 +30,14 @@ public class SignUp extends Message {
 	public void seteMailAddress(String eMailAddress) {
 		super.seteMailAddress(eMailAddress);
 	}
+
+	@DynamoDBRangeKey(attributeName = "partnerId")
+	public String getPartnerId()
+	{
+		return super.getPartnerId();	
+	}
 	
-	@DynamoDBHashKey(attributeName = "password")
+	@DynamoDBAttribute
 	public String getPassword() {
 		return password;
 	}
@@ -45,7 +46,7 @@ public class SignUp extends Message {
 		this.password = password;
 	}
 
-	@DynamoDBAttribute(attributeName = "firstName")
+	@DynamoDBAttribute
 	public String getFirstName() {
 		return firstName;
 	}
@@ -54,7 +55,7 @@ public class SignUp extends Message {
 		this.firstName = firstName;
 	}
 
-	@DynamoDBAttribute(attributeName = "lastName")
+	@DynamoDBAttribute
 	public String getLastName() {
 		return lastName;
 	}
@@ -63,7 +64,7 @@ public class SignUp extends Message {
 		this.lastName = lastName;
 	}
 
-	@DynamoDBAttribute(attributeName = "birthday")
+	@DynamoDBAttribute
 	public Date getBirthday() {
 		return birthday;
 	}
@@ -72,7 +73,7 @@ public class SignUp extends Message {
 		this.birthday = birthday;
 	}
 
-	@DynamoDBAttribute(attributeName = "gender")
+	@DynamoDBAttribute
 	public int getGender() {
 		return gender;
 	}
@@ -81,7 +82,7 @@ public class SignUp extends Message {
 		this.gender = gender;
 	}
 	
-	@DynamoDBAttribute(attributeName = "phoneNumber")
+	@DynamoDBAttribute
 	public String getPhoneNumber() {
 		return phoneNumber;
 	}
@@ -90,7 +91,7 @@ public class SignUp extends Message {
 		this.phoneNumber = phoneNumber;
 	}
 
-	@DynamoDBAttribute(attributeName = "city")
+	@DynamoDBAttribute
 	public String getCity() {
 		return city;
 	}
@@ -99,7 +100,7 @@ public class SignUp extends Message {
 		this.city = city;
 	}
 
-	@DynamoDBAttribute(attributeName = "state")
+	@DynamoDBAttribute
 	public String getState() {
 		return state;
 	}
@@ -108,7 +109,7 @@ public class SignUp extends Message {
 		this.state = state;
 	}
 
-	@DynamoDBAttribute(attributeName = "zip")
+	@DynamoDBAttribute
 	public String getZip() {
 		return zip;
 	}
@@ -117,7 +118,7 @@ public class SignUp extends Message {
 		this.zip = zip;
 	}
 
-	@DynamoDBAttribute(attributeName = "verified")
+	@DynamoDBAttribute
 	public boolean isVerified() {
 		return verified;
 	}
@@ -126,13 +127,22 @@ public class SignUp extends Message {
 		this.verified = verified;
 	}
 
-	@DynamoDBAttribute(attributeName = "acceptedtos")
+	@DynamoDBAttribute
 	public boolean isAcceptedtos() {
 		return acceptedtos;
 	}
 
 	public void setAcceptedtos(boolean acceptedtos) {
 		this.acceptedtos = acceptedtos;
+	}
+
+	@DynamoDBAttribute
+	public Date getDateRegistered() {
+		return dateRegistered;
+	}
+
+	public void setDateRegistered(Date dateRegistered) {
+		this.dateRegistered = dateRegistered;
 	}
 
 	

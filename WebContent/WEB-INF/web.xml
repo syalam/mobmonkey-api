@@ -27,11 +27,11 @@
 			<param-name>com.sun.jersey.spi.container.ContainerRequestFilters</param-name>
 			<param-value>com.MobMonkey.Filters.RequestApiFilter</param-value>
 		</init-param>
-		<init-param>
+		<!-- <init-param>
 			<param-name>com.sun.jersey.spi.container.ContainerResponseFilters</param-name>
 			<param-value>com.MobMonkey.Filters.ResponseApiFilter</param-value>
 		</init-param>
-
+ -->
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
@@ -39,5 +39,8 @@
 		<servlet-name>jersey-servlet</servlet-name>
 		<url-pattern>/rest/*</url-pattern>
 	</servlet-mapping>
-
+	<error-page>
+		<exception-type>java.lang.Throwable</exception-type>
+		<location>/error.jsp</location>
+	</error-page>
 </web-app>

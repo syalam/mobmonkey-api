@@ -12,7 +12,10 @@ public class MobMonkeyApi extends Application {
 		s.add(SignUpResource.class);
 		s.add(VODResource.class);
 		s.add(MediaResource.class);
+		s.add(PartnerResource.class);
 		s.add(Error.class);
+		s.add(VerifyResource.class);
+		s.add(RequestMediaResource.class);
 		return s;
 	}
 }
