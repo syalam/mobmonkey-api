@@ -12,6 +12,9 @@ public class RequestMedia extends Message {
 	private String message;
 	private String locationId;
 	private String providerId;
+	private long latitude;
+	private long longitude;
+	private long radius;
 	private int requestType;
 	private int scheduleMins;  
 	private Date scheduleDate;
