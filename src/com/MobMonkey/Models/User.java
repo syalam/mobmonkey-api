@@ -4,11 +4,12 @@ import java.util.Date;
 import com.amazonaws.services.dynamodb.datamodeling.*;
 
 @DynamoDBTable(tableName = "User")
-public class SignUp extends Message {
+public class User extends Message {
 	
-	public SignUp()
+	public User()
 	{
 	}
+	private String notificationId;
 	private String password;
 	private String firstName;
 	private String lastName;
@@ -46,6 +47,15 @@ public class SignUp extends Message {
 		this.password = password;
 	}
 
+	@DynamoDBAttribute
+	public String getNotificationId() {
+		return notificationId;
+	}
+
+	public void setNotificationId(String notificationId) {
+		this.notificationId = notificationId;
+	}
+	
 	@DynamoDBAttribute
 	public String getFirstName() {
 		return firstName;

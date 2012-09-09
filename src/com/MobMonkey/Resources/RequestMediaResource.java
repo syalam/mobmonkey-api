@@ -4,7 +4,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import com.MobMonkey.Models.RequestMedia;
-import com.MobMonkey.Models.SignUp;
+import com.MobMonkey.Models.User;
 
 @Path("/requestmedia")
 public class RequestMediaResource extends ResourceHelper {
@@ -32,7 +32,7 @@ public class RequestMediaResource extends ResourceHelper {
 		String partnerId = r.getPartnerId();
 
 		// Has user verified their email?
-		SignUp user = super.mapper().load(SignUp.class, username, partnerId);
+		User user = super.mapper().load(User.class, username, partnerId);
 		try {
 			if (!user.isVerified()) {
 				return Response.status(401)

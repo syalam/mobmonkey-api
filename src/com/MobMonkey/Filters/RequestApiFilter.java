@@ -13,7 +13,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
 import com.MobMonkey.Models.Partner;
-import com.MobMonkey.Models.SignUp;
+import com.MobMonkey.Models.User;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
@@ -119,7 +119,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 		try {
 			// Pull the user information
-			SignUp user = mapper.load(SignUp.class, eMailAddress.trim(), partnerId.trim());
+			User user = mapper.load(User.class, eMailAddress.trim(), partnerId.trim());
 
 			//User doesnt exist, reject the request.
 			if (null == user) {

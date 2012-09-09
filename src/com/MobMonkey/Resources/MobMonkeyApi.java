@@ -9,7 +9,7 @@ public class MobMonkeyApi extends Application {
 
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> s = new HashSet<Class<?>>();
-		s.add(SignUpResource.class);
+		s.add(UserResource.class);
 		s.add(VODResource.class);
 		s.add(MediaResource.class);
 		s.add(PartnerResource.class);

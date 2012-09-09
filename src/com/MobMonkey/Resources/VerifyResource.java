@@ -5,7 +5,7 @@ import java.util.Date;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
-import com.MobMonkey.Models.SignUp;
+import com.MobMonkey.Models.User;
 import com.MobMonkey.Models.Verify;
 
 @Path("/verify")
@@ -22,7 +22,7 @@ public class VerifyResource extends ResourceHelper {
 		try {
 			Verify v = super.mapper().load(Verify.class, verifyId, partnerId);
 
-			SignUp u = super.mapper().load(SignUp.class, v.geteMailAddress(),
+			User u = super.mapper().load(User.class, v.geteMailAddress(),
 					v.getPartnerId());
 
 			u.setVerified(true);
