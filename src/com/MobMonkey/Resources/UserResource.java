@@ -11,10 +11,9 @@ import com.MobMonkey.Models.Verify;
 import com.MobMonkey.Helpers.*;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
-import javax.enterprise.context.RequestScoped;
+
 
 @Path("/User")
-@RequestScoped
 public class UserResource extends ResourceHelper {
 
 	public UserResource() {
