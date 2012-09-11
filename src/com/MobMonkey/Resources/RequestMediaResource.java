@@ -1,5 +1,7 @@
 package com.MobMonkey.Resources;
 
+import java.util.UUID;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
@@ -45,17 +47,29 @@ public class RequestMediaResource extends ResourceHelper {
 					.build();
 		}
 
+		r.setRequestId(UUID.randomUUID().toString());
 		switch (mediaType) {
 		case "image":
-			return Response.ok().entity("image").build();
+			// saving the request to DB
+			r.setRequestType(1);
+			super.mapper().save(r);
+			return Response
+					.ok()
+					.entity("RequestID: " + r.getRequestId())
+					.build();
+
 		case "video":
-			return Response.ok().entity("video").build();
+			r.setRequestType(2);
+			super.mapper().save(r);
+			return Response
+					.ok()
+					.entity("RequestID: " + r.getRequestId())
+					.build();
+
 		default:
 			return Response.status(500)
 					.entity(mediaType + " is not supported.").build();
-
 		}
-
 	}
 
 }

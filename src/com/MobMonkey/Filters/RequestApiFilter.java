@@ -3,31 +3,14 @@ package com.MobMonkey.Filters;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ws.rs.core.Request;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
-import com.amazonaws.services.dynamodb.model.AttributeValue;
-import com.amazonaws.services.dynamodb.model.ComparisonOperator;
-import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.auth.AWSCredentials;
-import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
-import com.sun.jersey.spi.container.ContainerResponse;
-import com.sun.jersey.spi.container.ContainerResponseFilter;
 
 public class RequestApiFilter implements ContainerRequestFilter {
 	private AWSCredentials credentials;
@@ -90,6 +73,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		}
 		
 		//If the request path is to signup a partner, I let them through for now.
+		//TODO - I plan to clean up the exception rules to make it an iterative list coming from some config file
 		if (req.getRequestUri().getPath().toLowerCase()
 				.matches(".+/rest/partner.*$")) {
 			return true;
@@ -97,9 +81,9 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 		try {
 
-			// See if we have a valid partner ID.
+			// See if we have a valid partner ID, and that it is enabled (User verified email)
 			Partner p = mapper.load(Partner.class, partnerId.trim().toString());
-			if (p.equals(null)) {
+			if (p.equals(null) || !p.isEnabled()) {
 				return false;  // Quickly deny the request
 			} else {
 

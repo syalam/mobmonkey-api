@@ -9,6 +9,7 @@ import javax.ws.rs.core.*;
 
 import com.MobMonkey.Helpers.Mailer;
 import com.MobMonkey.Models.Partner;
+import com.MobMonkey.Models.Verify;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
@@ -24,7 +25,6 @@ public class PartnerResource extends ResourceHelper {
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<Partner> getPartnerInJSON() {
-
 		
 		DynamoDBScanExpression scan = new DynamoDBScanExpression();
 
@@ -39,8 +39,6 @@ public class PartnerResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Partner getPartnerInJSON(@PathParam("partnerid") String partnerId) {
 
-		
-
 		Partner p = super.mapper().load(Partner.class, partnerId.trim());
 
 		return p;
@@ -50,19 +48,25 @@ public class PartnerResource extends ResourceHelper {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response createPartnerInJSON(Partner p) {
-		//TODO - validation, email, etc
+		
+	//TODO - validation, email, etc
 		try {
-			p.setpartnerId(UUID.randomUUID().toString());
-			p.setEnabled(true);
+			p.setPartnerId(UUID.randomUUID().toString());
+			p.setEnabled(false);
 			p.setLastActivity(new Date());
 			super.mapper().save(p);
 		} catch (Exception e) {
 			return Response.status(500).entity(e.toString()).build();
 		}
-		Mailer mail = new Mailer();
-		mail.sendMail(p.getEmail(), "partner ID created.", "Congratulations, you now have a partner ID setup with MobMonkey.  You will use this ID to access the MobMonkey API endpoints.");
+		
+		Verify v = new Verify(UUID.randomUUID().toString(), p.getPartnerId(), p.getEmailAddress(), p.getDateRegistered());
+	
+		super.mapper().save(v);
 
-		String result = "Successfully created partner: " + p.getpartnerId();
+		Mailer mail = new Mailer();
+		mail.sendMail(p.getEmailAddress(), "registration e-mail.", "Thank you for registering as a partner!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/partner/" + v.getPartnerId() + "/" + v.getVerifyID() + "\">clicking here.</a>");
+
+		String result = "Successfully created partner: " + p.getPartnerId();
 
 		return Response.status(201).entity(result).build();
 	}

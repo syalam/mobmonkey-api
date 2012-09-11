@@ -13,7 +13,7 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
 
 
-@Path("/User")
+@Path("/signup")
 public class UserResource extends ResourceHelper {
 
 	public UserResource() {
@@ -23,10 +23,7 @@ public class UserResource extends ResourceHelper {
 	@GET
 	@Path("/users")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<User> getUserInJSON() {
-
-		
-		
+	public List<User> getUserInJSON() {	
 		DynamoDBScanExpression scan = new DynamoDBScanExpression();
 
 		PaginatedScanList<User> users = super.mapper().scan(User.class,
@@ -57,7 +54,7 @@ public class UserResource extends ResourceHelper {
 		super.mapper().save(v);
 
 		Mailer mail = new Mailer();
-		mail.sendMail(User.geteMailAddress(), "registration e-mail.", "Thank you for registering!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/" + v.getPartnerId() + "/" + v.getVerifyID() + "\">clicking here.</a>");
+		mail.sendMail(User.geteMailAddress(), "registration e-mail.", "Thank you for registering!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/user/" + v.getPartnerId() + "/" + v.getVerifyID() + "\">clicking here.</a>");
 
 		String result = "User successfully signed up";
 		return Response.status(201).entity(result).build();

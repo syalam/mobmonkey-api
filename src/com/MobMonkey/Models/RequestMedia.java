@@ -9,6 +9,7 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable(tableName = "RequestMedia")
 public class RequestMedia extends Message {
 	private String RequestId;
+	private String iOSDeviceToken;
 	private String message;
 	private String locationId;
 	private String providerId;
@@ -21,7 +22,6 @@ public class RequestMedia extends Message {
 	private int duration;
 	private boolean recurringSchedule; 
 	private boolean requestFulfilled;
-	private int vicinity;
 
 	public RequestMedia() {
 	}
@@ -33,6 +33,15 @@ public class RequestMedia extends Message {
 
 	public void setRequestId(String id) {
 		RequestId = id;
+	}
+
+	@DynamoDBAttribute()
+	public String getiOSDeviceToken() {
+		return iOSDeviceToken;
+	}
+
+	public void setiOSDeviceToken(String iOSDeviceToken) {
+		this.iOSDeviceToken = iOSDeviceToken;
 	}
 
 	@DynamoDBAttribute()
@@ -75,6 +84,33 @@ public class RequestMedia extends Message {
 
 	public void setProviderId(String providerId) {
 		this.providerId = providerId;
+	}
+
+	@DynamoDBAttribute()
+	public long getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(long latitude) {
+		this.latitude = latitude;
+	}
+
+	@DynamoDBAttribute()
+	public long getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(long longitude) {
+		this.longitude = longitude;
+	}
+
+	@DynamoDBAttribute()
+	public long getRadius() {
+		return radius;
+	}
+
+	public void setRadius(long radius) {
+		this.radius = radius;
 	}
 
 	@DynamoDBAttribute()
@@ -130,15 +166,6 @@ public class RequestMedia extends Message {
 
 	public void setRequestFulfilled(boolean requestFulfilled) {
 		this.requestFulfilled = requestFulfilled;
-	}
-
-	@DynamoDBAttribute()
-	public int getVicinity() {
-		return vicinity;
-	}
-
-	public void setVicinity(int vicinity) {
-		this.vicinity = vicinity;
 	}
 
 }

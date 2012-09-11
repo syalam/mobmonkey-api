@@ -1,7 +1,6 @@
 package com.MobMonkey.Resources;
 
 import javax.ws.rs.*;
-import javax.ws.rs.core.*;
 import com.amazonaws.services.s3.*;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;

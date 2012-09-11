@@ -15,8 +15,6 @@ public class ResponseApiFilter implements ContainerResponseFilter {
 	public ContainerResponse filter(ContainerRequest req,
 			ContainerResponse response) {
 
-		Object hi = response.getEntity();
-		String test = hi.toString();
 		return response;
 
 	}

@@ -12,17 +12,22 @@ public class Partner {
 	}
 	private String partnerId;
 	private String Name;
-	private String Email;
+	private String eMailAddress;
+	private String password;
+	private String acctNo;
+	private String achRTNo;
 	private boolean enabled;
+	private boolean revShare;
 	private Date lastActivity;
+	private Date dateRegistered;
 	
 	
 	@DynamoDBHashKey
-	public String getpartnerId() {
+	public String getPartnerId() {
 		return partnerId;
 	}
-	public void setpartnerId(String id) {
-		partnerId = id;
+	public void setPartnerId(String partnerId) {
+		this.partnerId = partnerId;
 	}
 	
 	@DynamoDBAttribute
@@ -33,11 +38,32 @@ public class Partner {
 		Name = name;
 	}
 	@DynamoDBAttribute
-	public String getEmail() {
-		return Email;
+	public String getEmailAddress() {
+		return eMailAddress;
 	}
-	public void setEmail(String email) {
-		Email = email;
+	public void setEmailAddress(String email) {
+		eMailAddress = email;
+	}
+	@DynamoDBAttribute
+	public String getPassword() {
+		return password;
+	}
+	public void setPassword(String password) {
+		this.password = password;
+	}
+	@DynamoDBAttribute
+	public String getAcctNo() {
+		return acctNo;
+	}
+	public void setAcctNo(String acctNo) {
+		this.acctNo = acctNo;
+	}
+	@DynamoDBAttribute
+	public String getAchRTNo() {
+		return achRTNo;
+	}
+	public void setAchRTNo(String achRTNo) {
+		this.achRTNo = achRTNo;
 	}
 	@DynamoDBAttribute
 	public boolean isEnabled() {
@@ -46,12 +72,26 @@ public class Partner {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
-	//@DynamoDBRangeKey
+	@DynamoDBAttribute
+	public boolean isRevShare() {
+		return revShare;
+	}
+	public void setRevShare(boolean revShare) {
+		this.revShare = revShare;
+	}
+	@DynamoDBAttribute
 	public Date getLastActivity() {
 		return lastActivity;
 	}
 	public void setLastActivity(Date lastActivity) {
 		this.lastActivity = lastActivity;
+	}
+	@DynamoDBAttribute
+	public Date getDateRegistered() {
+		return dateRegistered;
+	}
+	public void setDateRegistered(Date registered) {
+		this.dateRegistered = registered;
 	}
 
 }
