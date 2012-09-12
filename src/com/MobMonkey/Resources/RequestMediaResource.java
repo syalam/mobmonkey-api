@@ -1,5 +1,6 @@
 package com.MobMonkey.Resources;
 
+import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.*;
@@ -7,6 +8,9 @@ import javax.ws.rs.core.*;
 
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.User;
+
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
 
 @Path("/requestmedia")
 public class RequestMediaResource extends ResourceHelper {
@@ -17,9 +21,14 @@ public class RequestMediaResource extends ResourceHelper {
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public RequestMedia getRequestMediaInJSON() {
+	public List<RequestMedia> getRequestMediaInJSON() {
 
-		return new RequestMedia();
+		DynamoDBScanExpression scan = new DynamoDBScanExpression();
+
+		PaginatedScanList<RequestMedia> media = super.mapper().scan(RequestMedia.class,
+				scan);
+
+		return media.subList(0, media.size());
 
 	}
 
@@ -27,13 +36,22 @@ public class RequestMediaResource extends ResourceHelper {
 	@Path("/{mediaType}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response createRequestMediaInJSON(
-			@PathParam("mediaType") String mediaType, RequestMedia r) {
+			@PathParam("mediaType") String mediaTypeS, RequestMedia r, @Context HttpHeaders headers) {
+		// TODO implement a request tracking system to determine the number of
+		// requests made by a user
+		// create an attribute called displayAd and return true based on a
+		// predetermined value
+		
+		int mediaType = 0;
+		if (mediaTypeS.trim().toLowerCase().equals("image"))
+			mediaType = 1;
+		if (mediaTypeS.trim().toLowerCase().equals("video"))
+			mediaType = 2;
+		// Get username & PartnerId from header
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(0);
 
-		// Get username & PartnerId
-		String username = r.geteMailAddress();
-		String partnerId = r.getPartnerId();
-
-		// Has user verified their email?
+		// TODO Has user verified their email?  Need to move this to a helper class, we're going to use it a bunch
 		User user = super.mapper().load(User.class, username, partnerId);
 		try {
 			if (!user.isVerified()) {
@@ -48,28 +66,13 @@ public class RequestMediaResource extends ResourceHelper {
 		}
 
 		r.setRequestId(UUID.randomUUID().toString());
-		switch (mediaType) {
-		case "image":
-			// saving the request to DB
-			r.setRequestType(1);
-			super.mapper().save(r);
-			return Response
-					.ok()
-					.entity("RequestID: " + r.getRequestId())
-					.build();
 
-		case "video":
-			r.setRequestType(2);
-			super.mapper().save(r);
-			return Response
-					.ok()
-					.entity("RequestID: " + r.getRequestId())
-					.build();
+		// saving the request to DB
+		r.setRequestType(mediaType);
+		super.mapper().save(r);
+		return Response.ok()
+				.entity(mediaTypeS + " requestID: " + r.getRequestId()).build();
 
-		default:
-			return Response.status(500)
-					.entity(mediaType + " is not supported.").build();
-		}
 	}
 
 }

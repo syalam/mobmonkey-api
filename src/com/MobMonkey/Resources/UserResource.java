@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Models.Verify;
 import com.MobMonkey.Helpers.*;
@@ -35,16 +36,17 @@ public class UserResource extends ResourceHelper {
 	@POST
 	@Path("/user")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response createUserInJSON(User User) {
+	public Response createUserInJSON(User User, @Context HttpHeaders headers) {
 
 		//TODO - update partnerID with last activity
-		
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(0).toLowerCase();
 		
 		if(null == User.getPassword() || null == User.geteMailAddress())
 		{
 			return Response.status(500).entity("Email and password are required fields").build();
 		}
 		
+		User.setPartnerId(partnerId);
 		User.setVerified(false);
 		User.setDateRegistered(new Date());
 		super.mapper().save(User);

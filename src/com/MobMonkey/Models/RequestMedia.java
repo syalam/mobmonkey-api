@@ -9,20 +9,21 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable(tableName = "RequestMedia")
 public class RequestMedia extends Message {
 	private String RequestId;
+	private int requestType;
 	private String iOSDeviceToken;
 	private String message;
 	private String locationId;
 	private String providerId;
-	private long latitude;
-	private long longitude;
-	private long radius;
-	private int requestType;
+	private String latitude;
+	private String longitude;
+	private int radiusInYards;
 	private int scheduleMins;  
 	private Date scheduleDate;
 	private int duration;
-	private boolean recurringSchedule; 
 	private boolean requestFulfilled;
-
+	private boolean recurring;
+	
+	
 	public RequestMedia() {
 	}
 
@@ -87,30 +88,30 @@ public class RequestMedia extends Message {
 	}
 
 	@DynamoDBAttribute()
-	public long getLatitude() {
+	public String getLatitude() {
 		return latitude;
 	}
 
-	public void setLatitude(long latitude) {
+	public void setLatitude(String latitude) {
 		this.latitude = latitude;
 	}
 
 	@DynamoDBAttribute()
-	public long getLongitude() {
+	public String getLongitude() {
 		return longitude;
 	}
 
-	public void setLongitude(long longitude) {
+	public void setLongitude(String longitude) {
 		this.longitude = longitude;
 	}
 
 	@DynamoDBAttribute()
-	public long getRadius() {
-		return radius;
+	public int getRadiusInYards() {
+		return radiusInYards;
 	}
 
-	public void setRadius(long radius) {
-		this.radius = radius;
+	public void setRadiusInYards(int radiusInYards) {
+		this.radiusInYards = radiusInYards;
 	}
 
 	@DynamoDBAttribute()
@@ -150,14 +151,6 @@ public class RequestMedia extends Message {
 		this.duration = duration;
 	}
 
-	@DynamoDBAttribute()
-	public boolean isRecurringSchedule() {
-		return recurringSchedule;
-	}
-
-	public void setRecurringSchedule(boolean recurringSchedule) {
-		this.recurringSchedule = recurringSchedule;
-	}
 
 	@DynamoDBAttribute()
 	public boolean isRequestFulfilled() {
@@ -166,6 +159,15 @@ public class RequestMedia extends Message {
 
 	public void setRequestFulfilled(boolean requestFulfilled) {
 		this.requestFulfilled = requestFulfilled;
+	}
+
+	@DynamoDBAttribute()
+	public boolean isRecurring() {
+		return recurring;
+	}
+
+	public void setRecurring(boolean recurring) {
+		this.recurring = recurring;
 	}
 
 }

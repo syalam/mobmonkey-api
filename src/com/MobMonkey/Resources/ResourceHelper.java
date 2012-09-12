@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.s3.AmazonS3Client;
 
+
 public class ResourceHelper {
 	private AmazonS3Client s3cli;
 	private AWSCredentials credentials;

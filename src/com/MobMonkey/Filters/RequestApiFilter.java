@@ -68,14 +68,14 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 		//If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
-				.matches(".+/rest/verify.*$")) {
+				.matches(".*/rest/verify.*$")) {
 			return true;
 		}
 		
 		//If the request path is to signup a partner, I let them through for now.
 		//TODO - I plan to clean up the exception rules to make it an iterative list coming from some config file
 		if (req.getRequestUri().getPath().toLowerCase()
-				.matches(".+/rest/partner.*$")) {
+				.matches(".*/rest/partner.*$")) {
 			return true;
 		}
 
@@ -90,7 +90,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 				// We have a valid partner ID, but maybe we are signing up a new user
 				// If that's the case then we will let them through without user:pass creds.
 				if (req.getRequestUri().getPath().toLowerCase()
-						.matches(".+/rest/signup/user$")) {
+						.matches(".*/rest/signup/user$")) {
 					return true;
 				}
 
