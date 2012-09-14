@@ -4,11 +4,13 @@ import java.util.Date;
 import com.amazonaws.services.dynamodb.datamodeling.*;
 
 @DynamoDBTable(tableName = "User")
-public class User extends Message {
+public class User  {
 	
 	public User()
 	{
 	}
+	private String partnerId;
+	private String eMailAddress;
 	private String notificationId;
 	private String password;
 	private String firstName;
@@ -22,20 +24,27 @@ public class User extends Message {
 	private boolean verified;
 	private boolean acceptedtos;
 	private Date dateRegistered;
+	private int numberOfRequests;
+	private String deviceId;
+	private String deviceType;
 	
 	@DynamoDBHashKey
 	public String geteMailAddress() {
-		return super.geteMailAddress();
+		return eMailAddress;
 	}
 	
 	public void seteMailAddress(String eMailAddress) {
-		super.seteMailAddress(eMailAddress);
+		this.eMailAddress = eMailAddress;
 	}
 
 	@DynamoDBRangeKey(attributeName = "partnerId")
 	public String getPartnerId()
 	{
-		return super.getPartnerId();	
+		return partnerId;
+	}
+	
+	public void setPartnerId(String partnerId) {
+		this.partnerId = partnerId;
 	}
 	
 	@DynamoDBAttribute
@@ -153,6 +162,31 @@ public class User extends Message {
 
 	public void setDateRegistered(Date dateRegistered) {
 		this.dateRegistered = dateRegistered;
+	}
+	
+	@DynamoDBAttribute
+	public int getNumberOfRequests() {
+		return numberOfRequests;
+	}
+
+	public void setNumberOfRequests(int numberOfRequests) {
+		this.numberOfRequests = numberOfRequests;
+	}
+
+	public String getDeviceId() {
+		return deviceId;
+	}
+
+	public void setDeviceId(String deviceId) {
+		this.deviceId = deviceId;
+	}
+
+	public String getDeviceType() {
+		return deviceType;
+	}
+
+	public void setDeviceType(String deviceType) {
+		this.deviceType = deviceType;
 	}
 
 	

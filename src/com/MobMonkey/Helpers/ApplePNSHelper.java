@@ -1,16 +1,19 @@
 package com.MobMonkey.Helpers;
+import java.io.InputStream;
+
 import javapns.*;
 import javapns.communication.exceptions.CommunicationException;
 import javapns.communication.exceptions.KeystoreException;
 
-final class ApplePNSHelper {
+public final class ApplePNSHelper {
 
-	private String keyStoreFile = "Certificates.p12"; 
-	private String keyStorePass = "1MobMonkey23";
-	public ApplePNSHelper(String deviceId, String msg){
-		
+	private static String keyStoreFile = "Certificates.p12"; 
+	private static String keyStorePass = "1MobMonkey23";
+	public static void send(String deviceId, String msg){
+	
+		InputStream keyStore = ApplePNSHelper.class.getResourceAsStream(keyStoreFile);
 		try {
-			Push.alert(msg, keyStoreFile, keyStorePass, false, deviceId);
+			Push.alert(msg, keyStore, keyStorePass, true, deviceId);
 		} catch (CommunicationException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

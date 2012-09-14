@@ -7,10 +7,11 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "RequestMedia")
-public class RequestMedia extends Message {
-	private String RequestId;
+public class RequestMedia  {
+	private String partnerId;
+	private String eMailAddress;
+	private String requestId;
 	private int requestType;
-	private String iOSDeviceToken;
 	private String message;
 	private String locationId;
 	private String providerId;
@@ -29,35 +30,30 @@ public class RequestMedia extends Message {
 
 	@DynamoDBHashKey
 	public String getRequestId() {
-		return RequestId;
+		return requestId;
 	}
 
 	public void setRequestId(String id) {
-		RequestId = id;
-	}
-
-	@DynamoDBAttribute()
-	public String getiOSDeviceToken() {
-		return iOSDeviceToken;
-	}
-
-	public void setiOSDeviceToken(String iOSDeviceToken) {
-		this.iOSDeviceToken = iOSDeviceToken;
+		requestId = id;
 	}
 
 	@DynamoDBAttribute()
 	public String geteMailAddress() {
-		return super.geteMailAddress();
+	return eMailAddress;
 	}
 
 	public void seteMailAddress(String eMailAddress) {
-		super.seteMailAddress(eMailAddress);
+		this.eMailAddress = eMailAddress;
 	}
 
 	@DynamoDBAttribute()
 	public String getPartnerId()
 	{
-		return super.getPartnerId();
+		return partnerId;
+	}
+	
+	public void setPartnerId(String partnerId) {
+		this.partnerId = partnerId;
 	}
 
 	@DynamoDBAttribute()

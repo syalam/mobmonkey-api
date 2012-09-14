@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.RequestMedia;
+import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Resources.ResourceHelper;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
@@ -33,11 +34,11 @@ public final class Locator extends ResourceHelper {
 	 * 
 	 * }
 	 */
-	public ArrayList<String> findRequestsNearBy(String latitude,
+	public ArrayList<RequestMediaLite> findRequestsNearBy(String latitude,
 			String longitude) {
 		// 15L*24L*60L*60L*1000L = 15 days
 		// DAYL*HOURS*L*MINSL*SECSL*MILLISECSL
-		ArrayList<String> results = new ArrayList<String>();
+		ArrayList<RequestMediaLite> results = new ArrayList<RequestMediaLite>();
 		long rightNowPlus3Hours = (new Date()).getTime()
 				+ (3L * 60L * 60L * 1000L); // added
 											// three
@@ -49,6 +50,7 @@ public final class Locator extends ResourceHelper {
 		// request is scheduled at 2012-09-12T22:10:02.000Z
 
 		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+	
 		/*
 		 * scanExpression.addFilterCondition( "scheduleDate", new
 		 * Condition().withComparisonOperator
@@ -64,9 +66,17 @@ public final class Locator extends ResourceHelper {
 				scanExpression);
 
 		for (RequestMedia req : scanResult) {
+			// TODO need to take the requests scheduled date and duration and
+			// check to see if the current time is
+			// greater than this value.. because the request is expired!
 			if (isInVicinity(req.getLatitude(), req.getLongitude(), latitude,
-					longitude, req.getRadiusInYards()))
-				results.add(req.getRequestId());
+					longitude, req.getRadiusInYards())) {
+
+				RequestMediaLite newReq = new RequestMediaLite();
+				newReq.setRequestId(req.getRequestId());
+				newReq.setMessage(req.getMessage());
+				results.add(newReq);
+			}
 		}
 		return results;
 
@@ -75,7 +85,7 @@ public final class Locator extends ResourceHelper {
 	public boolean isInVicinity(String requestLat, String requestLong,
 			String userLat, String userLong, int radiusInYards) {
 
-		int R = 6371; // km
+		int R = 6371; // Earth's radius in km
 		double radiusInkm = radiusInYards * .0009144;
 		Double rLat = Math.toRadians(Double.parseDouble(requestLat));
 		Double rLong = Math.toRadians(Double.parseDouble(requestLong));

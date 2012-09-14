@@ -8,34 +8,39 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "CheckIn")
-public class CheckIn extends Message {
+public class CheckIn  {
 
+	private String partnerId;
+	private String eMailAddress;
 	private String locationId;
 	private String providerId;
 	private String latitude;
 	private String longitude;
 	private Date dateCheckedIn;
-	
-	public CheckIn(){
-		
+
+	public CheckIn() {
+
 	}
-	
-    @DynamoDBAttribute
+
+	@DynamoDBAttribute
 	public String getPartnerId() {
-			return super.getPartnerId();
+		return partnerId;
 	}
+
 	public void setPartnerId(String PartnerId) {
-	
-		super.setPartnerId(PartnerId);
+
+		this.partnerId = PartnerId;
 	}
+
 	@DynamoDBHashKey
 	public String geteMailAddress() {
-	
-		return super.geteMailAddress();
+
+		return eMailAddress;
 	}
+
 	public void seteMailAddress(String eMailAddress) {
-		
-		super.seteMailAddress(eMailAddress);
+
+		this.eMailAddress = eMailAddress;
 	}
 
 	@DynamoDBAttribute
@@ -64,6 +69,7 @@ public class CheckIn extends Message {
 	public void setLatitude(String latitude) {
 		this.latitude = latitude;
 	}
+
 	@DynamoDBAttribute
 	public String getLongitude() {
 		return longitude;
@@ -72,15 +78,14 @@ public class CheckIn extends Message {
 	public void setLongitude(String longitude) {
 		this.longitude = longitude;
 	}
+
 	@DynamoDBAttribute
 	public Date getDateCheckedIn() {
 		return dateCheckedIn;
 	}
+
 	public void setDateCheckedIn(Date dateCheckedIn) {
 		this.dateCheckedIn = dateCheckedIn;
 	}
-	
-	
-	
-	
+
 }

@@ -9,8 +9,8 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "Media")
-public class Media extends Message {
-
+public class Media {
+	
 	private String Id;
 	private String mediaData;
 	private String type;

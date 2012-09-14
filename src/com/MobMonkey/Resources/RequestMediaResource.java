@@ -25,8 +25,8 @@ public class RequestMediaResource extends ResourceHelper {
 
 		DynamoDBScanExpression scan = new DynamoDBScanExpression();
 
-		PaginatedScanList<RequestMedia> media = super.mapper().scan(RequestMedia.class,
-				scan);
+		PaginatedScanList<RequestMedia> media = super.mapper().scan(
+				RequestMedia.class, scan);
 
 		return media.subList(0, media.size());
 
@@ -36,12 +36,13 @@ public class RequestMediaResource extends ResourceHelper {
 	@Path("/{mediaType}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response createRequestMediaInJSON(
-			@PathParam("mediaType") String mediaTypeS, RequestMedia r, @Context HttpHeaders headers) {
+			@PathParam("mediaType") String mediaTypeS, RequestMedia r,
+			@Context HttpHeaders headers) {
 		// TODO implement a request tracking system to determine the number of
 		// requests made by a user
 		// create an attribute called displayAd and return true based on a
 		// predetermined value
-		
+
 		int mediaType = 0;
 		if (mediaTypeS.trim().toLowerCase().equals("image"))
 			mediaType = 1;
@@ -49,9 +50,11 @@ public class RequestMediaResource extends ResourceHelper {
 			mediaType = 2;
 		// Get username & PartnerId from header
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(0);
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
+				0);
 
-		// TODO Has user verified their email?  Need to move this to a helper class, we're going to use it a bunch
+		// TODO Has user verified their email? Need to move this to a helper
+		// class, we're going to use it a bunch
 		User user = super.mapper().load(User.class, username, partnerId);
 		try {
 			if (!user.isVerified()) {
@@ -68,10 +71,21 @@ public class RequestMediaResource extends ResourceHelper {
 		r.setRequestId(UUID.randomUUID().toString());
 
 		// saving the request to DB
+		r.seteMailAddress(username);
 		r.setRequestType(mediaType);
 		super.mapper().save(r);
-		return Response.ok()
-				.entity(mediaTypeS + " requestID: " + r.getRequestId()).build();
+		String response = "requestID:" + r.getRequestId();
+		// user officially makes a request.. lets increment his request value
+		//TODO move the number of requests to caching 
+		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
+		super.mapper().save(user);
+
+		if (user.getNumberOfRequests() % 5 == 0)
+			response += ",displayAd=true";
+		else
+			response += ",displayAd=false";
+		
+		return Response.ok().entity(response).build();
 
 	}
 

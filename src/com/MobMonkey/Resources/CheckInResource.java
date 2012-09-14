@@ -2,45 +2,76 @@ package com.MobMonkey.Resources;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.CheckIn;
+import com.MobMonkey.Models.Device;
+import com.MobMonkey.Models.RequestMedia;
+import com.MobMonkey.Models.RequestMediaLite;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodb.model.AttributeValue;
 
 @Path("/checkin")
 public class CheckInResource extends ResourceHelper {
 
-	public CheckInResource(){
+	public CheckInResource() {
 		super();
 	}
-	
+
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response createCheckInInJSON(CheckIn c, @Context HttpHeaders headers){
-		
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response createCheckInInJSON(CheckIn c, @Context HttpHeaders headers) {
+
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(0);
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
+				0);
 		c.seteMailAddress(eMailAddress);
 		c.setPartnerId(partnerId);
 		c.setDateCheckedIn(new Date());
-		try{
-		super.mapper().save(c);
-		}catch(Exception exc){
+		try {
+			super.mapper().save(c);
+		} catch (Exception exc) {
 			return Response.status(500).entity("An error has occured").build();
 		}
+
+		// so i have checked in the user at a specific x,y
+		// i should check to see if there are any requests in the area
+		ArrayList<RequestMediaLite> reqsNearBy = new Locator()
+				.findRequestsNearBy(c.getLatitude(), c.getLongitude());
+
+		if (reqsNearBy.size() > 0) {
+			// Get the users devices
+
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+
+			List<Device> userDevices = super.mapper().query(Device.class,
+					queryExpression);
+			for (Device d : userDevices) {
+				//Right now we only support iOS
+				if(d.getDeviceType().equals("iOS")){
+					ApplePNSHelper.send(d.getDeviceId(), "There are requests near you!");
+				
+				}
+			}
+
 		
-		//so i have checked in the user at a specific x,y
-		//i should check to see if there are any requests in the area
-		ArrayList<String> reqsNearBy = new Locator().findRequestsNearBy(c.getLatitude(), c.getLongitude());
-		
-		return Response.ok().entity(reqsNearBy.size() + " requests near by.").build();
-		
+			return Response.ok().entity(reqsNearBy).build();
+		} else
+			return Response.ok().entity("No requests are near by at this time")
+					.build();
+
 	}
 }

@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Models.Verify;
 import com.MobMonkey.Helpers.*;
@@ -50,6 +51,14 @@ public class UserResource extends ResourceHelper {
 		User.setVerified(false);
 		User.setDateRegistered(new Date());
 		super.mapper().save(User);
+		// Let's save the user's device Id as well
+		//TODO in signin API send the users deviceId so we will keep adding to their list of devices..
+		
+		Device d = new Device();	
+		d.seteMailAddress(User.geteMailAddress());
+		d.setDeviceId(User.getDeviceId());
+		d.setDeviceType(User.getDeviceType());
+		super.mapper().save(d);
 		
 		Verify v = new Verify(UUID.randomUUID().toString(), User.getPartnerId(), User.geteMailAddress(), User.getDateRegistered());
 	
