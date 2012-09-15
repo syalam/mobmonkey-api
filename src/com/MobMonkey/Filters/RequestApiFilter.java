@@ -3,6 +3,8 @@ package com.MobMonkey.Filters;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+
+import com.MobMonkey.Helpers.PwdSvc;
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
 import com.amazonaws.auth.PropertiesCredentials;
@@ -38,9 +40,11 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		// Check to see if the request has the correct authorization info.
 		boolean authorized = Authorize(req);
 		if (!authorized) {
-			//Basically if they arent authorized I send them to an error resource pool.
-			//I plan to implement custom error messages based on what could have possibly gone wrong
-			//but for now, everything is just 401 Unauthorized.
+			// Basically if they arent authorized I send them to an error
+			// resource pool.
+			// I plan to implement custom error messages based on what could
+			// have possibly gone wrong
+			// but for now, everything is just 401 Unauthorized.
 			req.setMethod("GET");
 			URI u = req.getRequestUri();
 			try {
@@ -66,14 +70,16 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
 
-		//If the request path is to verify an email, let them on through
+		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
 				.matches(".*/rest/verify.*$")) {
 			return true;
 		}
-		
-		//If the request path is to signup a partner, I let them through for now.
-		//TODO - I plan to clean up the exception rules to make it an iterative list coming from some config file
+
+		// If the request path is to signup a partner, I let them through for
+		// now.
+		// TODO - I plan to clean up the exception rules to make it an iterative
+		// list coming from some config file
 		if (req.getRequestUri().getPath().toLowerCase()
 				.matches(".*/rest/partner.*$")) {
 			return true;
@@ -81,14 +87,17 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 		try {
 
-			// See if we have a valid partner ID, and that it is enabled (User verified email)
+			// See if we have a valid partner ID, and that it is enabled (User
+			// verified email)
 			Partner p = mapper.load(Partner.class, partnerId.trim().toString());
 			if (p.equals(null) || !p.isEnabled()) {
-				return false;  // Quickly deny the request
+				return false; // Quickly deny the request
 			} else {
 
-				// We have a valid partner ID, but maybe we are signing up a new user
-				// If that's the case then we will let them through without user:pass creds.
+				// We have a valid partner ID, but maybe we are signing up a new
+				// user
+				// If that's the case then we will let them through without
+				// user:pass creds.
 				if (req.getRequestUri().getPath().toLowerCase()
 						.matches(".*/rest/signup/user$")) {
 					return true;
@@ -96,37 +105,39 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 			}
 		}
-		//Something happened, reject!
+		// Something happened, reject!
 		catch (Exception e) {
 			return false;
 		}
 
 		try {
 			// Pull the user information
-			User user = mapper.load(User.class, eMailAddress.trim(), partnerId.trim());
+			User user = mapper.load(User.class, eMailAddress.trim(),
+					partnerId.trim());
 
-			//User doesnt exist, reject the request.
+			// User doesnt exist, reject the request.
 			if (null == user) {
 				return false;
 			}
 
-			//Lets check to see if their password matches what we have in the DB.
+			// Lets check to see if their password matches what we have in the
+			// DB.
+			
 			if (!password.equals(user.getPassword())) {
+
 				return false;
 			}
 
-		} 
+		}
 		// Something happened, abort!!
 		catch (Exception e) {
 			return false;
 		}
-		
+
 		// Now, does the user have access to the resource?
-		//TODO - Lock down administrative resources, like getting user lists
-		
-		
-		
-		// Passed all my tests?  I'll allow it.
+		// TODO - Lock down administrative resources, like getting user lists
+
+		// Passed all my tests? I'll allow it.
 		return true;
 
 	}
