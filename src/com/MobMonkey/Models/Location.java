@@ -11,24 +11,24 @@ public class Location {
 	private String providerId;
 	private String name;
 	private String description;
-	private String category;
+	private String categoryId;
 	private String latitude;
 	private String longitude;
 	private String radiusInYards;
 
 	public Location() {
 	}
-
-	@DynamoDBRangeKey
+	
+	@DynamoDBHashKey
 	public String getLocationId() {
 		return locationId;
 	}
-
+	
 	public void setLocationId(String locationId) {
 		this.locationId = locationId;
 	}
 
-	@DynamoDBHashKey
+	@DynamoDBRangeKey
 	public String getProviderId() {
 		return providerId;
 	}
@@ -56,12 +56,12 @@ public class Location {
 	}
 
 	@DynamoDBAttribute
-	public String getCategory() {
-		return category;
+	public String getCategoryId() {
+		return categoryId;
 	}
 
-	public void setCategory(String category) {
-		this.category = category;
+	public void setCategoryId(String category) {
+		this.categoryId = category;
 	}
 	
 	@DynamoDBAttribute
