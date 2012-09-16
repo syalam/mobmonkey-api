@@ -11,38 +11,42 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable(tableName = "Media")
 public class Media {
 	
-	private String Id;
+	private String mediaId;
+	private String requestId;
+	private String eMailAddress;
 	private String mediaData;
-	private String type;
-	private double xCoordinate;
-	private double yCoordinate;
 	private Date uploadedDate;
 	
 	public Media(){
 	}
 	
-	@DynamoDBRangeKey(attributeName = "partnerId")
-	public String getPartnerId()
-	{
-		return this.getPartnerId();
+
+	@DynamoDBRangeKey
+	public String getMediaId() {
+		return mediaId;
 	}
 
+	public void setMediaId(String id) {
+		mediaId = id;
+	}
+
+	
 	@DynamoDBHashKey
-	public String getId() {
-		return Id;
+	public String getRequestId() {
+		return requestId;
 	}
 
-	public void setId(String id) {
-		Id = id;
+	public void setRequestId(String requestId) {
+		this.requestId = requestId;
 	}
 
 	@DynamoDBAttribute()
 	public String geteMailAddress() {
-		return this.geteMailAddress();
+		return eMailAddress;
 	}
 
 	public void seteMailAddress(String eMailAddress) {
-		this.seteMailAddress(eMailAddress);
+		this.eMailAddress = eMailAddress;
 	}
 
 	@DynamoDBIgnore
@@ -52,34 +56,6 @@ public class Media {
 
 	public void setMediaData(String mediaData) {
 		this.mediaData = mediaData;
-	}
-
-	@DynamoDBAttribute()
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	@DynamoDBAttribute()
-	public double getxCoordinate() {
-		return xCoordinate;
-	}
-
-	public void setxCoordinate(double xCoordinate) {
-		this.xCoordinate = xCoordinate;
-	}
-	
-	@DynamoDBAttribute()
-	public double getyCoordinate() {
-		return yCoordinate;
-	}
-
-
-	public void setyCoordinate(double yCoordinate) {
-		this.yCoordinate = yCoordinate;
 	}
 	
 	@DynamoDBAttribute()

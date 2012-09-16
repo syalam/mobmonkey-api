@@ -57,16 +57,17 @@ public class CheckInResource extends ResourceHelper {
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
 
-			List<Device> userDevices = super.mapper().query(Device.class,
+			List<Device> scanResult = super.mapper().query(Device.class,
 					queryExpression);
-			for (Device d : userDevices) {
-				//Right now we only support iOS
-				if(d.getDeviceType().equals("iOS")){
-					ApplePNSHelper.send(d.getDeviceId(), "There are requests near you!");
-				
-				}
+			
+			String[] deviceIds = new String[scanResult.size()];
+			
+			for(int i = 0; i < deviceIds.length; i++){
+				deviceIds[i] = scanResult.get(i).getDeviceId().toString();
 			}
 
+			ApplePNSHelper.send(deviceIds,
+					"There are " + reqsNearBy.size() + " requests for media near you!");
 		
 			return Response.ok().entity(reqsNearBy).build();
 		} else

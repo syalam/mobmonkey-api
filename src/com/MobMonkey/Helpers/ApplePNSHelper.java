@@ -13,14 +13,13 @@ public final class ApplePNSHelper {
 
 	private static String keyStoreFile = "Certificates.p12"; 
 	private static String keyStorePass = "1MobMonkey23";
-	public static void send(String deviceId, String msg){
+	public static void send(String[] devices, String msg){
 	
-		String[] devices = { deviceId };
 		
 		InputStream keyStore = ApplePNSHelper.class.getResourceAsStream(keyStoreFile);
 	      try {
               
-              List<PushedNotification> notifications = Push.alert("Ohhhh Monnnnn", 
+              List<PushedNotification> notifications = Push.alert(msg, 
                                               keyStore, keyStorePass, false, devices); 
 
               for (PushedNotification notification : notifications) {
