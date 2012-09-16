@@ -17,6 +17,7 @@ public class MobMonkeyApi extends Application {
 		s.add(VerifyResource.class);
 		s.add(RequestMediaResource.class);
 		s.add(CheckInResource.class);
+		s.add(LocationCategoryResource.class);
 		return s;
 	}
 }

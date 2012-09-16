@@ -17,7 +17,6 @@ import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Device;
-import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.model.AttributeValue;

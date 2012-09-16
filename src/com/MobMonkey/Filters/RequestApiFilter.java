@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import com.MobMonkey.Helpers.PwdSvc;
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
 import com.amazonaws.auth.PropertiesCredentials;
@@ -137,6 +136,9 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		// Now, does the user have access to the resource?
 		// TODO - Lock down administrative resources, like getting user lists
 
+		
+		
+		
 		// Passed all my tests? I'll allow it.
 		return true;
 
