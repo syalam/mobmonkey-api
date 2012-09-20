@@ -6,6 +6,7 @@ import java.net.URISyntaxException;
 
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
+import com.MobMonkey.Models.Oauth;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
@@ -68,6 +69,8 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		String partnerId = req.getHeaderValue("MobMonkey-partnerId");
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
+		String oauthToken = req.getHeaderValue("OauthToken");
+		String oauthTokenSecret = req.getHeaderValue("OauthTokenSecret");
 
 		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
@@ -98,7 +101,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 				// If that's the case then we will let them through without
 				// user:pass creds.
 				if (req.getRequestUri().getPath().toLowerCase()
-						.matches(".*/rest/signup/user$")) {
+						.matches(".*/rest/signup/user.*$")) {
 					return true;
 				}
 
@@ -110,6 +113,18 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		}
 
 		try {
+			// Before with auth the user using email and pass, lets see if we
+			// have an oauth header
+			if (null != oauthToken || null != oauthTokenSecret) {
+				Oauth ou = mapper.load(Oauth.class, eMailAddress, oauthToken);
+				
+				if(ou.getoAuthTokenSecret().equals(oauthTokenSecret)){
+					return true;  // we have a valid oauthtoken !!
+				}
+				
+			}
+
+			// No Oauth token.. lets see if we have a user & pass
 			// Pull the user information
 			User user = mapper.load(User.class, eMailAddress.trim(),
 					partnerId.trim());
@@ -121,7 +136,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 			// Lets check to see if their password matches what we have in the
 			// DB.
-			
+
 			if (!password.equals(user.getPassword())) {
 
 				return false;
@@ -136,12 +151,8 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		// Now, does the user have access to the resource?
 		// TODO - Lock down administrative resources, like getting user lists
 
-		
-		
-		
 		// Passed all my tests? I'll allow it.
 		return true;
 
 	}
-
 }

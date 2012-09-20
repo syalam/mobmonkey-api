@@ -17,6 +17,7 @@ public class Verify {
 	private String VerifyID;
 	private String partnerId;
 	private String eMailAddress;
+	private String oauthToken;
 	private Date sentDate;
 	private Date recvDate;
 	
@@ -73,6 +74,13 @@ public class Verify {
 
 	public void setRecvDate(Date recvDate) {
 		this.recvDate = recvDate;
+	}
+	@DynamoDBAttribute
+	public String getOauthToken() {
+		return oauthToken;
+	}
+	public void setOauthToken(String oauthToken) {
+		this.oauthToken = oauthToken;
 	}
 	
 }

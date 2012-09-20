@@ -11,8 +11,8 @@ import javapns.notification.ResponsePacket;
 
 public final class ApplePNSHelper {
 
-	private static String keyStoreFile = "Certificates.p12"; 
-	private static String keyStorePass = "1MobMonkey23";
+	private static String keyStoreFile = "DevCertificates.p12"; 
+	private static String keyStorePass = "mm";
 	public static void send(String[] devices, String msg){
 	
 		

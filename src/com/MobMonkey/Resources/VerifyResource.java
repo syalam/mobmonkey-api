@@ -9,6 +9,7 @@ import com.MobMonkey.Helpers.Mailer;
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Models.Verify;
+import com.MobMonkey.Models.Oauth;
 
 @Path("/verify")
 public class VerifyResource extends ResourceHelper {
@@ -40,6 +41,35 @@ public class VerifyResource extends ResourceHelper {
 		return Response.status(200).entity("<html><head><title>Verification success.</title></head><body><center><h1>Thank you for registering! You may now use the full functionality of MobMonkey.</h1></center></body></html>").build();
 
 	}
+	
+	@GET
+	@Path("/user/{partnerId}/{verifyId}/{oauthtoken}")
+	public Response verifyUserIDWithAuthToken(@PathParam("partnerId") String partnerId, @PathParam("oauthtoken") String oauthtoken,
+			@PathParam("verifyId") String verifyId) {
+		try {
+			Verify v = super.mapper().load(Verify.class, verifyId, partnerId);
+
+			User u = super.mapper().load(User.class, v.geteMailAddress(),
+					v.getPartnerId());
+
+			u.setVerified(true);
+			super.mapper().save(u);
+			
+			Oauth ou = super.mapper().load(Oauth.class, v.geteMailAddress(), oauthtoken);
+			ou.seteMailVerified(true);
+			super.mapper().save(ou);
+
+			v.setVerifyID(verifyId);
+			v.setRecvDate(new Date());
+			super.mapper().save(v);
+		} catch (Exception e) {
+			return Response.status(500).entity("TODO - HTML ERROR RESPONSE").build();
+		}
+		
+		return Response.status(200).entity("<html><head><title>Verification success.</title></head><body><center><h1>Thank you for registering! You may now use the full functionality of MobMonkey.</h1></center></body></html>").build();
+
+	}
+	
 	
 	@GET
 	@Path("/partner/{partnerId}/{verifyId}")

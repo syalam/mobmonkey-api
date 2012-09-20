@@ -18,6 +18,9 @@ public class MobMonkeyApi extends Application {
 		s.add(LocationCategoryResource.class);
 		s.add(LocationProviderResource.class);
 		s.add(LocationResource.class);
+		s.add(SignInResource.class);
+		s.add(SearchResource.class);
+		s.add(InboxResource.class);
 		return s;
 	}
 }

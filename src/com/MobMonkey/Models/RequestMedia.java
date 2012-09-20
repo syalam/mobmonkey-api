@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "RequestMedia")
@@ -28,7 +29,7 @@ public class RequestMedia  {
 	public RequestMedia() {
 	}
 
-	@DynamoDBHashKey
+	@DynamoDBRangeKey
 	public String getRequestId() {
 		return requestId;
 	}
@@ -37,7 +38,8 @@ public class RequestMedia  {
 		requestId = id;
 	}
 
-	@DynamoDBAttribute()
+	
+	@DynamoDBHashKey
 	public String geteMailAddress() {
 	return eMailAddress;
 	}

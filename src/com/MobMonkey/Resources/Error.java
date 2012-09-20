@@ -3,6 +3,8 @@ package com.MobMonkey.Resources;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import com.MobMonkey.Models.Status;
+
 @Path("/error")
 public class Error {
 
@@ -11,10 +13,13 @@ public class Error {
 
 	@GET
 	@Path("/unauthorized")
-	@Produces(MediaType.TEXT_PLAIN)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response getError() {
 
-		return Response.status(401).entity("Unauthorized attempt").build();
+		Status s = new Status();
+		s.setStatus("Unauthorized");
+		s.setDescription("Please login to MobMonkey using authorized credentials");
+		return Response.status(401).entity(s).build();
 	}
 
 }

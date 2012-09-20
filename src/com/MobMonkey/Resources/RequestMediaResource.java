@@ -77,6 +77,7 @@ public class RequestMediaResource extends ResourceHelper {
 		String response = "requestID:" + r.getRequestId();
 		// user officially makes a request.. lets increment his request value
 		//TODO move the number of requests to caching 
+		// also make all requests JSON
 		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
 		super.mapper().save(user);
 

@@ -50,7 +50,12 @@ public final class Locator extends ResourceHelper {
 		// request is scheduled at 2012-09-12T22:10:02.000Z
 
 		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-	
+		  scanExpression.addFilterCondition( "requestFulfilled", new
+				 Condition().withComparisonOperator
+				  (ComparisonOperator.EQ).withAttributeValueList( new
+				  AttributeValue().withN("0")));
+		
+		
 		/*
 		 * scanExpression.addFilterCondition( "scheduleDate", new
 		 * Condition().withComparisonOperator
@@ -75,6 +80,7 @@ public final class Locator extends ResourceHelper {
 				RequestMediaLite newReq = new RequestMediaLite();
 				newReq.setRequestId(req.getRequestId());
 				newReq.setMessage(req.getMessage());
+				newReq.setType(req.getRequestType());
 				results.add(newReq);
 			}
 		}

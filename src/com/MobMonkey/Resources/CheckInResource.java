@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response;
 
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
+import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.RequestMediaLite;
@@ -50,28 +51,35 @@ public class CheckInResource extends ResourceHelper {
 		ArrayList<RequestMediaLite> reqsNearBy = new Locator()
 				.findRequestsNearBy(c.getLatitude(), c.getLongitude());
 
-		if (reqsNearBy.size() > 0) {
-			// Get the users devices
+		for (RequestMediaLite req : reqsNearBy) {
+			AssignedRequest assReq = new AssignedRequest();
+			assReq.seteMailAddress(eMailAddress);
+			assReq.setRequestId(req.getRequestId());
+			assReq.setType(req.getType());
+			assReq.setAssignedDate(new Date());
+			assReq.setMessage(req.getMessage());
+			super.mapper().save(assReq);
+		}
+		// TODO we should do something here
+	/*	if (reqsNearBy.size() > 0) { // Get the users devices
 
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
 
 			List<Device> scanResult = super.mapper().query(Device.class,
 					queryExpression);
-			
+
 			String[] deviceIds = new String[scanResult.size()];
-			
-			for(int i = 0; i < deviceIds.length; i++){
+
+			for (int i = 0; i < deviceIds.length; i++) {
 				deviceIds[i] = scanResult.get(i).getDeviceId().toString();
 			}
 
-			ApplePNSHelper.send(deviceIds,
-					"There are " + reqsNearBy.size() + " requests for media near you!");
-		
-			return Response.ok().entity(reqsNearBy).build();
-		} else
-			return Response.ok().entity("No requests are near by at this time")
-					.build();
+			ApplePNSHelper.send(deviceIds, "There are " + reqsNearBy.size()
+					+ " requests for media near you!");
+
+		}*/
+		return Response.ok().entity(reqsNearBy).build();
 
 	}
 }
