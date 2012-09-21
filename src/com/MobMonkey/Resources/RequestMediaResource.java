@@ -71,7 +71,7 @@ public class RequestMediaResource extends ResourceHelper {
 		}
 
 		r.setRequestId(UUID.randomUUID().toString());
-
+		r.setPartnerId(partnerId);
 		// saving the request to DB
 		r.seteMailAddress(username);
 		r.setRequestType(mediaType);

@@ -30,7 +30,7 @@ public class RequestMedia  {
 	public RequestMedia() {
 	}
 
-	@DynamoDBRangeKey
+	@DynamoDBAttribute
 	public String getRequestId() {
 		return requestId;
 	}
@@ -118,12 +118,12 @@ public class RequestMedia  {
 		return requestType;
 	}
 
-	@DynamoDBAttribute()
+
 	public void setRequestType(int requestType) {
 		this.requestType = requestType;
 	}
 
-	@DynamoDBAttribute()
+	@DynamoDBRangeKey()
 	public Date getScheduleDate() {
 		return scheduleDate;
 	}
@@ -140,7 +140,6 @@ public class RequestMedia  {
 	public void setDuration(int duration) {
 		this.duration = duration;
 	}
-
 
 	@DynamoDBAttribute()
 	public boolean isRequestFulfilled() {

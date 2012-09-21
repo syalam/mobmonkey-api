@@ -90,18 +90,27 @@ public final class Locator extends ResourceHelper {
 			// TODO need to take the requests scheduled date and duration and
 			// check to see if the current time is
 			// greater than this value.. because the request is expired!
-			if (isInVicinity(req.getLatitude(), req.getLongitude(), latitude,
-					longitude, req.getRadiusInYards())) {
 
-				RequestMediaLite newReq = new RequestMediaLite();
-				newReq.setRequestId(req.getRequestId());
-				newReq.setMessage(req.getMessage());
-				newReq.setMediaType(req.getRequestType());
-				if (req.isRecurring())
-					newReq.setRequestType(1);
-				else
-					newReq.setRequestType(0);
-				results.add(newReq);
+			Date expiryDate = new Date();
+			expiryDate.setTime(req.getScheduleDate().getTime() + req.getDuration());
+			
+			if ((req.getScheduleDate().getTime() < rightNowMilli)
+					&& (rightNowMilli < expiryDate.getTime())) {
+
+				if (isInVicinity(req.getLatitude(), req.getLongitude(),
+						latitude, longitude, req.getRadiusInYards())) {
+
+					RequestMediaLite newReq = new RequestMediaLite();
+					newReq.setRequestId(req.getRequestId());
+					newReq.setMessage(req.getMessage());
+					newReq.setMediaType(req.getRequestType());
+					newReq.setExpiryDate(expiryDate);
+					if (req.isRecurring())
+						newReq.setRequestType(1);
+					else
+						newReq.setRequestType(0);
+					results.add(newReq);
+				}
 			}
 		}
 
@@ -143,9 +152,7 @@ public final class Locator extends ResourceHelper {
 		long duration = rm.getDuration();
 
 		double x = Math.abs((scheduleDate - rightNow) % frequencyInMS);
-
 		double y = ((x * 1000) / frequencyInMS);
-
 		double z = (y % 1) * frequencyInMS;
 
 		if (z < duration) {
