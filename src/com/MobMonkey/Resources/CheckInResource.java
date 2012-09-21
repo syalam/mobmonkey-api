@@ -55,9 +55,11 @@ public class CheckInResource extends ResourceHelper {
 			AssignedRequest assReq = new AssignedRequest();
 			assReq.seteMailAddress(eMailAddress);
 			assReq.setRequestId(req.getRequestId());
-			assReq.setType(req.getType());
+			assReq.setMediaType(req.getMediaType());
+			assReq.setRequestType(req.getRequestType());
 			assReq.setAssignedDate(new Date());
 			assReq.setMessage(req.getMessage());
+			assReq.setExpiryDate(req.getExpiryDate());
 			super.mapper().save(assReq);
 		}
 		// TODO we should do something here

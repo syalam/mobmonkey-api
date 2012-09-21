@@ -1,11 +1,13 @@
 package com.MobMonkey.Resources;
 
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.User;
 
@@ -73,10 +75,39 @@ public class RequestMediaResource extends ResourceHelper {
 		// saving the request to DB
 		r.seteMailAddress(username);
 		r.setRequestType(mediaType);
-		super.mapper().save(r);
+
+		if (r.getScheduleDate() == null) {
+			r.setScheduleDate(new Date());
+		}
+
+		// lets check if its a recurring request
+		if (r.isRecurring()) {
+
+			RecurringRequestMedia rm = new RecurringRequestMedia();
+			rm.setDuration(r.getDuration());
+			rm.seteMailAddress(r.geteMailAddress());
+			rm.setFulfilledDate(r.getFulfilledDate());
+			rm.setLatitude(r.getLatitude());
+			rm.setLocationId(r.getLocationId());
+			rm.setLongitude(r.getLongitude());
+			rm.setMessage(r.getMessage());
+			rm.setPartnerId(partnerId);
+			rm.setProviderId(r.getProviderId());
+			rm.setRadiusInYards(r.getRadiusInYards());
+			rm.setRecurring(true);
+			rm.setRequestFulfilled(false);
+			rm.setRequestId(r.getRequestId());
+			rm.setRequestType(r.getRequestType());
+			rm.setScheduleDate(r.getScheduleDate());
+			rm.setFrequencyInMS(r.getFrequencyInMS());
+			super.mapper().save(rm);
+		} else {
+
+			super.mapper().save(r);
+		}
 		String response = "requestID:" + r.getRequestId();
 		// user officially makes a request.. lets increment his request value
-		//TODO move the number of requests to caching 
+		// TODO move the number of requests to caching
 		// also make all requests JSON
 		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
 		super.mapper().save(user);
@@ -85,7 +116,7 @@ public class RequestMediaResource extends ResourceHelper {
 			response += ",displayAd=true";
 		else
 			response += ",displayAd=false";
-		
+
 		return Response.ok().entity(response).build();
 
 	}

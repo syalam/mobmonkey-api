@@ -7,8 +7,8 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
-@DynamoDBTable(tableName = "RequestMedia")
-public class RequestMedia  {
+@DynamoDBTable(tableName = "RecurringRequestMedia")
+public class RecurringRequestMedia  {
 	private String partnerId;
 	private String eMailAddress;
 	private String requestId;
@@ -18,7 +18,7 @@ public class RequestMedia  {
 	private String providerId;
 	private String latitude;
 	private String longitude;
-	private int radiusInYards;  
+	private int radiusInYards; 
 	private Date scheduleDate;
 	private int duration;
 	private boolean requestFulfilled;
@@ -26,8 +26,7 @@ public class RequestMedia  {
 	private boolean recurring;
 	private int frequencyInMS;
 	
-	
-	public RequestMedia() {
+	public RecurringRequestMedia() {
 	}
 
 	@DynamoDBRangeKey

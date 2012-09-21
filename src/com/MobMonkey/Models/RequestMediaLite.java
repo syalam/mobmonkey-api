@@ -1,10 +1,14 @@
 package com.MobMonkey.Models;
 
+import java.util.Date;
+
 public class RequestMediaLite {
 
 	private String RequestId;
 	private String message;
-	private int type;
+	private int mediaType;
+	private int requestType;
+	private Date expiryDate;
 	
 	public RequestMediaLite()
 	{
@@ -27,11 +31,27 @@ public class RequestMediaLite {
 		this.message = message;
 	}
 
-	public int getType() {
-		return type;
+	public int getMediaType() {
+		return mediaType;
 	}
 
-	public void setType(int type) {
-		this.type = type;
+	public void setMediaType(int type) {
+		this.mediaType = type;
+	}
+
+	public int getRequestType() {
+		return requestType;
+	}
+
+	public void setRequestType(int requestType) {
+		this.requestType = requestType;
+	}
+
+	public Date getExpiryDate() {
+		return expiryDate;
+	}
+
+	public void setExpiryDate(Date expiryDate) {
+		this.expiryDate = expiryDate;
 	}
 }

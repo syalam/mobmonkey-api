@@ -38,6 +38,7 @@ public class InboxResource extends ResourceHelper {
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0).toLowerCase();
 		
 		if(type.toLowerCase().equals("openrequests")){
+			//TODO add recurring requests to this list
 			
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(new AttributeValue().withS(eMailAddress));
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper().query(RequestMedia.class, queryExpression);
