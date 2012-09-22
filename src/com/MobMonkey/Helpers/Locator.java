@@ -116,8 +116,9 @@ public final class Locator extends ResourceHelper {
 
 		// This is for recurring requests.. let the fun begin!
 
+		DynamoDBScanExpression scanExpressionRecurring = new DynamoDBScanExpression();
 		List<RecurringRequestMedia> recurringScanResult = super.mapper().scan(
-				RecurringRequestMedia.class, scanExpression);
+				RecurringRequestMedia.class, scanExpressionRecurring );
 		for (RecurringRequestMedia rm : recurringScanResult) {
 
 			if (isInVicinity(rm.getLatitude(), rm.getLongitude(), latitude,

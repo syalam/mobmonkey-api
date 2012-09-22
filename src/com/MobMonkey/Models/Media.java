@@ -13,6 +13,7 @@ public class Media {
 	
 	private String mediaId;
 	private String requestId;
+	private String requestType;
 	private String eMailAddress;
 	private String mediaData;
 	private Date uploadedDate;
