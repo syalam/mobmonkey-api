@@ -8,24 +8,14 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable( tableName="LocationCategory")
 public class LocationCategory {
 	
-	private String categoryId;
 	private String name;
-	private String parentId;
+	private String parentName;
 	
 	public LocationCategory(){	
 	}
 	
+
 	@DynamoDBHashKey
-	public String getCategoryId() {
-		return categoryId;
-	}
-
-
-	public void setCategoryId(String categoryId) {
-		this.categoryId = categoryId;
-	}
-
-	@DynamoDBAttribute
 	public String getName() {
 		return name;
 	}
@@ -35,12 +25,12 @@ public class LocationCategory {
 	}
 	
 	@DynamoDBRangeKey
-	public String getParentId() {
-		return parentId;
+	public String getParentName() {
+		return parentName;
 	}
 	
-	public void setParentId(String parentId) {
-		this.parentId = parentId;
+	public void setParentName(String parentId) {
+		this.parentName = parentId;
 	}
 	
 }

@@ -27,10 +27,8 @@ public class LocationCategoryResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response createCategoryInJSON(LocationCategory category) {
 
-		if (category.getParentId() == null)
-			category.setParentId("null");
+		
 		try {
-			category.setCategoryId(UUID.randomUUID().toString());
 			super.mapper().save(category);
 
 		} catch (Exception exc) {

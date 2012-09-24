@@ -12,9 +12,17 @@ public class Location {
 	private String name;
 	private String description;
 	private String categoryId;
+	private String category;
 	private String latitude;
 	private String longitude;
 	private String radiusInYards;
+	private String streetAddress;
+	private String locality;
+	private String region;
+	private String postcode;
+	private String countryCode;
+	private String phoneNumber;
+	private String webSite;
 
 	public Location() {
 	}
@@ -64,6 +72,14 @@ public class Location {
 		this.categoryId = category;
 	}
 	
+	public String getCategory() {
+		return category;
+	}
+
+	public void setCategory(String category) {
+		this.category = category;
+	}
+
 	@DynamoDBAttribute
 	public String getLatitude() {
 		return latitude;
@@ -89,6 +105,64 @@ public class Location {
 
 	public void setRadiusInYards(String radiusInYards) {
 		this.radiusInYards = radiusInYards;
+	}
+	@DynamoDBAttribute
+	public String getStreetAddress() {
+		return streetAddress;
+	}
+
+	public void setStreetAddress(String streetAddress) {
+		this.streetAddress = streetAddress;
+	}
+	@DynamoDBAttribute
+	public String getLocality() {
+		return locality;
+	}
+
+	public void setLocality(String locality) {
+		this.locality = locality;
+	}
+	@DynamoDBAttribute
+	public String getRegion() {
+		return region;
+	}
+
+	public void setRegion(String region) {
+		this.region = region;
+	}
+	@DynamoDBAttribute
+	public String getPostcode() {
+		return postcode;
+	}
+
+	public void setPostcode(String postcode) {
+		this.postcode = postcode;
+	}
+
+	@DynamoDBAttribute
+	public String getCountryCode() {
+		return countryCode;
+	}
+
+	public void setCountryCode(String countryCode) {
+		this.countryCode = countryCode;
+	}
+
+	@DynamoDBAttribute
+	public String getPhoneNumber() {
+		return phoneNumber;
+	}
+
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
+	}
+	@DynamoDBAttribute
+	public String getWebSite() {
+		return webSite;
+	}
+
+	public void setWebSite(String webSite) {
+		this.webSite = webSite;
 	}
 
 }
