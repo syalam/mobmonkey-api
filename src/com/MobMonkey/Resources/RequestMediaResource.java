@@ -72,9 +72,8 @@ public class RequestMediaResource extends ResourceHelper {
 
 		r.setRequestId(UUID.randomUUID().toString());
 		r.setPartnerId(partnerId);
-		// saving the request to DB
 		r.seteMailAddress(username);
-		r.setRequestType(mediaType);
+		r.setMediaType(mediaType);
 
 		if (r.getScheduleDate() == null) {
 			r.setScheduleDate(new Date());
@@ -97,12 +96,12 @@ public class RequestMediaResource extends ResourceHelper {
 			rm.setRecurring(true);
 			rm.setRequestFulfilled(false);
 			rm.setRequestId(r.getRequestId());
-			rm.setRequestType(r.getRequestType());
+			rm.setRequestType(1);
 			rm.setScheduleDate(r.getScheduleDate());
 			rm.setFrequencyInMS(r.getFrequencyInMS());
 			super.mapper().save(rm);
 		} else {
-
+			r.setRequestType(0);
 			super.mapper().save(r);
 		}
 		String response = "requestID:" + r.getRequestId();

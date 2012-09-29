@@ -13,6 +13,7 @@ public class RequestMedia  {
 	private String eMailAddress;
 	private String requestId;
 	private int requestType;
+	private int mediaType;
 	private String message;
 	private String locationId;
 	private String providerId;
@@ -30,7 +31,7 @@ public class RequestMedia  {
 	public RequestMedia() {
 	}
 
-	@DynamoDBAttribute
+	@DynamoDBRangeKey
 	public String getRequestId() {
 		return requestId;
 	}
@@ -38,7 +39,6 @@ public class RequestMedia  {
 	public void setRequestId(String id) {
 		requestId = id;
 	}
-
 	
 	@DynamoDBHashKey
 	public String geteMailAddress() {
@@ -123,7 +123,16 @@ public class RequestMedia  {
 		this.requestType = requestType;
 	}
 
-	@DynamoDBRangeKey()
+	@DynamoDBAttribute()
+	public int getMediaType() {
+		return mediaType;
+	}
+
+	public void setMediaType(int mediaType) {
+		this.mediaType = mediaType;
+	}
+
+	@DynamoDBAttribute()
 	public Date getScheduleDate() {
 		return scheduleDate;
 	}

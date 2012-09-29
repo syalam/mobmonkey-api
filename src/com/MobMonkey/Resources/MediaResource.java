@@ -2,6 +2,7 @@ package com.MobMonkey.Resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import javax.xml.bind.*;
@@ -10,9 +11,12 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import com.MobMonkey.Helpers.ApplePNSHelper;
+import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.Media;
+import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
+import com.MobMonkey.Models.Status;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
@@ -28,15 +32,52 @@ public class MediaResource extends ResourceHelper {
 
 	@POST
 	@Path("/image")
-	@Consumes("application/json")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
 	public Response uploadImageInJSON(Media media, @Context HttpHeaders headers)
 			throws IOException {
 
+		Date now = new Date();
+		String requestorEmail = "";
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
-		media.setMediaId(UUID.randomUUID().toString());
-		media.seteMailAddress(username);
-		media.setRequestId(media.getRequestId());
 
+		// lets get the assigned request
+		AssignedRequest assReq = super.mapper().load(AssignedRequest.class,
+				username, media.getRequestId());
+		if(assReq == null){
+			return Response.status(500).entity(new Status("Failure", "The request ID specified is no longer assigned to you", "")).build();
+		}
+		requestorEmail = assReq.getRequestorEmail();
+
+		if (media.getRequestType().equals("1")) {
+			RecurringRequestMedia rrm = super.mapper().load(
+					RecurringRequestMedia.class, media.getRequestId());
+			if(rrm.equals(null)){
+				super.mapper().delete(assReq);
+				
+				return Response.status(500).entity(new Status("Failure", "The request has been removed by the requestor.", "")).build();
+			}
+			rrm.setRequestId(media.getRequestId());
+			rrm.setRequestFulfilled(true);
+			rrm.setFulfilledDate(now);
+			requestorEmail = rrm.geteMailAddress();
+			super.mapper().save(rrm);
+		} else if (media.getRequestType().equals("0")) {
+			RequestMedia rrm = super.mapper().load(RequestMedia.class,
+					requestorEmail, media.getRequestId());
+			if(rrm == null){
+				super.mapper().delete(assReq);
+				return Response.status(500).entity(new Status("Failure", "The request has been removed by the requestor", "")).build();
+			}
+			rrm.setRequestFulfilled(true);
+			rrm.setFulfilledDate(now);
+			super.mapper().save(rrm);
+		}
+
+		
+		//unique id for media
+		media.setMediaId(UUID.randomUUID().toString());
+	
 		// Save the file to S3
 		String keyName = "img-" + media.getMediaId() + ".png";
 		byte[] btDataFile = DatatypeConverter.parseBase64Binary(media
@@ -52,35 +93,33 @@ public class MediaResource extends ResourceHelper {
 		putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
 		super.s3cli().putObject(putObjectRequest);
 
+		media.setMediaURL("https://s3-us-west-1.amazonaws.com/mobmonkeyimages/"
+				+ keyName);
+
+		// "1" = recurring
+
+		media.seteMailAddress(username);
+		media.setUploadedDate(now);
+		
 		super.mapper().save(media);
-
-		RequestMedia rm = super.mapper().load(RequestMedia.class,
-				media.getRequestId());
-		rm.setRequestId(media.getRequestId());
-		rm.setRequestFulfilled(true);
-		super.mapper().save(rm);
-
 		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(rm.geteMailAddress()));
+				new AttributeValue().withS(requestorEmail));
 
 		List<Device> scanResult = super.mapper().query(Device.class,
 				queryExpression);
-		
-		
+
 		String[] deviceIds = new String[scanResult.size()];
-		
-		for(int i = 0; i < deviceIds.length; i++){
+
+		for (int i = 0; i < deviceIds.length; i++) {
 			deviceIds[i] = scanResult.get(i).getDeviceId().toString();
 		}
 
-		ApplePNSHelper.send(deviceIds,
-				"https://s3-us-west-1.amazonaws.com/mobmonkeyimages/"
-						+ keyName);
-		
-		String result = "Successfully uploaded image. https://s3-us-west-1.amazonaws.com/mobmonkeyimages/"
-				+ keyName;
-		return Response.status(201).entity(result).build();
+		ApplePNSHelper.send(deviceIds, media.getMediaURL());
+
+		return Response
+				.status(201)
+				.entity(new Status("Success", "Successfully uploaded image. "
+						+ media.getMediaURL(), "")).build();
 
 	}
-
 }

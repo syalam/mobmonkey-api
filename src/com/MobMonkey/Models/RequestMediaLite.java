@@ -2,6 +2,8 @@ package com.MobMonkey.Models;
 
 import java.util.Date;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 public class RequestMediaLite {
 
 	private String RequestId;
@@ -9,6 +11,7 @@ public class RequestMediaLite {
 	private int mediaType;
 	private int requestType;
 	private Date expiryDate;
+	@JsonIgnore private String requestorEmail;
 	
 	public RequestMediaLite()
 	{
@@ -53,5 +56,13 @@ public class RequestMediaLite {
 
 	public void setExpiryDate(Date expiryDate) {
 		this.expiryDate = expiryDate;
+	}
+
+	public String getRequestorEmail() {
+		return requestorEmail;
+	}
+
+	public void setRequestorEmail(String requestorEmail) {
+		this.requestorEmail = requestorEmail;
 	}
 }

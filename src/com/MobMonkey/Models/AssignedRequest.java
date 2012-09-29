@@ -2,20 +2,24 @@ package com.MobMonkey.Models;
 
 import java.util.Date;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
-@DynamoDBTable( tableName = "AssignedRequests")
+@DynamoDBTable( tableName = "AssignedRequest")
 public class AssignedRequest {
-	private String eMailAddress;
+	@JsonIgnore private String eMailAddress;
 	private String requestId;
 	private String message;
 	private int mediaType;
 	private int requestType;
 	private Date expiryDate;
 	private Date assignedDate;
+	private Date fulFilledDate;
+	@JsonIgnore private String requestorEmail;
 
 	public AssignedRequest() {
 
@@ -30,7 +34,7 @@ public class AssignedRequest {
 		this.eMailAddress = eMailAddress;
 	}
 
-	@DynamoDBAttribute
+	@DynamoDBRangeKey
 	public String getRequestId() {
 		return requestId;
 	}
@@ -66,7 +70,7 @@ public class AssignedRequest {
 		this.requestType = requestType;
 	}
 
-	@DynamoDBRangeKey
+	@DynamoDBAttribute
 	public Date getExpiryDate() {
 		return expiryDate;
 	}
@@ -82,6 +86,24 @@ public class AssignedRequest {
 
 	public void setAssignedDate(Date assignedDate) {
 		this.assignedDate = assignedDate;
+	}
+
+	@DynamoDBAttribute
+	public Date getFulFilledDate() {
+		return fulFilledDate;
+	}
+
+	public void setFulFilledDate(Date fulFilledDate) {
+		this.fulFilledDate = fulFilledDate;
+	}
+
+	@DynamoDBAttribute
+	public String getRequestorEmail() {
+		return requestorEmail;
+	}
+
+	public void setRequestorEmail(String requestorEmail) {
+		this.requestorEmail = requestorEmail;
 	}
 
 }

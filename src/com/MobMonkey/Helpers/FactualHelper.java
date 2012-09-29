@@ -18,12 +18,30 @@ import com.factual.driver.*;
 
 public class FactualHelper extends ResourceHelper {
 	private Factual factual;
+	private static String factual_providerId = "222e736f-c7fa-4c40-b78e-d99243441fae";
 
 	public FactualHelper() {
 		super();
 		factual = new Factual("BEoV3TPDev03P6NJSVJPgTmuTNOegwRsjJN41DnM",
 				"hwxVQz4lAxb5YpWhbLq10KhWiEw5k35WgFuoR2YI");
 
+	}
+
+	public String[] reverseLookUp(String locationId) {
+		String[] results = new String[2];
+		Query query = new Query();
+		query.field("factual_id").equal(locationId);
+
+		ReadResponse resp = factual.fetch("places", query);
+
+		List<Map<String, Object>> data = resp.getData();
+		for (Map<String, Object> map : data) {
+			results[0] = (map.containsKey("latitude") == true) ? map.get(
+					"latitude").toString() : "";
+			results[1] = (map.containsKey("longitude") == true) ? map
+					.get("longitude").toString() : "";
+		}
+		return results;
 	}
 
 	public List<Location> GeoFilter(Location loc) {
@@ -46,23 +64,35 @@ public class FactualHelper extends ResourceHelper {
 				factualCategory = categoryFactory(map.get("category")
 						.toString());
 				returnedLoc.setCategoryId(factualCategory);
-				returnedLoc.setCategory(map.get("category")
-						.toString());
+				returnedLoc.setCategory(map.get("category").toString());
 			} catch (Exception exc) {
 				// TODO what do I do when factual doesnt have a category for me?
 			}
 
-			String country = (map.containsKey("country") == true) ? map.get("country").toString() : "";
-			String latitude = (map.containsKey("latitude") == true) ? map.get("latitude").toString() : "";
-			String longitude = (map.containsKey("longitude") == true) ? map.get("longitude").toString() : "";
-			String locality = (map.containsKey("locality") == true) ? map.get("locality").toString() : "";
-			String name = (map.containsKey("name") == true) ? map.get("name").toString() : "";
-			String tel = (map.containsKey("tel") == true) ? map.get("tel").toString() : "";
-			String postcode = (map.containsKey("postcode") == true) ? map.get("postcode").toString() : "";
-			String region = (map.containsKey("region") == true) ? map.get("region").toString() : "";
-			String address = (map.containsKey("address") == true) ? map.get("address").toString() : "";
-			String website = (map.containsKey("website") == true) ? map.get("website").toString() : "";
-			
+			String locationId = (map.containsKey("factual_id") == true) ? map
+					.get("factual_id").toString() : "";
+			String country = (map.containsKey("country") == true) ? map.get(
+					"country").toString() : "";
+			String latitude = (map.containsKey("latitude") == true) ? map.get(
+					"latitude").toString() : "";
+			String longitude = (map.containsKey("longitude") == true) ? map
+					.get("longitude").toString() : "";
+			String locality = (map.containsKey("locality") == true) ? map.get(
+					"locality").toString() : "";
+			String name = (map.containsKey("name") == true) ? map.get("name")
+					.toString() : "";
+			String tel = (map.containsKey("tel") == true) ? map.get("tel")
+					.toString() : "";
+			String postcode = (map.containsKey("postcode") == true) ? map.get(
+					"postcode").toString() : "";
+			String region = (map.containsKey("region") == true) ? map.get(
+					"region").toString() : "";
+			String address = (map.containsKey("address") == true) ? map.get(
+					"address").toString() : "";
+			String website = (map.containsKey("website") == true) ? map.get(
+					"website").toString() : "";
+
+			returnedLoc.setLocationId(locationId);
 			returnedLoc.setCountryCode(country);
 			returnedLoc.setLatitude(latitude);
 			returnedLoc.setLongitude(longitude);
@@ -70,7 +100,7 @@ public class FactualHelper extends ResourceHelper {
 			returnedLoc.setName(name);
 			returnedLoc.setPhoneNumber(tel);
 			returnedLoc.setPostcode(postcode);
-			returnedLoc.setProviderId("factual");
+			returnedLoc.setProviderId(factual_providerId);
 			returnedLoc.setRegion(region);
 			returnedLoc.setStreetAddress(address);
 			returnedLoc.setWebSite(website);
@@ -156,19 +186,18 @@ public class FactualHelper extends ResourceHelper {
 
 	}
 
-	public List<Location> AddressFilter(Location loc){
-		
+	public List<Location> AddressFilter(Location loc) {
+
 		Query query = new Query();
 		query.field("locality").equal(loc.getLocality());
 		query.field("region").equal(loc.getRegion());
 		query.field("postcode").equal(loc.getPostcode());
 		query.field("address").search(loc.getStreetAddress());
-	
+
 		query.limit(50);
-		
-		ReadResponse resp = factual
-				.fetch("places", query);
-		
+
+		ReadResponse resp = factual.fetch("places", query);
+
 		List<Map<String, Object>> data = resp.getData();
 
 		List<Location> results = new ArrayList<Location>();
@@ -179,24 +208,33 @@ public class FactualHelper extends ResourceHelper {
 				factualCategory = categoryFactory(map.get("category")
 						.toString());
 				returnedLoc.setCategoryId(factualCategory);
-				returnedLoc.setCategory(map.get("category")
-						.toString());
+				returnedLoc.setCategory(map.get("category").toString());
 			} catch (Exception exc) {
 				// TODO what do I do when factual doesnt have a category for me?
 			}
 
-			//TODO make this into a helper method
-			String country = (map.containsKey("country") == true) ? map.get("country").toString() : "";
-			String latitude = (map.containsKey("latitude") == true) ? map.get("latitude").toString() : "";
-			String longitude = (map.containsKey("longitude") == true) ? map.get("longitude").toString() : "";
-			String locality = (map.containsKey("locality") == true) ? map.get("locality").toString() : "";
-			String name = (map.containsKey("name") == true) ? map.get("name").toString() : "";
-			String tel = (map.containsKey("tel") == true) ? map.get("tel").toString() : "";
-			String postcode = (map.containsKey("postcode") == true) ? map.get("postcode").toString() : "";
-			String region = (map.containsKey("region") == true) ? map.get("region").toString() : "";
-			String address = (map.containsKey("address") == true) ? map.get("address").toString() : "";
-			String website = (map.containsKey("website") == true) ? map.get("website").toString() : "";
-			
+			// TODO make this into a helper method
+			String country = (map.containsKey("country") == true) ? map.get(
+					"country").toString() : "";
+			String latitude = (map.containsKey("latitude") == true) ? map.get(
+					"latitude").toString() : "";
+			String longitude = (map.containsKey("longitude") == true) ? map
+					.get("longitude").toString() : "";
+			String locality = (map.containsKey("locality") == true) ? map.get(
+					"locality").toString() : "";
+			String name = (map.containsKey("name") == true) ? map.get("name")
+					.toString() : "";
+			String tel = (map.containsKey("tel") == true) ? map.get("tel")
+					.toString() : "";
+			String postcode = (map.containsKey("postcode") == true) ? map.get(
+					"postcode").toString() : "";
+			String region = (map.containsKey("region") == true) ? map.get(
+					"region").toString() : "";
+			String address = (map.containsKey("address") == true) ? map.get(
+					"address").toString() : "";
+			String website = (map.containsKey("website") == true) ? map.get(
+					"website").toString() : "";
+
 			returnedLoc.setCountryCode(country);
 			returnedLoc.setLatitude(latitude);
 			returnedLoc.setLongitude(longitude);
@@ -216,4 +254,4 @@ public class FactualHelper extends ResourceHelper {
 
 		return results;
 	}
- }
+}

@@ -13,9 +13,11 @@ public class Media {
 	
 	private String mediaId;
 	private String requestId;
-	private String requestType;
+	private int mediaType; //image = 1, video = 2
+	private String requestType; 
 	private String eMailAddress;
 	private String mediaData;
+	private String mediaURL;
 	private Date uploadedDate;
 	
 	public Media(){
@@ -40,6 +42,27 @@ public class Media {
 	public void setRequestId(String requestId) {
 		this.requestId = requestId;
 	}
+	
+	@DynamoDBAttribute
+	public int getMediaType() {
+		return mediaType;
+	}
+
+
+	public void setMediaType(int mediaType) {
+		this.mediaType = mediaType;
+	}
+
+
+	@DynamoDBAttribute()
+	public String getRequestType() {
+		return requestType;
+	}
+
+
+	public void setRequestType(String requestType) {
+		this.requestType = requestType;
+	}
 
 	@DynamoDBAttribute()
 	public String geteMailAddress() {
@@ -59,6 +82,17 @@ public class Media {
 		this.mediaData = mediaData;
 	}
 	
+	@DynamoDBAttribute()
+	public String getMediaURL() {
+		return mediaURL;
+	}
+
+
+	public void setMediaURL(String mediaURL) {
+		this.mediaURL = mediaURL;
+	}
+
+
 	@DynamoDBAttribute()
 	public Date getUploadedDate() {
 		return uploadedDate;

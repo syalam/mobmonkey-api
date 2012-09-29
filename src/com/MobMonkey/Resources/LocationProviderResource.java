@@ -22,8 +22,10 @@ public class LocationProviderResource extends ResourceHelper {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response createLocationProviderInJSON(LocationProvider locprov) {
+	
+		locprov.setProviderId(UUID.randomUUID().toString());
 		try {
-			locprov.setProviderId(UUID.randomUUID().toString());
+			
 			super.mapper().save(locprov);
 		} catch (Exception exc) {
 			return Response
