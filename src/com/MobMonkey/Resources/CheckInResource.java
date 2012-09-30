@@ -40,11 +40,7 @@ public class CheckInResource extends ResourceHelper {
 		c.seteMailAddress(eMailAddress);
 		c.setPartnerId(partnerId);
 		c.setDateCheckedIn(new Date());
-		try {
-			super.mapper().save(c);
-		} catch (Exception exc) {
-			return Response.status(500).entity("An error has occured").build();
-		}
+		
 
 		String locationId = "";
 		String providerId = "";
@@ -77,6 +73,8 @@ public class CheckInResource extends ResourceHelper {
 			if (coords[0] != "" && coords[1] != "") {
 				reqsNearBy = new Locator().findRequestsNearBy(coords[0],
 						coords[1]);
+				c.setLatitude(coords[0]);
+				c.setLongitude(coords[1]);
 			} else if (latitude != "" && longitude != "") {
 				reqsNearBy = new Locator().findRequestsNearBy(c.getLatitude(),
 						c.getLongitude());
@@ -99,26 +97,11 @@ public class CheckInResource extends ResourceHelper {
 			assReq.setRequestorEmail(req.getRequestorEmail());
 			super.mapper().save(assReq);
 		}
-		// TODO we should do something here
-		/*
-		 * if (reqsNearBy.size() > 0) { // Get the users devices
-		 * 
-		 * DynamoDBQueryExpression queryExpression = new
-		 * DynamoDBQueryExpression( new AttributeValue().withS(eMailAddress));
-		 * 
-		 * List<Device> scanResult = super.mapper().query(Device.class,
-		 * queryExpression);
-		 * 
-		 * String[] deviceIds = new String[scanResult.size()];
-		 * 
-		 * for (int i = 0; i < deviceIds.length; i++) { deviceIds[i] =
-		 * scanResult.get(i).getDeviceId().toString(); }
-		 * 
-		 * ApplePNSHelper.send(deviceIds, "There are " + reqsNearBy.size() +
-		 * " requests for media near you!");
-		 * 
-		 * }
-		 */
+		try {
+			super.mapper().save(c);
+		} catch (Exception exc) {
+			return Response.status(500).entity("An error has occured").build();
+		}
 		return Response.ok().entity(reqsNearBy).build();
 
 	}

@@ -7,6 +7,7 @@ import java.util.UUID;
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
+import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.User;
@@ -70,6 +71,14 @@ public class RequestMediaResource extends ResourceHelper {
 					.build();
 		}
 
+		String[] coords = new String[2];
+		//so lets reverse lookup some coords if they havent proivded them
+		if(r.getProviderId() != null && r.getLocationId() != null){
+			coords = new Locator().reverseLookUp(r.getProviderId(),
+				r.getLocationId());
+			r.setLatitude(coords[0]);
+			r.setLongitude(coords[1]);
+		}
 		r.setRequestId(UUID.randomUUID().toString());
 		r.setPartnerId(partnerId);
 		r.seteMailAddress(username);
@@ -79,6 +88,8 @@ public class RequestMediaResource extends ResourceHelper {
 			r.setScheduleDate(new Date());
 		}
 
+		
+		
 		// lets check if its a recurring request
 		if (r.isRecurring()) {
 

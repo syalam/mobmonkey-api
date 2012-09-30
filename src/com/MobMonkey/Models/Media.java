@@ -2,6 +2,8 @@ package com.MobMonkey.Models;
 
 import java.util.Date;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
@@ -19,6 +21,7 @@ public class Media {
 	private String mediaData;
 	private String mediaURL;
 	private Date uploadedDate;
+	@JsonIgnore private String originalRequestor;
 	
 	public Media(){
 	}
@@ -100,6 +103,16 @@ public class Media {
 
 	public void setUploadedDate(Date uploadedDate) {
 		this.uploadedDate = uploadedDate;
+	}
+
+
+	public String getOriginalRequestor() {
+		return originalRequestor;
+	}
+
+	@DynamoDBAttribute
+	public void setOriginalRequestor(String originalRequestor) {
+		this.originalRequestor = originalRequestor;
 	}
 	
 	

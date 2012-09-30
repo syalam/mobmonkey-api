@@ -39,6 +39,7 @@ public class MediaResource extends ResourceHelper {
 
 		Date now = new Date();
 		String requestorEmail = "";
+		String originalRequestor = "";
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
 
 		// lets get the assigned request
@@ -48,7 +49,8 @@ public class MediaResource extends ResourceHelper {
 			return Response.status(500).entity(new Status("Failure", "The request ID specified is no longer assigned to you", "")).build();
 		}
 		requestorEmail = assReq.getRequestorEmail();
-
+		originalRequestor = assReq.getRequestorEmail();
+		
 		if (media.getRequestType().equals("1")) {
 			RecurringRequestMedia rrm = super.mapper().load(
 					RecurringRequestMedia.class, media.getRequestId());
@@ -100,6 +102,7 @@ public class MediaResource extends ResourceHelper {
 
 		media.seteMailAddress(username);
 		media.setUploadedDate(now);
+		media.setOriginalRequestor(originalRequestor);
 		
 		super.mapper().save(media);
 		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
@@ -116,6 +119,10 @@ public class MediaResource extends ResourceHelper {
 
 		ApplePNSHelper.send(deviceIds, media.getMediaURL());
 
+		
+		//finally delete the assigned request
+		super.mapper().delete(assReq);
+		
 		return Response
 				.status(201)
 				.entity(new Status("Success", "Successfully uploaded image. "

@@ -18,6 +18,7 @@ import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.MediaLite;
 import com.MobMonkey.Models.RecurringRequestMedia;
+import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.Status;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
@@ -162,7 +163,19 @@ public class SearchResource extends ResourceHelper {
 					}
 
 				} else {
-					m.getRequestId();
+					RequestMedia origReq = super.mapper().load(RequestMedia.class, m.getOriginalRequestor(), m.getRequestId());
+					
+					if (origReq.getProviderId().equals(loc.getProviderId())
+							&& origReq.getLocationId().equals(
+									loc.getLocationId())) {
+						MediaLite media = new MediaLite();
+						media.setMediaURL(m.getMediaURL());
+						Date expiryDate = new Date();
+						expiryDate.setTime(m.getUploadedDate().getTime()
+								+ threedays);
+						media.setExpiryDate(expiryDate);
+						results.add(media);
+					}
 				}
 			}
 			return Response.ok().entity(results).build();
