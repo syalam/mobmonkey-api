@@ -100,9 +100,9 @@ public class SearchResource extends ResourceHelper {
 		List<MediaLite> results = new ArrayList<MediaLite>();
 		Integer mediaType = 0;
 		if (type.equals("image"))
-			mediaType = 1;
+			mediaType = 0;
 		else if (type.equals("video"))
-			mediaType = 2;
+			mediaType = 1;
 
 		// we have a locationId!
 		if (loc.getLocationId() != null && loc.getProviderId() != null) {
