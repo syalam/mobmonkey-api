@@ -16,7 +16,7 @@ public class SignInResource extends ResourceHelper {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response SignInInJSON(){
-		//TODO
+		//TODO capture mobile device ID:
 		
 		return Response.ok().build();
 		

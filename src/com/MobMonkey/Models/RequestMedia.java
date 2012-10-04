@@ -2,6 +2,8 @@ package com.MobMonkey.Models;
 
 import java.util.Date;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
@@ -12,6 +14,7 @@ public class RequestMedia  {
 	private String partnerId;
 	private String eMailAddress;
 	private String requestId;
+	private Date requestDate;
 	private int requestType;
 	private int mediaType;
 	private String message;
@@ -26,6 +29,7 @@ public class RequestMedia  {
 	private Date fulfilledDate;
 	private boolean recurring;
 	private int frequencyInMS;
+	private String nameOfLocation;
 	
 	
 	public RequestMedia() {
@@ -47,6 +51,15 @@ public class RequestMedia  {
 
 	public void seteMailAddress(String eMailAddress) {
 		this.eMailAddress = eMailAddress;
+	}
+
+	@DynamoDBAttribute
+	public Date getRequestDate() {
+		return requestDate;
+	}
+
+	public void setRequestDate(Date requestDate) {
+		this.requestDate = requestDate;
 	}
 
 	@DynamoDBAttribute()
@@ -184,6 +197,14 @@ public class RequestMedia  {
 
 	public void setFrequencyInMS(int frequencyInMS) {
 		this.frequencyInMS = frequencyInMS;
+	}
+
+	public String getNameOfLocation() {
+		return nameOfLocation;
+	}
+
+	public void setNameOfLocation(String nameOfLocation) {
+		this.nameOfLocation = nameOfLocation;
 	}
 
 }

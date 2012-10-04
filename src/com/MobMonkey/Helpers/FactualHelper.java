@@ -27,8 +27,10 @@ public class FactualHelper extends ResourceHelper {
 
 	}
 
-	public String[] reverseLookUp(String locationId) {
-		String[] results = new String[2];
+	public Location reverseLookUp(String locationId) {
+		
+		//TODO Working for only factual, need to add MobMonkey
+		Location results = new Location();
 		Query query = new Query();
 		query.field("factual_id").equal(locationId);
 
@@ -36,10 +38,40 @@ public class FactualHelper extends ResourceHelper {
 
 		List<Map<String, Object>> data = resp.getData();
 		for (Map<String, Object> map : data) {
-			results[0] = (map.containsKey("latitude") == true) ? map.get(
+	
+			String country = (map.containsKey("country") == true) ? map.get(
+					"country").toString() : "";
+			String latitude = (map.containsKey("latitude") == true) ? map.get(
 					"latitude").toString() : "";
-			results[1] = (map.containsKey("longitude") == true) ? map
+			String longitude = (map.containsKey("longitude") == true) ? map
 					.get("longitude").toString() : "";
+			String locality = (map.containsKey("locality") == true) ? map.get(
+					"locality").toString() : "";
+			String name = (map.containsKey("name") == true) ? map.get("name")
+					.toString() : "";
+			String tel = (map.containsKey("tel") == true) ? map.get("tel")
+					.toString() : "";
+			String postcode = (map.containsKey("postcode") == true) ? map.get(
+					"postcode").toString() : "";
+			String region = (map.containsKey("region") == true) ? map.get(
+					"region").toString() : "";
+			String address = (map.containsKey("address") == true) ? map.get(
+					"address").toString() : "";
+			String website = (map.containsKey("website") == true) ? map.get(
+					"website").toString() : "";
+					
+					results.setLocationId(locationId);
+					results.setCountryCode(country);
+					results.setLatitude(latitude);
+					results.setLongitude(longitude);
+					results.setLocality(locality);
+					results.setName(name);
+					results.setPhoneNumber(tel);
+					results.setPostcode(postcode);
+					results.setProviderId(factual_providerId);
+					results.setRegion(region);
+					results.setStreetAddress(address);
+					results.setWebSite(website);	
 		}
 		return results;
 	}

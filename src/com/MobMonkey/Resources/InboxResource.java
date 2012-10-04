@@ -32,25 +32,81 @@ public class InboxResource extends ResourceHelper {
 	@GET
 	@Path("/{type}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getInboxInJSON(@PathParam("type") String type, @Context HttpHeaders headers){
+	public Response getInboxInJSON(@PathParam("type") String type,
+			@Context HttpHeaders headers) {
+		// TODO answered requests
+
+		List<RequestMedia> results = new ArrayList<RequestMedia>();
 		
-		
-		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0).toLowerCase();
-		
-		if(type.toLowerCase().equals("openrequests")){
-			//TODO add recurring requests to this list
+		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
+				.toLowerCase();
+
+		if (type.toLowerCase().equals("openrequests")) {
+			// TODO add recurring requests to this list
+			// ALSO ADD FILTERING!!!!!!!!!!!!
+
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
 			
-			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(new AttributeValue().withS(eMailAddress));
-			PaginatedQueryList<RequestMedia> openRequests = super.mapper().query(RequestMedia.class, queryExpression);
+
 			
-			return Response.ok().entity(openRequests.toArray()).build();
+			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
+					.query(RequestMedia.class, queryExpression);
+			
+		
+			
+			for (RequestMedia rm : openRequests) {
+				if (rm.getProviderId() != null && rm.getLocationId() != null) {
+					rm.setNameOfLocation(new Locator().reverseLookUp(
+							rm.getProviderId(), rm.getLocationId()).getName());
+				}
+				
+				if(!rm.isRequestFulfilled()){
+					results.add(rm);
+				}
+			}
+
+			return Response.ok().entity(results).build();
 		}
-		if(type.toLowerCase().equals("assignedrequests")){
-			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(new AttributeValue().withS(eMailAddress));
-			PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper().query(AssignedRequest.class, queryExpression);
-	
+		if (type.toLowerCase().equals("assignedrequests")) {
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+			PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
+					.query(AssignedRequest.class, queryExpression);
+
 			return Response.ok().entity(assignedToMe.toArray()).build();
 		}
-		return Response.status(500).entity(new Status("Failure", type + " is not a valid inbox parameter", "")).build();
+		if (type.toLowerCase().equals("fulfilledrequests")) {
+			// TODO add recurring requests to this list
+			// ALSO ADD FILTERING!!!!!!!!!!!!
+
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+			
+
+			
+			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
+					.query(RequestMedia.class, queryExpression);
+			
+		
+			
+			for (RequestMedia rm : openRequests) {
+				if (rm.getProviderId() != null && rm.getLocationId() != null) {
+					rm.setNameOfLocation(new Locator().reverseLookUp(
+							rm.getProviderId(), rm.getLocationId()).getName());
+				}
+				
+				if(rm.isRequestFulfilled()){
+					results.add(rm);
+				}
+			}
+
+			return Response.ok().entity(results).build();
+		}
+		
+		return Response
+				.status(500)
+				.entity(new Status("Failure", type
+						+ " is not a valid inbox parameter", "")).build();
 	}
 }

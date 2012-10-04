@@ -2,6 +2,9 @@ package com.MobMonkey.Resources;
 
 import java.io.IOException;
 
+import javax.ws.rs.core.HttpHeaders;
+
+import com.MobMonkey.Models.User;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
@@ -54,6 +57,13 @@ public class ResourceHelper {
 	}
 	public AmazonElastiCacheClient ecCli(){
 		return ecCli;
+	}
+	
+	public User getUser(HttpHeaders headers){
+		User user = new User();
+		user.seteMailAddress(headers.getRequestHeader("MobMonkey-user").get(0));
+		user.setPartnerId(headers.getRequestHeader("MobMonkey-partnerId").get(0));
+		return user;
 	}
 
 }

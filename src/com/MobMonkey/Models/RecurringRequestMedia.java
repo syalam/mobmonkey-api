@@ -13,6 +13,7 @@ public class RecurringRequestMedia  {
 	private String eMailAddress;
 	private String requestId;
 	private int requestType;
+	private Date requestDate;
 	private String message;
 	private String locationId;
 	private String providerId;
@@ -56,6 +57,15 @@ public class RecurringRequestMedia  {
 	
 	public void setPartnerId(String partnerId) {
 		this.partnerId = partnerId;
+	}
+
+	@DynamoDBAttribute()
+	public Date getRequestDate() {
+		return requestDate;
+	}
+
+	public void setRequestDate(Date requestDate) {
+		this.requestDate = requestDate;
 	}
 
 	@DynamoDBAttribute()

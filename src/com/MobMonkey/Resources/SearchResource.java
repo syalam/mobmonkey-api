@@ -44,7 +44,7 @@ public class SearchResource extends ResourceHelper {
 
 		if (loc.getLatitude() != null && loc.getLongitude() != null) {
 			// TODO validate lat/long with regex
-			List<Location> locations = SearchHelper.getLocationsByGeo(loc);
+			List<Location> locations = new SearchHelper().getLocationsByGeo(loc);
 			return Response.ok().entity(locations).build();
 		}
 		if (loc.getLocality() != null && loc.getRegion() != null
@@ -73,7 +73,7 @@ public class SearchResource extends ResourceHelper {
 		for (Location loc : locs) {
 			if (loc.getLatitude() != null && loc.getLongitude() != null) {
 				// TODO validate lat/long with regex
-				List<Location> locList = SearchHelper.getLocationsByGeo(loc);
+				List<Location> locList = new SearchHelper().getLocationsByGeo(loc);
 				locations.addAll(locList);
 
 			}

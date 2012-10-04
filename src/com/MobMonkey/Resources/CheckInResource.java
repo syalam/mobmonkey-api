@@ -13,6 +13,8 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import android.location.Location;
+
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.AssignedRequest;
@@ -68,13 +70,13 @@ public class CheckInResource extends ResourceHelper {
 
 		}
 		if (locationId != "" && providerId != "") {
-			String[] coords = new Locator().reverseLookUp(providerId,
+			com.MobMonkey.Models.Location loc = new Locator().reverseLookUp(providerId,
 					locationId);
-			if (coords[0] != "" && coords[1] != "") {
-				reqsNearBy = new Locator().findRequestsNearBy(coords[0],
-						coords[1]);
-				c.setLatitude(coords[0]);
-				c.setLongitude(coords[1]);
+			if (loc.getLatitude() != null && loc.getLongitude() != null) {
+				reqsNearBy = new Locator().findRequestsNearBy(loc.getLatitude(),
+						loc.getLongitude());
+				c.setLatitude(loc.getLatitude());
+				c.setLongitude(loc.getLongitude());
 			} else if (latitude != "" && longitude != "") {
 				reqsNearBy = new Locator().findRequestsNearBy(c.getLatitude(),
 						c.getLongitude());

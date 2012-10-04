@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.TimeZone;
 
 import com.MobMonkey.Models.CheckIn;
+import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
@@ -19,6 +20,7 @@ import com.amazonaws.services.dynamodb.model.Condition;
 
 public final class Locator extends ResourceHelper {
 	private static String factual_providerId = "222e736f-c7fa-4c40-b78e-d99243441fae";
+	private static String mobmonkey_providerId = "e048acf0-9e61-4794-b901-6a4bb49c3181";
 	static SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
 	public Locator() {
@@ -27,14 +29,16 @@ public final class Locator extends ResourceHelper {
 
 
 
-	public String[] reverseLookUp(String providerId, String locationId){
-		String[] results = new String[2];
+	public Location reverseLookUp(String providerId, String locationId){
+		Location loc = new Location();
 		if(providerId.toLowerCase().equals(factual_providerId.toLowerCase())){
 			FactualHelper factual = new FactualHelper();
-			results = factual.reverseLookUp(locationId);
+			loc = factual.reverseLookUp(locationId);
+		}else if(providerId.toLowerCase().equals(mobmonkey_providerId.toLowerCase())){
+			loc = super.mapper().load(Location.class, locationId, providerId);
 		}
 		
-		return results;
+		return loc;
 	}
 	public ArrayList<RequestMediaLite> findRequestsNearBy(String latitude,
 			String longitude) {
@@ -90,9 +94,9 @@ public final class Locator extends ResourceHelper {
 							: "";
 					providerId = (!req.getProviderId().equals(null)) ? req.getProviderId()
 							: "";
-					String[] coords = this.reverseLookUp(providerId, locationId);
-					reqlatitude = coords[0];
-					reqlongitude = coords[1];
+					Location coords = new Locator().reverseLookUp(providerId, locationId);
+					reqlatitude = coords.getLatitude();
+					reqlongitude = coords.getLongitude();
 				} catch (Exception exc) {
 					try {
 						reqlatitude = (!req.getLatitude().equals(null)) ? req.getLatitude() : "";
@@ -112,7 +116,7 @@ public final class Locator extends ResourceHelper {
 					RequestMediaLite newReq = new RequestMediaLite();
 					newReq.setRequestId(req.getRequestId());
 					newReq.setMessage(req.getMessage());
-					newReq.setMediaType(req.getRequestType());
+					newReq.setMediaType(req.getMediaType());
 					newReq.setExpiryDate(expiryDate);
 					newReq.setRequestorEmail(req.geteMailAddress());
 					if (req.isRecurring())
@@ -201,7 +205,7 @@ public final class Locator extends ResourceHelper {
 
 	}
 
-	public boolean isInVicinity(String requestLat, String requestLong,
+	public static boolean isInVicinity(String requestLat, String requestLong,
 			String userLat, String userLong, int radiusInYards) {
 
 		int R = 6371; // Earth's radius in km
