@@ -17,6 +17,8 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
+import com.amazonaws.services.dynamodb.model.ComparisonOperator;
+import com.amazonaws.services.dynamodb.model.Condition;
 
 @Path("/signup")
 public class UserResource extends ResourceHelper {
@@ -26,14 +28,16 @@ public class UserResource extends ResourceHelper {
 	}
 
 	@GET
-	@Path("/users")
+	@Path("/user")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<User> getUserInJSON() {
-		DynamoDBScanExpression scan = new DynamoDBScanExpression();
+	public Response getUserInJSON(@Context HttpHeaders headers) {
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId")
+				.get(0).toLowerCase();
+		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
+				.toLowerCase();
 
-		PaginatedScanList<User> users = super.mapper().scan(User.class, scan);
-
-		return users.subList(0, users.size());
+		User result = super.mapper().load(User.class, eMailAddress, partnerId);
+		return Response.ok().entity(result).build();
 	}
 
 	@POST

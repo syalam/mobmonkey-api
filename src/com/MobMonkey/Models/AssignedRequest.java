@@ -6,6 +6,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
@@ -19,6 +20,10 @@ public class AssignedRequest {
 	private Date expiryDate;
 	private Date assignedDate;
 	private Date fulFilledDate;
+	private String nameOfLocation;
+	
+	
+
 	@JsonIgnore private String requestorEmail;
 
 	public AssignedRequest() {
@@ -106,4 +111,12 @@ public class AssignedRequest {
 		this.requestorEmail = requestorEmail;
 	}
 
+	@DynamoDBIgnore
+	public String getNameOfLocation() {
+		return nameOfLocation;
+	}
+
+	public void setNameOfLocation(String nameOfLocation) {
+		this.nameOfLocation = nameOfLocation;
+	}
 }

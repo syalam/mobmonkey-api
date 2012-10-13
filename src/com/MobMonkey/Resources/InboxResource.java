@@ -14,6 +14,7 @@ import javax.ws.rs.core.Response;
 
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.AssignedRequest;
+import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Models.Status;
@@ -37,7 +38,7 @@ public class InboxResource extends ResourceHelper {
 		// TODO answered requests
 
 		List<RequestMedia> results = new ArrayList<RequestMedia>();
-		
+
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
 				.toLowerCase();
 
@@ -47,21 +48,17 @@ public class InboxResource extends ResourceHelper {
 
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
-			
 
-			
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
-			
-		
-			
+
 			for (RequestMedia rm : openRequests) {
 				if (rm.getProviderId() != null && rm.getLocationId() != null) {
 					rm.setNameOfLocation(new Locator().reverseLookUp(
 							rm.getProviderId(), rm.getLocationId()).getName());
 				}
-				
-				if(!rm.isRequestFulfilled()){
+
+				if (!rm.isRequestFulfilled()) {
 					results.add(rm);
 				}
 			}
@@ -74,6 +71,24 @@ public class InboxResource extends ResourceHelper {
 			PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
 					.query(AssignedRequest.class, queryExpression);
 
+			for (AssignedRequest assReq : assignedToMe) {
+				switch (assReq.getRequestType()) {
+				case 0:
+					RequestMedia rm = super.mapper().load(RequestMedia.class,
+							assReq.getRequestorEmail(), assReq.getRequestId());
+					assReq.setNameOfLocation(new Locator().reverseLookUp(
+							rm.getProviderId(), rm.getLocationId()).getName());
+					break;
+				case 1:
+					RecurringRequestMedia rrm = super.mapper().load(RecurringRequestMedia.class, assReq.getRequestorEmail());
+					assReq.setNameOfLocation(new Locator().reverseLookUp(
+							rrm.getProviderId(), rrm.getLocationId()).getName());
+					break;
+				}
+				
+					
+			}
+
 			return Response.ok().entity(assignedToMe.toArray()).build();
 		}
 		if (type.toLowerCase().equals("fulfilledrequests")) {
@@ -82,28 +97,24 @@ public class InboxResource extends ResourceHelper {
 
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
-			
 
-			
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
-			
-		
-			
+
 			for (RequestMedia rm : openRequests) {
 				if (rm.getProviderId() != null && rm.getLocationId() != null) {
 					rm.setNameOfLocation(new Locator().reverseLookUp(
 							rm.getProviderId(), rm.getLocationId()).getName());
 				}
-				
-				if(rm.isRequestFulfilled()){
+
+				if (rm.isRequestFulfilled()) {
 					results.add(rm);
 				}
 			}
 
 			return Response.ok().entity(results).build();
 		}
-		
+
 		return Response
 				.status(500)
 				.entity(new Status("Failure", type

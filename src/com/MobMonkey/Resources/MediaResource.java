@@ -41,7 +41,11 @@ public class MediaResource extends ResourceHelper {
 		String requestorEmail = "";
 		String originalRequestor = "";
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
-
+        
+		String mediaId = UUID.randomUUID().toString();
+	    String mediaFileName = "img-" + mediaId + ".png";
+		String mediaUrl = "https://s3-us-west-1.amazonaws.com/mobmonkeyimages/"
+				+ mediaFileName; 
 		// lets get the assigned request
 		AssignedRequest assReq = super.mapper().load(AssignedRequest.class,
 				username, media.getRequestId());
@@ -62,6 +66,7 @@ public class MediaResource extends ResourceHelper {
 			rrm.setRequestId(media.getRequestId());
 			rrm.setRequestFulfilled(true);
 			rrm.setFulfilledDate(now);
+			//TODO rrm.setMediaUrl
 			requestorEmail = rrm.geteMailAddress();
 			super.mapper().save(rrm);
 		} else if (media.getRequestType().equals("0")) {
@@ -73,15 +78,16 @@ public class MediaResource extends ResourceHelper {
 			}
 			rrm.setRequestFulfilled(true);
 			rrm.setFulfilledDate(now);
+			rrm.setMediaUrl(mediaUrl);
 			super.mapper().save(rrm);
 		}
 
 		
 		//unique id for media
-		media.setMediaId(UUID.randomUUID().toString());
+		media.setMediaId(mediaId);
 	
 		// Save the file to S3
-		String keyName = "img-" + media.getMediaId() + ".png";
+	
 		byte[] btDataFile = DatatypeConverter.parseBase64Binary(media
 				.getMediaData());
 		ByteArrayInputStream bais = new ByteArrayInputStream(btDataFile);
@@ -90,13 +96,12 @@ public class MediaResource extends ResourceHelper {
 		objmeta.setContentType("image/png");
 		objmeta.setExpirationTimeRuleId("images");
 		PutObjectRequest putObjectRequest = new PutObjectRequest(
-				"mobmonkeyimages", keyName, bais, objmeta);
+				"mobmonkeyimages", mediaFileName, bais, objmeta);
 		putObjectRequest.setRequestCredentials(super.credentials());
 		putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
 		super.s3cli().putObject(putObjectRequest);
 
-		media.setMediaURL("https://s3-us-west-1.amazonaws.com/mobmonkeyimages/"
-				+ keyName);
+		media.setMediaURL(mediaUrl);
 
 		// "1" = recurring
 
@@ -129,4 +134,5 @@ public class MediaResource extends ResourceHelper {
 						+ media.getMediaURL(), "")).build();
 
 	}
+	
 }

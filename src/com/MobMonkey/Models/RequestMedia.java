@@ -30,6 +30,7 @@ public class RequestMedia  {
 	private boolean recurring;
 	private int frequencyInMS;
 	private String nameOfLocation;
+	private String mediaUrl;
 	
 	
 	public RequestMedia() {
@@ -205,6 +206,15 @@ public class RequestMedia  {
 
 	public void setNameOfLocation(String nameOfLocation) {
 		this.nameOfLocation = nameOfLocation;
+	}
+
+	@DynamoDBAttribute
+	public String getMediaUrl() {
+		return mediaUrl;
+	}
+
+	public void setMediaUrl(String mediaUrl) {
+		this.mediaUrl = mediaUrl;
 	}
 
 }
