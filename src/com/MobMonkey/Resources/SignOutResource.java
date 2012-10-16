@@ -17,10 +17,10 @@ import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.User;
 
-@Path("/signin")
-public class SignInResource extends ResourceHelper {
+@Path("/signout")
+public class SignOutResource extends ResourceHelper {
 
-	public SignInResource() {
+	public SignOutResource() {
 		super();
 	}
 
@@ -28,7 +28,7 @@ public class SignInResource extends ResourceHelper {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/{type}/{deviceId}")
-	public Response SignInInJSON(@Context HttpHeaders headers,
+	public Response SignOutInJSON(@Context HttpHeaders headers,
 			@PathParam("deviceId") String deviceId,
 			@PathParam("type") String type) {
 		User user = super.getUser(headers);
@@ -44,10 +44,9 @@ public class SignInResource extends ResourceHelper {
 		
 		d.setDeviceId(deviceId);
 
-		user.setLastSignIn(new Date());
 		
-		super.mapper().save(d);
-		return Response.ok().entity(new Status("Success", "Successfully signed in", "")).build();
+		super.mapper().delete(d);
+		return Response.ok().entity(new Status("Success", "Successfully signed out", "")).build();
 
 	}
 }

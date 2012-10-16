@@ -2,6 +2,7 @@ package com.MobMonkey.Models;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
@@ -23,6 +24,7 @@ public class Location {
 	private String countryCode;
 	private String phoneNumber;
 	private String webSite;
+	private boolean bookmark;
 
 	public Location() {
 	}
@@ -163,6 +165,15 @@ public class Location {
 
 	public void setWebSite(String webSite) {
 		this.webSite = webSite;
+	}
+
+	@DynamoDBIgnore
+	public boolean isBookmark() {
+		return bookmark;
+	}
+
+	public void setBookmark(boolean bookmark) {
+		this.bookmark = bookmark;
 	}
 
 }

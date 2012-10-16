@@ -56,7 +56,13 @@ public class UserResource extends ResourceHelper {
 			s.setDescription("Email or password is missing");
 			return Response.status(500).entity(s).build();
 		}
+		// TODO regex on email address
 
+		boolean validEmail = new EmailValidator().validate(User.geteMailAddress());
+		if(!validEmail){
+			return Response.status(500).entity(new Status("Failure", "Invalid email address: (" + User.geteMailAddress() + ") specified.", "")).build();
+		}
+		
 		User.setPartnerId(partnerId);
 		User.setVerified(false);
 		User.setDateRegistered(new Date());

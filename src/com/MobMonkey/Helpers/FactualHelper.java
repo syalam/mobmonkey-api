@@ -76,16 +76,18 @@ public class FactualHelper extends ResourceHelper {
 		return results;
 	}
 
-	public List<Location> GeoFilter(Location loc) {
+	public List<Location> GeoFilter(Location loc, String searchString) {
 		int radiusInMeters = (int) (Integer.parseInt(loc.getRadiusInYards()) * .9144); // convert
 																						// yards
 																						// to
 																						// meters
 
+		Query query = new Query().within(new Circle(Double
+				.parseDouble(loc.getLatitude()), Double.parseDouble(loc
+				.getLongitude()), radiusInMeters));
+		query.search(searchString);
 		ReadResponse resp = factual
-				.fetch("places", new Query().within(new Circle(Double
-						.parseDouble(loc.getLatitude()), Double.parseDouble(loc
-						.getLongitude()), radiusInMeters)));
+				.fetch("places", query);
 		List<Map<String, Object>> data = resp.getData();
 
 		List<Location> results = new ArrayList<Location>();

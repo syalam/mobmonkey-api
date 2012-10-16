@@ -10,6 +10,8 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -20,6 +22,7 @@ import com.MobMonkey.Models.MediaLite;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.Status;
+import com.MobMonkey.Models.User;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
@@ -40,15 +43,30 @@ public class SearchResource extends ResourceHelper {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/location")
-	public Response findLocationsInJSON(Location loc) {
+	public Response findLocationsInJSON(Location loc,
+			@Context HttpHeaders headers) {
+		User user = null;
+		try {
+			user = super.getUser(headers);
+		} catch (Exception exc) {
 
-		if (loc.getLatitude() != null && loc.getLongitude() != null) {
+		}
+		if (loc.getLatitude() != null && loc.getLongitude() != null
+				&& loc.getName() != null && loc.getRadiusInYards() != null) {
 			// TODO validate lat/long with regex
-			List<Location> locations = new SearchHelper().getLocationsByGeo(loc);
-			return Response.ok().entity(locations).build();
+			List<Location> locations = new SearchHelper().getLocationsByGeo(
+					loc, loc.getName());
+			if (user != null) {
+				List<Location> bookmarkedLocations = this.AssignBookmarks(
+						locations, user.geteMailAddress());
+
+				return Response.ok().entity(bookmarkedLocations).build();
+			} else {
+				return Response.ok().entity(locations).build();
+			}
 		}
 		if (loc.getLocality() != null && loc.getRegion() != null
-				&& loc.getPostcode() != null) {
+				&& loc.getPostcode() != null && loc.getName() != null) {
 			// TODO validate postcode with regex, make sure locality and region
 			// are sane
 			List<Location> locations = SearchHelper.getLocationsByAddress(loc);
@@ -59,7 +77,7 @@ public class SearchResource extends ResourceHelper {
 				.status(500)
 				.entity(new Status(
 						"Failure",
-						"You need to specify either (lat & long) OR (address, locality, region & zip)",
+						"You need to specify either (lat & long & name & radiusInYards) OR (name, address, locality, region & zip)",
 						"")).build();
 	}
 
@@ -71,9 +89,11 @@ public class SearchResource extends ResourceHelper {
 
 		List<Location> locations = new ArrayList<Location>();
 		for (Location loc : locs) {
-			if (loc.getLatitude() != null && loc.getLongitude() != null) {
+			if (loc.getLatitude() != null && loc.getLongitude() != null
+					&& loc.getName() != null) {
 				// TODO validate lat/long with regex
-				List<Location> locList = new SearchHelper().getLocationsByGeo(loc);
+				List<Location> locList = new SearchHelper().getLocationsByGeo(
+						loc, loc.getName());
 				locations.addAll(locList);
 
 			}
@@ -163,8 +183,10 @@ public class SearchResource extends ResourceHelper {
 					}
 
 				} else {
-					RequestMedia origReq = super.mapper().load(RequestMedia.class, m.getOriginalRequestor(), m.getRequestId());
-					
+					RequestMedia origReq = super.mapper().load(
+							RequestMedia.class, m.getOriginalRequestor(),
+							m.getRequestId());
+
 					if (origReq.getProviderId().equals(loc.getProviderId())
 							&& origReq.getLocationId().equals(
 									loc.getLocationId())) {
@@ -194,5 +216,22 @@ public class SearchResource extends ResourceHelper {
 							"")).build();
 		}
 
+	}
+
+	private List<Location> AssignBookmarks(List<Location> locations,
+			String eMailAddress) {
+		List<Location> bookmarks = new BookmarkResource()
+				.getBookmarks(eMailAddress);
+
+		for (Location loc : locations) {
+			for (Location bookmark : bookmarks) {
+				if (loc.getProviderId().equals(bookmark.getProviderId())
+						&& loc.getLocationId().equals(bookmark.getLocationId())) {
+					loc.setBookmark(true);
+				}
+			}
+
+		}
+		return locations;
 	}
 }

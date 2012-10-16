@@ -77,6 +77,10 @@ public class RequestApiFilter implements ContainerRequestFilter {
 				.matches(".*/rest/verify.*$")) {
 			return true;
 		}
+		if (req.getRequestUri().getPath().toLowerCase()
+				.matches(".*/rest/search/location$")) {
+			return true;
+		}
 
 		// If the request path is to signup a partner, I let them through for
 		// now.

@@ -42,7 +42,6 @@ public class CheckInResource extends ResourceHelper {
 		c.seteMailAddress(eMailAddress);
 		c.setPartnerId(partnerId);
 		c.setDateCheckedIn(new Date());
-		
 
 		String locationId = "";
 		String providerId = "";
@@ -70,11 +69,11 @@ public class CheckInResource extends ResourceHelper {
 
 		}
 		if (locationId != "" && providerId != "") {
-			com.MobMonkey.Models.Location loc = new Locator().reverseLookUp(providerId,
-					locationId);
+			com.MobMonkey.Models.Location loc = new Locator().reverseLookUp(
+					providerId, locationId);
 			if (loc.getLatitude() != null && loc.getLongitude() != null) {
-				reqsNearBy = new Locator().findRequestsNearBy(loc.getLatitude(),
-						loc.getLongitude());
+				reqsNearBy = new Locator().findRequestsNearBy(
+						loc.getLatitude(), loc.getLongitude());
 				c.setLatitude(loc.getLatitude());
 				c.setLongitude(loc.getLongitude());
 			} else if (latitude != "" && longitude != "") {
@@ -88,16 +87,19 @@ public class CheckInResource extends ResourceHelper {
 		}
 
 		for (RequestMediaLite req : reqsNearBy) {
-			AssignedRequest assReq = new AssignedRequest();
-			assReq.seteMailAddress(eMailAddress);
-			assReq.setRequestId(req.getRequestId());
-			assReq.setMediaType(req.getMediaType());
-			assReq.setRequestType(req.getRequestType());
-			assReq.setAssignedDate(new Date());
-			assReq.setMessage(req.getMessage());
-			assReq.setExpiryDate(req.getExpiryDate());
-			assReq.setRequestorEmail(req.getRequestorEmail());
-			super.mapper().save(assReq);
+			if (!req.getRequestorEmail().toLowerCase()
+					.equals(eMailAddress.toLowerCase())) {
+				AssignedRequest assReq = new AssignedRequest();
+				assReq.seteMailAddress(eMailAddress);
+				assReq.setRequestId(req.getRequestId());
+				assReq.setMediaType(req.getMediaType());
+				assReq.setRequestType(req.getRequestType());
+				assReq.setAssignedDate(new Date());
+				assReq.setMessage(req.getMessage());
+				assReq.setExpiryDate(req.getExpiryDate());
+				assReq.setRequestorEmail(req.getRequestorEmail());
+				super.mapper().save(assReq);
+			}
 		}
 		try {
 			super.mapper().save(c);

@@ -27,6 +27,7 @@ public class User  {
 	private int numberOfRequests;
 	private String deviceId;
 	private String deviceType;
+	private Date lastSignIn;
 	
 	@DynamoDBHashKey
 	public String geteMailAddress() {
@@ -187,6 +188,15 @@ public class User  {
 
 	public void setDeviceType(String deviceType) {
 		this.deviceType = deviceType;
+	}
+
+	@DynamoDBAttribute
+	public Date getLastSignIn() {
+		return lastSignIn;
+	}
+
+	public void setLastSignIn(Date lastSignIn) {
+		this.lastSignIn = lastSignIn;
 	}
 
 	

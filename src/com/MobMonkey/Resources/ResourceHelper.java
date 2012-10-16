@@ -60,9 +60,11 @@ public class ResourceHelper {
 	}
 	
 	public User getUser(HttpHeaders headers){
-		User user = new User();
-		user.seteMailAddress(headers.getRequestHeader("MobMonkey-user").get(0));
-		user.setPartnerId(headers.getRequestHeader("MobMonkey-partnerId").get(0));
+		
+		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(0);
+		
+		User user = mapper.load(User.class, eMailAddress, partnerId);
 		return user;
 	}
 

@@ -37,22 +37,9 @@ public class BookmarkResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getBookmarksInJSON(@Context HttpHeaders headers) {
 		User user = super.getUser(headers);
-		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(user.geteMailAddress()));
+		
+		List<Location> results = this.getBookmarks(user.geteMailAddress());
 
-		List<Location> results = new ArrayList();
-
-		PaginatedQueryList<Bookmark> bookmarks = super.mapper().query(
-				Bookmark.class, queryExpression);
-		for (Bookmark b : bookmarks) {
-			String[] locprov = b.getLocprovId().split(":");
-			b.setLocationId(locprov[0]);
-			b.setProviderId(locprov[1]);
-
-			Location loc = new Locator().reverseLookUp(b.getProviderId(),
-					b.getLocationId());
-			results.add(loc);
-		}
 		return Response.ok().entity(results).build();
 
 	}
@@ -112,4 +99,22 @@ public class BookmarkResource extends ResourceHelper {
 
 	}
 
+	public List<Location> getBookmarks(String eMailAddress){
+		List<Location> results = new ArrayList<Location>();
+		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+				new AttributeValue().withS(eMailAddress));
+		
+		PaginatedQueryList<Bookmark> bookmarks = super.mapper().query(
+				Bookmark.class, queryExpression);
+		for (Bookmark b : bookmarks) {
+			String[] locprov = b.getLocprovId().split(":");
+			b.setLocationId(locprov[0]);
+			b.setProviderId(locprov[1]);
+
+			Location loc = new Locator().reverseLookUp(b.getProviderId(),
+					b.getLocationId());
+			results.add(loc);
+		}
+		return results;
+	}
 }

@@ -15,12 +15,12 @@ public final class SearchHelper extends ResourceHelper {
 		super();
 	}
 
-	public  List<Location> getLocationsByGeo(Location loc) {
+	public  List<Location> getLocationsByGeo(Location loc, String searchString) {
 	   //TODO add limiting, and paging
 		List<Location> results = new ArrayList<Location>();
 		
 		FactualHelper factual = new FactualHelper();
-		List<Location> factualLocs = factual.GeoFilter(loc);
+		List<Location> factualLocs = factual.GeoFilter(loc, searchString);
 		List<Location> mobMonkeyLocs = getMobMonkeyLocationsByGeo(loc);
 		
 		results.addAll(mobMonkeyLocs);
