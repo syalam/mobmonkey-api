@@ -56,6 +56,9 @@ public class RequestMediaResource extends ResourceHelper {
 			mediaType = 1;
 		if (mediaTypeS.trim().toLowerCase().equals("video"))
 			mediaType = 2;
+		if (mediaTypeS.trim().toLowerCase().equals("livestreaming"))
+			mediaType = 3;
+		
 		// Get username & PartnerId from header
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
 		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(

@@ -15,7 +15,7 @@ public class Media {
 	
 	private String mediaId;
 	private String requestId;
-	private int mediaType; //image = 1, video = 2
+	private int mediaType; //image = 0, video = 1, live streaming = 3
 	private String requestType; 
 	private String eMailAddress;
 	private String mediaData;

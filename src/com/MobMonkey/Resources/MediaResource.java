@@ -103,8 +103,6 @@ public class MediaResource extends ResourceHelper {
 
 		media.setMediaURL(mediaUrl);
 
-		// "1" = recurring
-
 		media.seteMailAddress(username);
 		media.setUploadedDate(now);
 		media.setOriginalRequestor(originalRequestor);
@@ -133,6 +131,31 @@ public class MediaResource extends ResourceHelper {
 				.entity(new Status("Success", "Successfully uploaded image. "
 						+ media.getMediaURL(), "")).build();
 
+	}
+	
+	@POST
+	@Path("/livestreaming")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response uploadLiveStreamingInJSON(Media media, @Context HttpHeaders headers)
+	{
+		Date now = new Date();
+		
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+		
+		
+		media.setMediaId(UUID.randomUUID().toString());
+		media.setMediaType(3);
+		media.setUploadedDate(now);
+		media.setRequestType("0");
+		media.seteMailAddress(username);
+		media.setOriginalRequestor(username);
+	
+		super.mapper().save(media);
+
+		
+		return Response.ok().entity(new Status("Success", "Added livestreaming media to the database", media.getMediaId())).build();
+		
 	}
 	
 }

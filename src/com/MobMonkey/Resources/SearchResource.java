@@ -123,6 +123,8 @@ public class SearchResource extends ResourceHelper {
 			mediaType = 0;
 		else if (type.equals("video"))
 			mediaType = 1;
+		else if (type.equals("livestreaming"))
+			mediaType = 3;
 
 		// we have a locationId!
 		if (loc.getLocationId() != null && loc.getProviderId() != null) {
@@ -146,6 +148,7 @@ public class SearchResource extends ResourceHelper {
 					.format(rightNowMinus3Days);
 
 			DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+			if(mediaType != 3){
 			scanExpression
 					.addFilterCondition(
 							"uploadedDate",
@@ -155,6 +158,7 @@ public class SearchResource extends ResourceHelper {
 									.withAttributeValueList(
 											new AttributeValue()
 													.withS(rightNowMinus3DaysDate)));
+			}
 			scanExpression.addFilterCondition(
 					"mediaType",
 					new Condition().withComparisonOperator(
@@ -192,10 +196,14 @@ public class SearchResource extends ResourceHelper {
 									loc.getLocationId())) {
 						MediaLite media = new MediaLite();
 						media.setMediaURL(m.getMediaURL());
+						
+						//TODO if the mediaType = 3, we have livestreaming and it never expires..
 						Date expiryDate = new Date();
+						
 						expiryDate.setTime(m.getUploadedDate().getTime()
 								+ threedays);
 						media.setExpiryDate(expiryDate);
+						
 						results.add(media);
 					}
 				}
