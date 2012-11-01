@@ -1,6 +1,7 @@
 package com.MobMonkey.Resources;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.ws.rs.GET;
@@ -53,12 +54,19 @@ public class InboxResource extends ResourceHelper {
 					.query(RequestMedia.class, queryExpression);
 
 			for (RequestMedia rm : openRequests) {
-				if (rm.getProviderId() != null && rm.getLocationId() != null) {
-					rm.setNameOfLocation(new Locator().reverseLookUp(
-							rm.getProviderId(), rm.getLocationId()).getName());
-				}
-
+				//check to see if request is fulfilled
 				if (!rm.isRequestFulfilled()) {
+					Date now = new Date();
+					Date expiryDate = new Date();
+					int duration = rm.getDuration(); // in minutes
+					expiryDate.setTime(rm.getRequestDate().getTime() + duration * 60000);
+					if(now.getTime() > expiryDate.getTime()){
+						rm.setExpired(true);
+					}else{
+						rm.setExpired(false);
+					}
+					
+					
 					results.add(rm);
 				}
 			}

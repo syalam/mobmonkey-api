@@ -3,7 +3,9 @@ package com.MobMonkey.Resources;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -15,7 +17,9 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Helpers.SearchHelper;
+import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.MediaLite;
@@ -45,6 +49,10 @@ public class SearchResource extends ResourceHelper {
 	@Path("/location")
 	public Response findLocationsInJSON(Location loc,
 			@Context HttpHeaders headers) {
+
+		// Location now has a count attribute that will look like this:
+		// "monkeys=1,images=3,videos=2,livestreaming=false"
+
 		User user = null;
 		try {
 			user = super.getUser(headers);
@@ -56,6 +64,11 @@ public class SearchResource extends ResourceHelper {
 			// TODO validate lat/long with regex
 			List<Location> locations = new SearchHelper().getLocationsByGeo(
 					loc, loc.getName());
+
+			// Populate the counts!
+			locations = PopulateCounts(locations);
+			
+			//If we have a user, check to see if these locations are bookmarked
 			if (user != null) {
 				List<Location> bookmarkedLocations = this.AssignBookmarks(
 						locations, user.geteMailAddress());
@@ -148,16 +161,13 @@ public class SearchResource extends ResourceHelper {
 					.format(rightNowMinus3Days);
 
 			DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-			if(mediaType != 3){
-			scanExpression
-					.addFilterCondition(
-							"uploadedDate",
-							new Condition()
-									.withComparisonOperator(
-											ComparisonOperator.GT)
-									.withAttributeValueList(
-											new AttributeValue()
-													.withS(rightNowMinus3DaysDate)));
+			if (mediaType != 3) {
+				scanExpression.addFilterCondition(
+						"uploadedDate",
+						new Condition().withComparisonOperator(
+								ComparisonOperator.GT).withAttributeValueList(
+								new AttributeValue()
+										.withS(rightNowMinus3DaysDate)));
 			}
 			scanExpression.addFilterCondition(
 					"mediaType",
@@ -196,14 +206,15 @@ public class SearchResource extends ResourceHelper {
 									loc.getLocationId())) {
 						MediaLite media = new MediaLite();
 						media.setMediaURL(m.getMediaURL());
-						
-						//TODO if the mediaType = 3, we have livestreaming and it never expires..
+
+						// TODO if the mediaType = 3, we have livestreaming and
+						// it never expires..
 						Date expiryDate = new Date();
-						
+
 						expiryDate.setTime(m.getUploadedDate().getTime()
 								+ threedays);
 						media.setExpiryDate(expiryDate);
-						
+
 						results.add(media);
 					}
 				}
@@ -241,5 +252,87 @@ public class SearchResource extends ResourceHelper {
 
 		}
 		return locations;
+	}
+
+	private List<Location> PopulateCounts(List<Location> locations) {
+		// "monkeys=1,images=3,videos=2,livestreaming=false"
+
+		for (Location loc : locations) {
+			String counts = "";
+			int monkeys = 0;
+			
+
+			// Let's see if there are any users checked in the vicinity
+			monkeys = UserCountAtLocation(loc);
+
+			// how about media
+			Map<String,Integer> media = MediaCountAtLocation(loc);
+			
+			loc.setMonkeys(monkeys);
+			loc.setImages(media.get("images"));
+			loc.setVideos(media.get("videos"));
+			loc.setLivestreaming(media.get("livestreaming"));
+		}
+
+		return locations;
+	}
+
+	public int UserCountAtLocation(Location loc) {
+		int count = 0;
+		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+		PaginatedScanList<CheckIn> results = super.mapper().scan(CheckIn.class, scanExpression);
+		
+		for(CheckIn c : results){
+			new Locator();
+			if(Locator.isInVicinity(loc.getLatitude(), loc.getLongitude(), c.getLatitude(), c.getLongitude(), 250)){
+				count++;
+			}
+		}
+	
+		return count;
+	}
+
+	public Map<String, Integer> MediaCountAtLocation(Location loc) {
+		Map<String, Integer> results = new HashMap<String, Integer>();
+		int images = 0;
+		int videos = 0;
+		int livestreaming = 0;
+
+		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+
+		scanExpression.addFilterCondition(
+				"locationId",
+				new Condition().withComparisonOperator(ComparisonOperator.EQ)
+						.withAttributeValueList(
+								new AttributeValue().withS(loc.getLocationId()
+										.toString())));
+
+		scanExpression.addFilterCondition(
+				"providerId",
+				new Condition().withComparisonOperator(ComparisonOperator.EQ)
+						.withAttributeValueList(
+								new AttributeValue().withS(loc.getProviderId()
+										.toString())));
+		
+		
+
+		PaginatedScanList<RequestMedia> requests = super.mapper().scan(
+				RequestMedia.class, scanExpression);
+
+		for (RequestMedia r : requests) {
+			if (r.getMediaType() == 1) {
+				images++;
+			} else if (r.getMediaType() == 2) {
+				videos++;
+			} else if(r.getMediaType() == 3){
+			  livestreaming++;
+			}
+		}
+
+		results.put("images", images);
+		results.put("videos", videos);
+		results.put("livestreaming", livestreaming);
+		
+		return results;
 	}
 }

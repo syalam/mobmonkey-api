@@ -58,7 +58,7 @@ public class RequestMediaResource extends ResourceHelper {
 			mediaType = 2;
 		if (mediaTypeS.trim().toLowerCase().equals("livestreaming"))
 			mediaType = 3;
-		
+
 		// Get username & PartnerId from header
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
 		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
@@ -83,11 +83,15 @@ public class RequestMediaResource extends ResourceHelper {
 		// so lets reverse lookup some coords if they havent proivded them
 		if (r.getProviderId() != null && r.getLocationId() != null) {
 			new Locator();
-			coords = new Locator()
-					.reverseLookUp(r.getProviderId(), r.getLocationId());
+			coords = new Locator().reverseLookUp(r.getProviderId(),
+					r.getLocationId());
 			if (coords.getLatitude() != null && coords.getLongitude() != null) {
 				r.setLatitude(coords.getLatitude());
 				r.setLongitude(coords.getLongitude());
+				
+				// lets set the name of the location
+				r.setNameOfLocation(coords.getName());
+
 			} else {
 				return Response
 						.status(500)
@@ -100,8 +104,10 @@ public class RequestMediaResource extends ResourceHelper {
 			return Response
 					.status(500)
 					.entity(new Status("Failure",
-							"Please provide a provider and location ID", "")).build();
+							"Please provide a provider and location ID", ""))
+					.build();
 		}
+
 		r.setRequestId(UUID.randomUUID().toString());
 		r.setPartnerId(partnerId);
 		r.seteMailAddress(username);
@@ -132,26 +138,27 @@ public class RequestMediaResource extends ResourceHelper {
 			rm.setScheduleDate(r.getScheduleDate());
 			rm.setFrequencyInMS(r.getFrequencyInMS());
 			rm.setRequestDate(now);
+			rm.setNameOfLocation(r.getNameOfLocation());
 			super.mapper().save(rm);
 		} else {
 			r.setRequestType(0);
 			super.mapper().save(r);
 		}
-	
+
 		// user officially makes a request.. lets increment his request value
 		// TODO move the number of requests to caching
 		// also make all requests JSON
 		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
 		super.mapper().save(user);
-		
-		//Trending metric!
+
+		// Trending metric!
 		Trending t = new Trending();
 		t.setLocationId(r.getLocationId());
 		t.setProviderId(r.getProviderId());
 		t.setTimeStamp(new Date());
 		t.setType("Request");
 		super.mapper().save(t);
-		
+
 		Status status = new Status();
 		status.setStatus("Success");
 		status.setId(r.getRequestId());

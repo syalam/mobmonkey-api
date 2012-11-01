@@ -98,6 +98,7 @@ public class CheckInResource extends ResourceHelper {
 				assReq.setMessage(req.getMessage());
 				assReq.setExpiryDate(req.getExpiryDate());
 				assReq.setRequestorEmail(req.getRequestorEmail());
+				assReq.setNameOfLocation(req.getLocationName());
 				super.mapper().save(assReq);
 			}
 		}

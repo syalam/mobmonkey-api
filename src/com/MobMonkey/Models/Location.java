@@ -25,6 +25,10 @@ public class Location {
 	private String phoneNumber;
 	private String webSite;
 	private boolean bookmark;
+	private int monkeys;
+	private int images;
+	private int videos;
+	private int livestreaming;
 
 	public Location() {
 	}
@@ -174,6 +178,39 @@ public class Location {
 
 	public void setBookmark(boolean bookmark) {
 		this.bookmark = bookmark;
+	}
+
+	@DynamoDBIgnore
+	public int getMonkeys() {
+		return monkeys;
+	}
+
+	public void setMonkeys(int monkeys) {
+		this.monkeys = monkeys;
+	}
+	@DynamoDBIgnore
+	public int getImages() {
+		return images;
+	}
+
+	public void setImages(int images) {
+		this.images = images;
+	}
+	@DynamoDBIgnore
+	public int getVideos() {
+		return videos;
+	}
+
+	public void setVideos(int videos) {
+		this.videos = videos;
+	}
+	@DynamoDBIgnore
+	public int getLivestreaming() {
+		return livestreaming;
+	}
+
+	public void setLivestreaming(int livestreaming) {
+		this.livestreaming = livestreaming;
 	}
 
 }

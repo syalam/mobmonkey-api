@@ -8,6 +8,7 @@ public class RequestMediaLite {
 
 	private String RequestId;
 	private String message;
+	private String locationName;
 	private int mediaType;
 	private int requestType;
 	private Date expiryDate;
@@ -64,5 +65,13 @@ public class RequestMediaLite {
 
 	public void setRequestorEmail(String requestorEmail) {
 		this.requestorEmail = requestorEmail;
+	}
+
+	public String getLocationName() {
+		return locationName;
+	}
+
+	public void setLocationName(String locationName) {
+		this.locationName = locationName;
 	}
 }

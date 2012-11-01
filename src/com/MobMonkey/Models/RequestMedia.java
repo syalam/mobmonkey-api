@@ -6,6 +6,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
@@ -28,6 +29,7 @@ public class RequestMedia  {
 	private boolean requestFulfilled;
 	private Date fulfilledDate;
 	private boolean recurring;
+	private boolean expired;
 	private int frequencyInMS;
 	private String nameOfLocation;
 	private String mediaUrl;
@@ -191,6 +193,15 @@ public class RequestMedia  {
 		this.recurring = recurring;
 	}
 
+	@DynamoDBIgnore
+	public boolean isExpired() {
+		return expired;
+	}
+
+	public void setExpired(boolean expired) {
+		this.expired = expired;
+	}
+
 	@DynamoDBAttribute()
 	public int getFrequencyInMS() {
 		return frequencyInMS;
@@ -199,7 +210,8 @@ public class RequestMedia  {
 	public void setFrequencyInMS(int frequencyInMS) {
 		this.frequencyInMS = frequencyInMS;
 	}
-
+	
+	@DynamoDBAttribute()
 	public String getNameOfLocation() {
 		return nameOfLocation;
 	}

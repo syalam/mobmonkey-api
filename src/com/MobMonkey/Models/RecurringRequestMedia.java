@@ -4,6 +4,7 @@ import java.util.Date;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
@@ -24,6 +25,8 @@ public class RecurringRequestMedia  {
 	private int duration;
 	private boolean requestFulfilled;
 	private Date fulfilledDate;
+	private boolean expired;
+	private String nameOfLocation;
 	private boolean recurring;
 	private int frequencyInMS;
 	
@@ -185,6 +188,24 @@ public class RecurringRequestMedia  {
 
 	public void setFrequencyInMS(int frequencyInMS) {
 		this.frequencyInMS = frequencyInMS;
+	}
+
+	@DynamoDBIgnore
+	public boolean isExpired() {
+		return expired;
+	}
+
+	public void setExpired(boolean expired) {
+		this.expired = expired;
+	}
+	
+	@DynamoDBAttribute
+	public String getNameOfLocation() {
+		return nameOfLocation;
+	}
+
+	public void setNameOfLocation(String nameOfLocation) {
+		this.nameOfLocation = nameOfLocation;
 	}
 
 }
