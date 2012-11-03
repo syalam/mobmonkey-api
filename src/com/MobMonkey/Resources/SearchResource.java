@@ -237,6 +237,16 @@ public class SearchResource extends ResourceHelper {
 
 	}
 
+	
+/*	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	@Path("/category")
+	public Response findLocationsInJSON(Location loc,
+			@Context HttpHeaders headers) {
+		
+	}*/
+	
 	private List<Location> AssignBookmarks(List<Location> locations,
 			String eMailAddress) {
 		List<Location> bookmarks = new BookmarkResource()

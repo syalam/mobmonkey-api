@@ -86,8 +86,9 @@ public class FactualHelper extends ResourceHelper {
 				.parseDouble(loc.getLatitude()), Double.parseDouble(loc
 				.getLongitude()), radiusInMeters));
 		query.search(searchString);
+
 		ReadResponse resp = factual
-				.fetch("places", query);
+				.fetch("places-v3", query);
 		List<Map<String, Object>> data = resp.getData();
 
 		List<Location> results = new ArrayList<Location>();
