@@ -11,13 +11,15 @@ public class Location {
 	private String locationId;
 	private String providerId;
 	private String name;
-	private String description;
-	private String categoryId;
-	private String category;
+	private String categoryIds;
+	private String categoryLabels;
+	private String distance;
+	private String neighborhood;
 	private String latitude;
 	private String longitude;
 	private String radiusInYards;
-	private String streetAddress;
+	private String address;
+	private String address_ext;
 	private String locality;
 	private String region;
 	private String postcode;
@@ -61,29 +63,39 @@ public class Location {
 	}
 
 	@DynamoDBAttribute
-	public String getDescription() {
-		return description;
+	public String getCategoryIds() {
+		return categoryIds;
 	}
 
-	public void setDescription(String description) {
-		this.description = description;
+	public void setCategoryIds(String categoryIds) {
+		this.categoryIds = categoryIds;
+	}
+
+	@DynamoDBIgnore
+	public String getCategoryLabels() {
+		return categoryLabels;
+	}
+
+	public void setCategoryLabels(String categoryLabels) {
+		this.categoryLabels = categoryLabels;
+	}
+
+	@DynamoDBIgnore
+	public String getDistance() {
+		return distance;
+	}
+
+	public void setDistance(String distance) {
+		this.distance = distance;
 	}
 
 	@DynamoDBAttribute
-	public String getCategoryId() {
-		return categoryId;
+	public String getNeighborhood() {
+		return neighborhood;
 	}
 
-	public void setCategoryId(String category) {
-		this.categoryId = category;
-	}
-	
-	public String getCategory() {
-		return category;
-	}
-
-	public void setCategory(String category) {
-		this.category = category;
+	public void setNeighborhood(String neighborhood) {
+		this.neighborhood = neighborhood;
 	}
 
 	@DynamoDBAttribute
@@ -112,14 +124,26 @@ public class Location {
 	public void setRadiusInYards(String radiusInYards) {
 		this.radiusInYards = radiusInYards;
 	}
+	
+	
 	@DynamoDBAttribute
-	public String getStreetAddress() {
-		return streetAddress;
+	public String getAddress() {
+		return address;
 	}
 
-	public void setStreetAddress(String streetAddress) {
-		this.streetAddress = streetAddress;
+	public void setAddress(String address) {
+		this.address = address;
 	}
+
+	@DynamoDBAttribute
+	public String getAddress_ext() {
+		return address_ext;
+	}
+
+	public void setAddress_ext(String address_ext) {
+		this.address_ext = address_ext;
+	}
+
 	@DynamoDBAttribute
 	public String getLocality() {
 		return locality;

@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -43,7 +44,7 @@ public class SearchResource extends ResourceHelper {
 
 	}
 
-	@POST
+	@GET
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/location")
@@ -60,10 +61,11 @@ public class SearchResource extends ResourceHelper {
 
 		}
 		if (loc.getLatitude() != null && loc.getLongitude() != null
-				&& loc.getName() != null && loc.getRadiusInYards() != null) {
+				&& loc.getName() != null && loc.getRadiusInYards() != null && loc.getCategoryIds() != null) {
 			// TODO validate lat/long with regex
+			loc.setCategoryIds(loc.getCategoryIds());
 			List<Location> locations = new SearchHelper().getLocationsByGeo(
-					loc, loc.getName());
+					loc);
 
 			// Populate the counts!
 			locations = PopulateCounts(locations);
@@ -106,7 +108,7 @@ public class SearchResource extends ResourceHelper {
 					&& loc.getName() != null) {
 				// TODO validate lat/long with regex
 				List<Location> locList = new SearchHelper().getLocationsByGeo(
-						loc, loc.getName());
+						loc);
 				locations.addAll(locList);
 
 			}
