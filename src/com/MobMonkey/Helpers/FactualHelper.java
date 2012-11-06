@@ -72,7 +72,9 @@ public class FactualHelper extends ResourceHelper {
 		if (loc.getName() != "") {
 			query.field("name").search(loc.getName());
 		}
-		query.field("category_ids").search(loc.getCategoryIds());
+		if (loc.getCategoryIds() != "") {
+			query.field("category_ids").search(loc.getCategoryIds());
+		}
 		ReadResponse resp = factual.fetch("places-v3", query);
 		List<Map<String, Object>> data = resp.getData();
 
@@ -271,15 +273,16 @@ public class FactualHelper extends ResourceHelper {
 				JsonObject labels = parser.parse(job.get("labels").toString())
 						.getAsJsonObject();
 
-				locCat.setEn(labels.get("en").toString());
-				locCat.setDe(labels.get("de").toString());
-				locCat.setIt(labels.get("it").toString());
-				locCat.setEs(labels.get("es").toString());
-				locCat.setFr(labels.get("fr").toString());
-				locCat.setKr(labels.get("kr").toString());
-				locCat.setJp(labels.get("jp").toString());
-				locCat.setZh(labels.get("zh").toString());
-				locCat.setZh_hant(labels.get("zh-hant").toString());
+				locCat.setEn(labels.get("en").toString().replaceAll("\"", ""));
+				locCat.setDe(labels.get("de").toString().replaceAll("\"", ""));
+				locCat.setIt(labels.get("it").toString().replaceAll("\"", ""));
+				locCat.setEs(labels.get("es").toString().replaceAll("\"", ""));
+				locCat.setFr(labels.get("fr").toString().replaceAll("\"", ""));
+				locCat.setKr(labels.get("kr").toString().replaceAll("\"", ""));
+				locCat.setJp(labels.get("jp").toString().replaceAll("\"", ""));
+				locCat.setZh(labels.get("zh").toString().replaceAll("\"", ""));
+				locCat.setZh_hant(labels.get("zh-hant").toString()
+						.replaceAll("\"", ""));
 
 				results.add(locCat);
 			} catch (Exception exc) {
