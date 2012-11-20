@@ -37,6 +37,7 @@ public class UserResource extends ResourceHelper {
 				.toLowerCase();
 
 		User result = super.mapper().load(User.class, eMailAddress, partnerId);
+		result.setPassword(null);
 		return Response.ok().entity(result).build();
 	}
 

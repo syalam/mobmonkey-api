@@ -167,7 +167,7 @@ public class RequestMediaResource extends ResourceHelper {
 			status.setDescription("DisplayAd=true");
 		else
 			status.setDescription("DisplayAd=false");
-		// TODO turn this into status
+	
 		return Response.ok().entity(status).build();
 
 	}

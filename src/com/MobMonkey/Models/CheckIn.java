@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
@@ -8,7 +9,7 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "CheckIn")
-public class CheckIn  {
+public class CheckIn implements Serializable {
 
 	private String partnerId;
 	private String eMailAddress;

@@ -12,20 +12,21 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "Media")
 public class Media {
-	
+
 	private String mediaId;
 	private String requestId;
-	private int mediaType; //image = 0, video = 1, live streaming = 3
-	private String requestType; 
+	private int mediaType; // image = 1, video = 2, live streaming = 3
+	private String contentType;
+	private String requestType;
 	private String eMailAddress;
 	private String mediaData;
 	private String mediaURL;
 	private Date uploadedDate;
-	@JsonIgnore private String originalRequestor;
-	
-	public Media(){
+	@JsonIgnore
+	private String originalRequestor;
+
+	public Media() {
 	}
-	
 
 	@DynamoDBRangeKey
 	public String getMediaId() {
@@ -36,7 +37,6 @@ public class Media {
 		mediaId = id;
 	}
 
-	
 	@DynamoDBHashKey
 	public String getRequestId() {
 		return requestId;
@@ -45,23 +45,29 @@ public class Media {
 	public void setRequestId(String requestId) {
 		this.requestId = requestId;
 	}
-	
+
 	@DynamoDBAttribute
 	public int getMediaType() {
 		return mediaType;
 	}
 
-
 	public void setMediaType(int mediaType) {
 		this.mediaType = mediaType;
 	}
 
+	@DynamoDBAttribute
+	public String getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
+	}
 
 	@DynamoDBAttribute()
 	public String getRequestType() {
 		return requestType;
 	}
-
 
 	public void setRequestType(String requestType) {
 		this.requestType = requestType;
@@ -84,17 +90,15 @@ public class Media {
 	public void setMediaData(String mediaData) {
 		this.mediaData = mediaData;
 	}
-	
+
 	@DynamoDBAttribute()
 	public String getMediaURL() {
 		return mediaURL;
 	}
 
-
 	public void setMediaURL(String mediaURL) {
 		this.mediaURL = mediaURL;
 	}
-
 
 	@DynamoDBAttribute()
 	public Date getUploadedDate() {
@@ -105,7 +109,6 @@ public class Media {
 		this.uploadedDate = uploadedDate;
 	}
 
-
 	public String getOriginalRequestor() {
 		return originalRequestor;
 	}
@@ -114,7 +117,5 @@ public class Media {
 	public void setOriginalRequestor(String originalRequestor) {
 		this.originalRequestor = originalRequestor;
 	}
-	
-	
-	
+
 }

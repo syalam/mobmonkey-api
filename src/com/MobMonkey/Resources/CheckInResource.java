@@ -17,6 +17,7 @@ import android.location.Location;
 
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
+import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Device;
@@ -99,10 +100,39 @@ public class CheckInResource extends ResourceHelper {
 				assReq.setExpiryDate(req.getExpiryDate());
 				assReq.setRequestorEmail(req.getRequestorEmail());
 				assReq.setNameOfLocation(req.getLocationName());
+				assReq.setProviderId(req.getProviderId());
+				assReq.setLocationId(req.getLocationId());
 				super.mapper().save(assReq);
 			}
 		}
 		try {
+			// Need to update our cache
+
+			Object o = super.getFromCache("CheckInData");
+		
+			if (o != null) {
+				int count = 0;
+				try {
+					@SuppressWarnings("unchecked")
+					List<CheckIn> checkIn = (List<CheckIn>) o;
+					for (int i = 0; i < checkIn.size(); i++) {
+						if (checkIn.get(i).geteMailAddress().toLowerCase()
+								.equals(c.geteMailAddress().toLowerCase()))
+							;
+						{
+							count = i;
+						}
+					}
+					checkIn.remove(count);
+					checkIn.add(c);
+
+					super.storeInCache("CheckInData", 259200, checkIn);
+
+				} catch (IllegalArgumentException e) {
+
+				}
+			}
+
 			super.mapper().save(c);
 		} catch (Exception exc) {
 			return Response.status(500).entity("An error has occured").build();

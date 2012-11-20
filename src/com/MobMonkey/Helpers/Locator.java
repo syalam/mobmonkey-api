@@ -119,6 +119,8 @@ public final class Locator extends ResourceHelper {
 					newReq.setMediaType(req.getMediaType());
 					newReq.setExpiryDate(expiryDate);
 					newReq.setRequestorEmail(req.geteMailAddress());
+					newReq.setLocationId(req.getLocationId());
+					newReq.setProviderId(req.getProviderId());
 					if (req.isRecurring())
 						newReq.setRequestType(1);
 					else
@@ -147,6 +149,8 @@ public final class Locator extends ResourceHelper {
 						newSReq.setRequestType(1);
 						newSReq.setMessage(rm.getMessage());
 						newSReq.setExpiryDate((Date) result[1]);
+						newSReq.setLocationId(rm.getLocationId());
+						newSReq.setProviderId(rm.getProviderId());
 						results.add(newSReq);
 					}
 				}
@@ -209,7 +213,7 @@ public final class Locator extends ResourceHelper {
 			String userLat, String userLong, int radiusInYards) {
 
 		int R = 6371; // Earth's radius in km
-		double radiusInkm = radiusInYards * .0009144;
+		double radiusInkm = radiusInYards * .0009144; // convert yards to KM
 		Double rLat = Math.toRadians(Double.parseDouble(requestLat));
 		Double rLong = Math.toRadians(Double.parseDouble(requestLong));
 		Double uLat = Math.toRadians(Double.parseDouble(userLat));

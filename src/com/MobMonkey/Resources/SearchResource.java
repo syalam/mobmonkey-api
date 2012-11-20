@@ -44,7 +44,8 @@ public class SearchResource extends ResourceHelper {
 
 	}
 
-	@GET
+	//TODO - make this into GET and use query params.. maybe even a customprovider
+	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/location")
@@ -68,7 +69,7 @@ public class SearchResource extends ResourceHelper {
 					loc);
 
 			// Populate the counts!
-			locations = PopulateCounts(locations);
+			locations = new SearchHelper().PopulateCounts(locations);
 			
 			//If we have a user, check to see if these locations are bookmarked
 			if (user != null) {
@@ -135,9 +136,9 @@ public class SearchResource extends ResourceHelper {
 		List<MediaLite> results = new ArrayList<MediaLite>();
 		Integer mediaType = 0;
 		if (type.equals("image"))
-			mediaType = 0;
-		else if (type.equals("video"))
 			mediaType = 1;
+		else if (type.equals("video"))
+			mediaType = 2;
 		else if (type.equals("livestreaming"))
 			mediaType = 3;
 
@@ -266,85 +267,5 @@ public class SearchResource extends ResourceHelper {
 		return locations;
 	}
 
-	private List<Location> PopulateCounts(List<Location> locations) {
-		// "monkeys=1,images=3,videos=2,livestreaming=false"
-
-		for (Location loc : locations) {
-			String counts = "";
-			int monkeys = 0;
-			
-
-			// Let's see if there are any users checked in the vicinity
-			monkeys = UserCountAtLocation(loc);
-
-			// how about media
-			Map<String,Integer> media = MediaCountAtLocation(loc);
-			
-			loc.setMonkeys(monkeys);
-			loc.setImages(media.get("images"));
-			loc.setVideos(media.get("videos"));
-			loc.setLivestreaming(media.get("livestreaming"));
-		}
-
-		return locations;
-	}
-
-	public int UserCountAtLocation(Location loc) {
-		int count = 0;
-		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-		PaginatedScanList<CheckIn> results = super.mapper().scan(CheckIn.class, scanExpression);
-		
-		for(CheckIn c : results){
-			new Locator();
-			if(Locator.isInVicinity(loc.getLatitude(), loc.getLongitude(), c.getLatitude(), c.getLongitude(), 250)){
-				count++;
-			}
-		}
 	
-		return count;
-	}
-
-	public Map<String, Integer> MediaCountAtLocation(Location loc) {
-		Map<String, Integer> results = new HashMap<String, Integer>();
-		int images = 0;
-		int videos = 0;
-		int livestreaming = 0;
-
-		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-
-		scanExpression.addFilterCondition(
-				"locationId",
-				new Condition().withComparisonOperator(ComparisonOperator.EQ)
-						.withAttributeValueList(
-								new AttributeValue().withS(loc.getLocationId()
-										.toString())));
-
-		scanExpression.addFilterCondition(
-				"providerId",
-				new Condition().withComparisonOperator(ComparisonOperator.EQ)
-						.withAttributeValueList(
-								new AttributeValue().withS(loc.getProviderId()
-										.toString())));
-		
-		
-
-		PaginatedScanList<RequestMedia> requests = super.mapper().scan(
-				RequestMedia.class, scanExpression);
-
-		for (RequestMedia r : requests) {
-			if (r.getMediaType() == 1) {
-				images++;
-			} else if (r.getMediaType() == 2) {
-				videos++;
-			} else if(r.getMediaType() == 3){
-			  livestreaming++;
-			}
-		}
-
-		results.put("images", images);
-		results.put("videos", videos);
-		results.put("livestreaming", livestreaming);
-		
-		return results;
-	}
 }

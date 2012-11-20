@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.ws.rs.core.HttpHeaders;
 
+import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.MobMonkey.Models.User;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
@@ -34,13 +35,6 @@ public class ResourceHelper {
 		ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
 				"us-west-1");
 		mapper = new DynamoDBMapper(ddb);
-	
-		
-		ecCli = new AmazonElastiCacheClient();
-	//	ecCli.setEndpoint("mobmonkey.otbiua.0001.usw1.cache.amazonaws.com");
-	
-		
-
 
 	}
 
@@ -55,17 +49,53 @@ public class ResourceHelper {
 	public AmazonS3Client s3cli() {
 		return s3cli;
 	}
-	public AmazonElastiCacheClient ecCli(){
+
+	public AmazonElastiCacheClient ecCli() {
 		return ecCli;
 	}
-	
-	public User getUser(HttpHeaders headers){
-		
+
+	public User getUser(HttpHeaders headers) {
+
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(0);
-		
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
+				0);
+
 		User user = mapper.load(User.class, eMailAddress, partnerId);
 		return user;
 	}
 
+	public Object getFromCache(String key) {
+		Object o = null;
+		try {
+			o = MobMonkeyCache.getInstace().getCache().get(key);
+
+		} catch (Exception exc) {
+
+		}
+
+		return o;
+	}
+	
+	public void storeInCache(String key, int duration, Object o){
+		try {
+			MobMonkeyCache
+					.getInstace()
+					.getCache()
+					.set(key,
+							duration, o);
+		} catch (Exception exc) {
+
+		}
+	}
+	
+	public void deleteFromCache(String key){
+		try {
+			MobMonkeyCache
+					.getInstace()
+					.getCache()
+					.delete(key);
+		} catch (Exception exc) {
+
+		}
+	}
 }

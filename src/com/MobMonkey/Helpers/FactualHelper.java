@@ -7,6 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+import net.spy.memcached.AddrUtil;
+import net.spy.memcached.MemcachedClient;
+import net.spy.memcached.internal.GetFuture;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
@@ -19,6 +26,7 @@ import org.apache.http.util.EntityUtils;
 import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.LocationCategory;
 import com.MobMonkey.Resources.ResourceHelper;
+import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
@@ -47,7 +55,15 @@ public class FactualHelper extends ResourceHelper {
 	public Location reverseLookUp(String locationId) {
 
 		// TODO Working for only factual, need to add MobMonkey
-		Location results = new Location();
+		// Check to see if it's in the cache first
+
+		Location results = null;
+
+		Object o = super.getFromCache(locationId + ":" + factual_providerId);
+		if (o != null) {
+			return (Location) o;
+		}
+		
 		Query query = new Query();
 		query.field("factual_id").equal(locationId);
 
@@ -55,6 +71,7 @@ public class FactualHelper extends ResourceHelper {
 
 		List<Map<String, Object>> data = resp.getData();
 		for (Map<String, Object> map : data) {
+			// Add to the catch when I create mobmonkey location
 			results = this.createMobMonkeyLocation(map);
 		}
 		return results;
@@ -169,6 +186,9 @@ public class FactualHelper extends ResourceHelper {
 		returnedLoc.setNeighborhood(neighborhood);
 		returnedLoc.setDistance(distance);
 
+		super.storeInCache(returnedLoc.getLocationId() + ":" + factual_providerId,
+							259200, returnedLoc);
+		
 		return returnedLoc;
 	}
 

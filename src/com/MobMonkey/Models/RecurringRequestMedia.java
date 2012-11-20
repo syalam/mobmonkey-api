@@ -33,7 +33,7 @@ public class RecurringRequestMedia  {
 	public RecurringRequestMedia() {
 	}
 
-	@DynamoDBAttribute()
+	@DynamoDBRangeKey
 	public String getRequestId() {
 		return requestId;
 	}

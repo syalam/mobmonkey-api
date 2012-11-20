@@ -1,5 +1,8 @@
 package com.MobMonkey.Models;
 
+import java.util.List;
+import java.io.Serializable;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
@@ -7,7 +10,11 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "Location")
-public class Location {
+public class Location implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8818817512015525776L;
 	private String locationId;
 	private String providerId;
 	private String name;
@@ -31,7 +38,9 @@ public class Location {
 	private int images;
 	private int videos;
 	private int livestreaming;
-
+	private int rank;
+	private List<RequestMedia> requests;
+	
 	public Location() {
 	}
 	
@@ -235,6 +244,23 @@ public class Location {
 
 	public void setLivestreaming(int livestreaming) {
 		this.livestreaming = livestreaming;
+	}
+	@DynamoDBIgnore
+	public int getRank() {
+		return rank;
+	}
+
+	public void setRank(int rank) {
+		this.rank = rank;
+	}
+
+	@DynamoDBIgnore
+	public List<RequestMedia> getRequests() {
+		return requests;
+	}
+
+	public void setRequests(List<RequestMedia> requests) {
+		this.requests = requests;
 	}
 
 }

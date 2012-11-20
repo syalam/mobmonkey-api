@@ -5,7 +5,11 @@ import java.util.Date;
 public class MediaLite {
 
 	private String MediaURL;
+	private String mediaId;
+	private String requestId;
 	private Date expiryDate;
+	private String type;
+	private String contentType;
 	
 	public MediaLite(){
 		
@@ -19,12 +23,44 @@ public class MediaLite {
 		MediaURL = mediaURL;
 	}
 
+	public String getMediaId() {
+		return mediaId;
+	}
+
+	public void setMediaId(String mediaId) {
+		this.mediaId = mediaId;
+	}
+
+	public String getRequestId() {
+		return requestId;
+	}
+
+	public void setRequestId(String requestId) {
+		this.requestId = requestId;
+	}
+
 	public Date getExpiryDate() {
 		return expiryDate;
 	}
 
 	public void setExpiryDate(Date expiryDate) {
 		this.expiryDate = expiryDate;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public String getContentType() {
+		return contentType;
+	}
+
+	public void setContentType(String contentType) {
+		this.contentType = contentType;
 	}
 	
 }

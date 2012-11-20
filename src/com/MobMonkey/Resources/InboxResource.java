@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response;
 
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.AssignedRequest;
+import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
@@ -38,10 +39,25 @@ public class InboxResource extends ResourceHelper {
 			@Context HttpHeaders headers) {
 		// TODO answered requests
 
-		List<RequestMedia> results = new ArrayList<RequestMedia>();
-
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
 				.toLowerCase();
+
+		if (type.toLowerCase().equals("assignedrequests")) {
+			List<AssignedRequest> results = new ArrayList<AssignedRequest>();
+			results = getAssignedRequests(eMailAddress);
+
+			return Response.ok().entity(results).build();
+		} else {
+			List<RequestMedia> results = new ArrayList<RequestMedia>();
+
+			results = getRequests(type, eMailAddress);
+			return Response.ok().entity(results).build();
+		}
+
+	}
+
+	public List<RequestMedia> getRequests(String type, String eMailAddress) {
+		List<RequestMedia> results = new ArrayList<RequestMedia>();
 
 		if (type.toLowerCase().equals("openrequests")) {
 			// TODO add recurring requests to this list
@@ -54,24 +70,23 @@ public class InboxResource extends ResourceHelper {
 					.query(RequestMedia.class, queryExpression);
 
 			for (RequestMedia rm : openRequests) {
-				//check to see if request is fulfilled
+				// check to see if request is fulfilled
 				if (!rm.isRequestFulfilled()) {
 					Date now = new Date();
 					Date expiryDate = new Date();
 					int duration = rm.getDuration(); // in minutes
-					expiryDate.setTime(rm.getRequestDate().getTime() + duration * 60000);
-					if(now.getTime() > expiryDate.getTime()){
+					expiryDate.setTime(rm.getRequestDate().getTime() + duration
+							* 60000);
+					if (now.getTime() > expiryDate.getTime()) {
 						rm.setExpired(true);
-					}else{
+					} else {
 						rm.setExpired(false);
 					}
-					
-					
+
 					results.add(rm);
 				}
 			}
 
-			return Response.ok().entity(results).build();
 		}
 		if (type.toLowerCase().equals("assignedrequests")) {
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
@@ -86,18 +101,20 @@ public class InboxResource extends ResourceHelper {
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					assReq.setNameOfLocation(new Locator().reverseLookUp(
 							rm.getProviderId(), rm.getLocationId()).getName());
+					results.add(rm);
 					break;
 				case 1:
-					RecurringRequestMedia rrm = super.mapper().load(RecurringRequestMedia.class, assReq.getRequestorEmail());
+					// TODO convert rrm to a RequestMedia and add it to results
+					RecurringRequestMedia rrm = super.mapper().load(
+							RecurringRequestMedia.class,
+							assReq.getRequestorEmail());
 					assReq.setNameOfLocation(new Locator().reverseLookUp(
 							rrm.getProviderId(), rrm.getLocationId()).getName());
 					break;
 				}
-				
-					
+
 			}
 
-			return Response.ok().entity(assignedToMe.toArray()).build();
 		}
 		if (type.toLowerCase().equals("fulfilledrequests")) {
 			// TODO add recurring requests to this list
@@ -116,16 +133,53 @@ public class InboxResource extends ResourceHelper {
 				}
 
 				if (rm.isRequestFulfilled()) {
+					// TODO if the request is expired, or has no media to it, do
+					// not add it!
+					DynamoDBQueryExpression mediaQuery = new DynamoDBQueryExpression(
+							new AttributeValue().withS(rm.getRequestId()));
+					PaginatedQueryList<Media> media = super.mapper().query(
+							Media.class, mediaQuery);
+					rm.setMediaUrl(media.get(0).getMediaURL());
 					results.add(rm);
 				}
 			}
-
-			return Response.ok().entity(results).build();
 		}
+		return results;
+	}
 
-		return Response
-				.status(500)
-				.entity(new Status("Failure", type
-						+ " is not a valid inbox parameter", "")).build();
+	public List<AssignedRequest> getAssignedRequests(String eMailAddress) {
+
+		List<AssignedRequest> results = new ArrayList<AssignedRequest>();
+		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+				new AttributeValue().withS(eMailAddress));
+		PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
+				.query(AssignedRequest.class, queryExpression);
+
+		for (AssignedRequest assReq : assignedToMe) {
+			switch (assReq.getRequestType()) {
+			case 0:
+				RequestMedia rm = super.mapper().load(RequestMedia.class,
+						assReq.getRequestorEmail(), assReq.getRequestId());
+				try {
+					assReq.setNameOfLocation(new Locator().reverseLookUp(
+							rm.getProviderId(), rm.getLocationId()).getName());
+
+					results.add(assReq);
+				} catch (Exception exc) {
+
+				}
+				break;
+			case 1:
+				RecurringRequestMedia rrm = super.mapper()
+						.load(RecurringRequestMedia.class,
+								assReq.getRequestorEmail());
+				assReq.setNameOfLocation(new Locator().reverseLookUp(
+						rrm.getProviderId(), rrm.getLocationId()).getName());
+				results.add(assReq);
+				break;
+			}
+
+		}
+		return results;
 	}
 }

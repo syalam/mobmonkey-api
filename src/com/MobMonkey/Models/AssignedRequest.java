@@ -21,6 +21,8 @@ public class AssignedRequest {
 	private Date assignedDate;
 	private Date fulFilledDate;
 	private String nameOfLocation;
+	private String locationId;
+	private String providerId;
 	
 	
 
@@ -118,5 +120,23 @@ public class AssignedRequest {
 
 	public void setNameOfLocation(String nameOfLocation) {
 		this.nameOfLocation = nameOfLocation;
+	}
+
+	@DynamoDBAttribute
+	public String getLocationId() {
+		return locationId;
+	}
+
+	public void setLocationId(String locationId) {
+		this.locationId = locationId;
+	}
+
+	@DynamoDBAttribute
+	public String getProviderId() {
+		return providerId;
+	}
+
+	public void setProviderId(String providerId) {
+		this.providerId = providerId;
 	}
 }
