@@ -1,8 +1,14 @@
 package com.MobMonkey.Resources;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -20,6 +26,7 @@ import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Models.Status;
+import com.MobMonkey.Models.Trending;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
@@ -69,8 +76,15 @@ public class InboxResource extends ResourceHelper {
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
 
+			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
+				unsorted.put(rm, rm.getScheduleDate().getTime());
+
+			}
+
+			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
 				// check to see if request is fulfilled
+				RequestMedia rm = entry.getKey();
 				if (!rm.isRequestFulfilled()) {
 					Date now = new Date();
 					Date expiryDate = new Date();
@@ -94,13 +108,18 @@ public class InboxResource extends ResourceHelper {
 			PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
 					.query(AssignedRequest.class, queryExpression);
 
-			for (AssignedRequest assReq : assignedToMe) {
+			HashMap<AssignedRequest, Long> unsorted = new HashMap<AssignedRequest, Long>();
+			for (AssignedRequest rm : assignedToMe) {
+				unsorted.put(rm, rm.getAssignedDate().getTime());
+
+			}
+
+			for (Entry<AssignedRequest, Long> entry : entriesSortedByValues(unsorted)) {
+				AssignedRequest assReq = entry.getKey();
 				switch (assReq.getRequestType()) {
 				case 0:
 					RequestMedia rm = super.mapper().load(RequestMedia.class,
 							assReq.getRequestorEmail(), assReq.getRequestId());
-					assReq.setNameOfLocation(new Locator().reverseLookUp(
-							rm.getProviderId(), rm.getLocationId()).getName());
 					results.add(rm);
 					break;
 				case 1:
@@ -108,8 +127,6 @@ public class InboxResource extends ResourceHelper {
 					RecurringRequestMedia rrm = super.mapper().load(
 							RecurringRequestMedia.class,
 							assReq.getRequestorEmail());
-					assReq.setNameOfLocation(new Locator().reverseLookUp(
-							rrm.getProviderId(), rrm.getLocationId()).getName());
 					break;
 				}
 
@@ -126,7 +143,16 @@ public class InboxResource extends ResourceHelper {
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
 
+			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
+				unsorted.put(rm, rm.getScheduleDate().getTime());
+
+			}
+
+			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
+				// check to see if request is fulfilled
+				RequestMedia rm = entry.getKey();
+
 				if (rm.getProviderId() != null && rm.getLocationId() != null) {
 					rm.setNameOfLocation(new Locator().reverseLookUp(
 							rm.getProviderId(), rm.getLocationId()).getName());
@@ -182,4 +208,5 @@ public class InboxResource extends ResourceHelper {
 		}
 		return results;
 	}
+
 }

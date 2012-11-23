@@ -18,15 +18,19 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.MobMonkey.Helpers.FactualHelper;
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Helpers.SearchHelper;
+import com.MobMonkey.Models.Bookmark;
 import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.Trending;
+import com.MobMonkey.Models.User;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
@@ -42,19 +46,23 @@ public class TrendingResource extends ResourceHelper {
 		super();
 	}
 
-	@Path("/{type}")
+	@Path("/topviewed")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getNearMeInJSON(
-			@PathParam("type") String type,
+			@Context HttpHeaders headers,
 			@QueryParam("timeSpan") String timeSpan,
 			@QueryParam("latitude") String latitude,
 			@QueryParam("longitude") String longitude,
 			@QueryParam("radius") String radius,
 			@QueryParam("categoryIds") String categoryIds,
 			@DefaultValue("false") @QueryParam("nearby") boolean nearby,
-			@DefaultValue("false") @QueryParam("myinterests") boolean myinterests) {
-		String requestType = type.toLowerCase();
+			@DefaultValue("false") @QueryParam("myinterests") boolean myinterests,
+			@DefaultValue("false") @QueryParam("bookmarksonly") boolean bookmarks) {
+
+		String hashKey = "Media";
+		User user = super.getUser(headers);
+
 		if (timeSpan == null) {
 			return Response
 					.status(500)
@@ -63,13 +71,8 @@ public class TrendingResource extends ResourceHelper {
 							"Need to provide query parameter \'timeSpan\'. Valid timeSpan values are: day, week, or month",
 							"")).build();
 		}
-		String hashKey = "";
-		ArrayList<String> catIds = new ArrayList<String>();
 
-		if (requestType.equals("bookmarks"))
-			hashKey = "Bookmark";
-		if (requestType.equals("topviewed"))
-			hashKey = "Media";
+		ArrayList<String> catIds = new ArrayList<String>();
 
 		if (nearby) {
 			if (latitude == null || longitude == null || radius == null) {
@@ -96,47 +99,61 @@ public class TrendingResource extends ResourceHelper {
 			}
 		}
 
-		List<Location> results = new ArrayList<Location>();
+	
 		List<Location> sortedList = GetTrends(timeSpan, hashKey);
+		List<Location> itemsToRemove = new ArrayList<Location>();
+	
+		//
+		if (myinterests) {
 
-		for (Location loc : sortedList) {
-			if (nearby) {
-				if (Locator.isInVicinity(loc.getLatitude(), loc.getLongitude(),
-						latitude, longitude, Integer.parseInt(radius))) {
-					results.add(loc);
-				}
-			} else if (myinterests) {
+			for(Location loc : sortedList){
 				String[] locCats = loc.getCategoryIds().split(",");
 
 				for (String s : locCats) {
-					if (catIds.contains(s)) {
-						results.add(loc);
+					if (!catIds.contains(s)) {
+						itemsToRemove.add(loc);
 					}
 				}
+			}
+		}
 
-			} else {
-				results.add(loc);
+		if (nearby) {
+			for(Location loc : sortedList){
+
+				if (!Locator.isInVicinity(loc.getLatitude(),
+						loc.getLongitude(), latitude, longitude,
+						Integer.parseInt(radius))) {
+					itemsToRemove.add(loc);
+				}
 			}
 
 		}
+		if (bookmarks) {
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(user.geteMailAddress()));
 
-		return Response.ok().entity(results).build();
-
-	}
-
-	static <K, V extends Comparable<? super V>> SortedSet<Map.Entry<K, V>> entriesSortedByValues(
-			Map<K, V> map) {
-		SortedSet<Map.Entry<K, V>> sortedEntries = new TreeSet<Map.Entry<K, V>>(
-				new Comparator<Map.Entry<K, V>>() {
-					@Override
-					public int compare(Map.Entry<K, V> e1, Map.Entry<K, V> e2) {
-						int res = e2.getValue().compareTo(e1.getValue());
-						return res != 0 ? res : 1; // Special fix to preserve
-													// items with equal values
+			PaginatedQueryList<Bookmark> bookmarkList = super.mapper()
+					.query(Bookmark.class, queryExpression);
+			
+			for(Location loc : sortedList){		
+				for (Bookmark b : bookmarkList) {
+					String bookmarkLocationId = b.getLocprovId().split(":")[0];
+					String bookmarkProviderId = b.getLocprovId().split(":")[1];
+					if (!loc.getLocationId().equals(bookmarkLocationId)
+							&& !loc.getProviderId().equals(bookmarkProviderId)) {
+						itemsToRemove.add(loc);
 					}
-				});
-		sortedEntries.addAll(map.entrySet());
-		return sortedEntries;
+				}
+			}
+
+		}
+		
+		for(Location i : itemsToRemove){
+			sortedList.remove(i);
+		}
+
+		return Response.ok().entity(sortedList).build();
+
 	}
 
 	private List<Location> GetTrends(String timeSpan, String type) {
@@ -176,10 +193,6 @@ public class TrendingResource extends ResourceHelper {
 		}
 		List<Location> sortedList = new ArrayList<Location>();
 
-		
-		
-		
-		
 		int count = 1;
 		for (Entry<String, Integer> entry : entriesSortedByValues(popularity)) {
 			String[] locprov = entry.getKey().split(":");
@@ -195,8 +208,9 @@ public class TrendingResource extends ResourceHelper {
 						loc.setRank(count);
 						count++;
 						sortedList.add(loc);
-						if(count == 11){
-							sortedList = new SearchHelper().PopulateCounts(sortedList);
+						if (count == 11) {
+							sortedList = new SearchHelper()
+									.PopulateCounts(sortedList);
 							return sortedList;
 						}
 					}
@@ -205,11 +219,9 @@ public class TrendingResource extends ResourceHelper {
 				}
 			}
 		}
-		
-		
 
 		return new SearchHelper().PopulateCounts(sortedList);
-		
+
 	}
 
 }

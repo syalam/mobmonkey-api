@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.Map.Entry;
+
 import javax.xml.bind.*;
 
 import javax.ws.rs.*;
@@ -259,10 +261,16 @@ public class MediaResource extends ResourceHelper {
 				new AttributeValue().withS(locationId + ":" + providerId));
 		PaginatedQueryList<LocationMedia> results = super.mapper().query(
 				LocationMedia.class, queryExpression);
+		
+
+		HashMap<LocationMedia, Long> unsorted = new HashMap<LocationMedia, Long>();
+		for (LocationMedia lm : results) {
+			unsorted.put(lm, lm.getUploadedDate().getTime());
+		}
 
 		List<MediaLite> media = new ArrayList<MediaLite>();
-		for (LocationMedia locMedia : results) {
-
+		for (Entry<LocationMedia, Long> entry : entriesSortedByValues(unsorted)) {
+			LocationMedia locMedia = entry.getKey();
 			Media m = super.mapper().load(Media.class, locMedia.getRequestId(),
 					locMedia.getMediaId());
 			MediaLite ml = new MediaLite();
@@ -351,14 +359,19 @@ public class MediaResource extends ResourceHelper {
 		putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
 		super.s3cli().putObject(putObjectRequest);
 		String url = "";
-		if (m.getMediaType() == 1) {
+		url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
+				+ mediaFileName;
+		
+	/*	Change this back to below if we wanna do FMS again
+	 * 
+	 * if (m.getMediaType() == 1) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
 		} else if (m.getMediaType() == 2) {
 			url = "http://ec2-184-169-198-0.us-west-1.compute.amazonaws.com/hls-vod/"
 					+ mediaFileName + ".m3u8";
 
-		}
+		}*/
 		return url;
 
 	}

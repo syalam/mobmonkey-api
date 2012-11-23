@@ -64,13 +64,7 @@ public class BookmarkResource extends ResourceHelper {
 							"This book mark is already present in the database",
 							"")).build();
 		}
-		Trending t = new Trending();
-		t.setType("Bookmark");
-		t.setLocationId(b.getLocationId());
-		t.setProviderId(b.getProviderId());
-		t.setTimeStamp(new Date());
-		super.mapper().save(t);
-
+		
 		return Response.ok()
 				.entity(new Status("Success", "Added bookmark.", "")).build();
 
