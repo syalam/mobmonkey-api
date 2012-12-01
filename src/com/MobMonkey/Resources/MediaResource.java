@@ -2,11 +2,13 @@ package com.MobMonkey.Resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.Map.Entry;
 
@@ -23,6 +25,7 @@ import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.MediaLite;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
+import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.Trending;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
@@ -36,6 +39,8 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 
 @Path("/media")
 public class MediaResource extends ResourceHelper {
+	static SimpleDateFormat dateFormatter = new SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
 	public MediaResource() {
 		super();
@@ -149,6 +154,67 @@ public class MediaResource extends ResourceHelper {
 	}
 
 	@POST
+	@Path("/request")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response acceptImageRequestInJSON(
+			@QueryParam("requestId") String requestId,
+			@QueryParam("mediaId") String mediaId, @Context HttpHeaders headers) {
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+		Media m = new Media();
+
+		try {
+			m = super.mapper().load(Media.class, requestId, mediaId);
+			if (!m.getOriginalRequestor().toLowerCase()
+					.equals(username.toLowerCase())) {
+				return Response
+						.status(500)
+						.entity(new Status(
+								"Error",
+								"The requestId provided is not associated with your username",
+								"")).build();
+			}
+		} catch (Exception exc) {
+			return Response
+					.status(500)
+					.entity(new Status(
+							"Error",
+							"There was a problem loading this media from the DB",
+							"")).build();
+		}
+		if (m.getRequestType().equals("0")) {
+			try {
+
+				m.setAccepted(true);
+				super.mapper().save(m);
+				super.storeInCache(requestId + ":" + mediaId, 259200, m);
+
+				return Response
+						.ok()
+						.entity(new Status("Success",
+								"Successfully accepted media", "")).build();
+
+			} catch (Exception exc) {
+				return Response
+						.status(500)
+						.entity(new Status(
+								"Error",
+								"The requestId provided is not associated with your username",
+								"")).build();
+			}
+		} else {
+			// super.ampper().load(RecurringRequstMedia)
+			// TODO implement recurring
+			return Response
+					.ok()
+					.entity(new Status("NEED TO IMPLEMENT",
+							"NEED TO IMPLEMENT", "")).build();
+
+		}
+
+	}
+
+	@POST
 	@Path("/{type}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
@@ -166,7 +232,7 @@ public class MediaResource extends ResourceHelper {
 		media.seteMailAddress(username);
 		media.setUploadedDate(now);
 		media.setOriginalRequestor(originalRequestor); // for livestreaming
-
+		media.setAccepted(false);
 		Map<String, String> reqDetails = getRequestDetails(media);
 		if (reqDetails.containsKey("Error"))
 			return Response.status(500)
@@ -245,6 +311,16 @@ public class MediaResource extends ResourceHelper {
 				.build();
 
 	}
+	
+	@POST 
+	@Path("/testAPNS")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response testAPNSInJSON(@QueryParam("deviceId") String deviceId){
+		String[] deviceIds = new String[1];
+		deviceIds[0] = deviceId;
+		String result = ApplePNSHelper.testSend(deviceIds, "This is a test. Sent on: " + (new Date()).toString());
+		return Response.ok().entity("Result: " + result).build();
+	}
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -252,16 +328,25 @@ public class MediaResource extends ResourceHelper {
 			@QueryParam("providerId") String providerId) {
 
 		// Query location media table for date range today - 3 days.
-		//
+		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+
+		long threeDaysAgo = (new Date()).getTime()
+				- (3L * 24L * 60L * 60L * 1000L); // three days in milliseconds
+
+		String threeDaysAgoDate = dateFormatter.format(threeDaysAgo);
 
 		LocationMedia result = new LocationMedia();
 		result.setLocationId(locationId);
 		result.setProviderId(providerId);
 		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(locationId + ":" + providerId));
+		queryExpression.setRangeKeyCondition(new Condition()
+				.withComparisonOperator(ComparisonOperator.GT)
+				.withAttributeValueList(
+						new AttributeValue().withS(threeDaysAgoDate)));
+
 		PaginatedQueryList<LocationMedia> results = super.mapper().query(
 				LocationMedia.class, queryExpression);
-		
 
 		HashMap<LocationMedia, Long> unsorted = new HashMap<LocationMedia, Long>();
 		for (LocationMedia lm : results) {
@@ -277,9 +362,7 @@ public class MediaResource extends ResourceHelper {
 			ml.setMediaURL(m.getMediaURL());
 			ml.setRequestId(locMedia.getRequestId());
 			ml.setMediaId(locMedia.getMediaId());
-
-			// set expiration date
-
+			ml.setAccepted(m.isAccepted());
 			ml.setExpiryDate(getExpiryDate(m.getUploadedDate().getTime()));
 			ml.setType(getMediaType(m.getMediaType()));
 			if (m.getMediaType() == 3) {
@@ -359,19 +442,17 @@ public class MediaResource extends ResourceHelper {
 		putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
 		super.s3cli().putObject(putObjectRequest);
 		String url = "";
-		url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
-				+ mediaFileName;
-		
-	/*	Change this back to below if we wanna do FMS again
-	 * 
-	 * if (m.getMediaType() == 1) {
+	
+
+		if (m.getMediaType() == 1) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
 		} else if (m.getMediaType() == 2) {
-			url = "http://ec2-184-169-198-0.us-west-1.compute.amazonaws.com/hls-vod/"
-					+ mediaFileName + ".m3u8";
+			url = "https://s3.amazonaws.com/" + bucket + "/"
+					+ mediaFileName;
 
-		}*/
+		}
+
 		return url;
 
 	}

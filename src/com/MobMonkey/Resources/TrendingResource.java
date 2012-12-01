@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -99,14 +100,13 @@ public class TrendingResource extends ResourceHelper {
 			}
 		}
 
-	
-		List<Location> sortedList = GetTrends(timeSpan, hashKey);
+		List<Location> sortedList = GetTrends(timeSpan, hashKey, user.geteMailAddress());
 		List<Location> itemsToRemove = new ArrayList<Location>();
-	
+
 		//
 		if (myinterests) {
 
-			for(Location loc : sortedList){
+			for (Location loc : sortedList) {
 				String[] locCats = loc.getCategoryIds().split(",");
 
 				for (String s : locCats) {
@@ -118,7 +118,7 @@ public class TrendingResource extends ResourceHelper {
 		}
 
 		if (nearby) {
-			for(Location loc : sortedList){
+			for (Location loc : sortedList) {
 
 				if (!Locator.isInVicinity(loc.getLatitude(),
 						loc.getLongitude(), latitude, longitude,
@@ -132,23 +132,24 @@ public class TrendingResource extends ResourceHelper {
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(user.geteMailAddress()));
 
-			PaginatedQueryList<Bookmark> bookmarkList = super.mapper()
-					.query(Bookmark.class, queryExpression);
+			PaginatedQueryList<Bookmark> bookmarkList = super.mapper().query(
+					Bookmark.class, queryExpression);
+			// Create a hashmap that allows for using contains method
+			Hashtable<String, String> ht = new Hashtable<String, String>();
+			for (Bookmark b : bookmarkList) {
+				ht.put(b.getLocprovId(), "");
+			}
+
+			for (Location loc : sortedList) {
 			
-			for(Location loc : sortedList){		
-				for (Bookmark b : bookmarkList) {
-					String bookmarkLocationId = b.getLocprovId().split(":")[0];
-					String bookmarkProviderId = b.getLocprovId().split(":")[1];
-					if (!loc.getLocationId().equals(bookmarkLocationId)
-							&& !loc.getProviderId().equals(bookmarkProviderId)) {
-						itemsToRemove.add(loc);
-					}
+				if (!ht.containsKey(loc.getLocationId() + ":" + loc.getProviderId())) {
+					itemsToRemove.add(loc);
 				}
 			}
 
 		}
-		
-		for(Location i : itemsToRemove){
+
+		for (Location i : itemsToRemove) {
 			sortedList.remove(i);
 		}
 
@@ -156,7 +157,7 @@ public class TrendingResource extends ResourceHelper {
 
 	}
 
-	private List<Location> GetTrends(String timeSpan, String type) {
+	private List<Location> GetTrends(String timeSpan, String type, String eMailAddress) {
 		int timeSpanInDays = 0;
 		if (timeSpan.toLowerCase().equals("day")) {
 			timeSpanInDays = 1;
@@ -210,7 +211,7 @@ public class TrendingResource extends ResourceHelper {
 						sortedList.add(loc);
 						if (count == 11) {
 							sortedList = new SearchHelper()
-									.PopulateCounts(sortedList);
+									.PopulateCounts(sortedList, eMailAddress);
 							return sortedList;
 						}
 					}
@@ -220,7 +221,7 @@ public class TrendingResource extends ResourceHelper {
 			}
 		}
 
-		return new SearchHelper().PopulateCounts(sortedList);
+		return new SearchHelper().PopulateCounts(sortedList, eMailAddress);
 
 	}
 

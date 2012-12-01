@@ -21,7 +21,9 @@ import javax.ws.rs.core.Response;
 
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Models.AssignedRequest;
+import com.MobMonkey.Models.LocationMedia;
 import com.MobMonkey.Models.Media;
+import com.MobMonkey.Models.MediaLite;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
@@ -136,7 +138,8 @@ public class InboxResource extends ResourceHelper {
 		if (type.toLowerCase().equals("fulfilledrequests")) {
 			// TODO add recurring requests to this list
 			// ALSO ADD FILTERING!!!!!!!!!!!!
-
+			long threeDaysAgo = (new Date()).getTime()
+					- (3L * 24L * 60L * 60L * 1000L);
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
 
@@ -145,32 +148,77 @@ public class InboxResource extends ResourceHelper {
 
 			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
-				unsorted.put(rm, rm.getScheduleDate().getTime());
-
+				if (rm.isRequestFulfilled()
+						&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
+					unsorted.put(rm, rm.getScheduleDate().getTime());
+				}
 			}
 
 			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
 				// check to see if request is fulfilled
 				RequestMedia rm = entry.getKey();
 
-				if (rm.getProviderId() != null && rm.getLocationId() != null) {
-					rm.setNameOfLocation(new Locator().reverseLookUp(
-							rm.getProviderId(), rm.getLocationId()).getName());
-				}
+				/*
+				 * if (rm.getProviderId() != null && rm.getLocationId() != null)
+				 * { rm.setNameOfLocation(new Locator().reverseLookUp(
+				 * rm.getProviderId(), rm.getLocationId()).getName()); }
+				 */
 
 				if (rm.isRequestFulfilled()) {
-					// TODO if the request is expired, or has no media to it, do
-					// not add it!
+
 					DynamoDBQueryExpression mediaQuery = new DynamoDBQueryExpression(
 							new AttributeValue().withS(rm.getRequestId()));
 					PaginatedQueryList<Media> media = super.mapper().query(
 							Media.class, mediaQuery);
-					rm.setMediaUrl(media.get(0).getMediaURL());
+
+					List<MediaLite> mediaL = new ArrayList<MediaLite>();
+					for (Media m : media) {
+
+						MediaLite ml = new MediaLite();
+						ml.setMediaURL(m.getMediaURL());
+						ml.setRequestId(m.getRequestId());
+						ml.setMediaId(m.getMediaId());
+						ml.setAccepted(m.isAccepted());
+						ml.setExpiryDate(getExpiryDate(m.getUploadedDate()
+								.getTime()));
+						ml.setType(getMediaType(m.getMediaType()));
+						if (m.getMediaType() == 3) {
+							ml.setExpiryDate(null);
+							mediaL.add(ml);
+						} else {
+
+							if (m.getUploadedDate().getTime() >= threeDaysAgo) {
+								mediaL.add(ml);
+							}
+						}
+					}
+
+					// Add media list to results
+					rm.setMedia(mediaL);
 					results.add(rm);
+
 				}
 			}
 		}
 		return results;
+	}
+
+	private String getMediaType(int typeId) {
+		if (typeId == 1)
+			return "image";
+		if (typeId == 2)
+			return "video";
+		if (typeId == 3)
+			return "livestreaming";
+		else
+			return "unknown";
+	}
+
+	private Date getExpiryDate(long uploadDate) {
+		long threedays = 3L * 24L * 60L * 60L * 1000L;
+		Date expiryDate = new Date();
+		expiryDate.setTime(uploadDate + threedays);
+		return expiryDate;
 	}
 
 	public List<AssignedRequest> getAssignedRequests(String eMailAddress) {

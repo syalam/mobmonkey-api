@@ -1,6 +1,7 @@
 package com.MobMonkey.Models;
 
 import java.util.Date;
+import java.util.List;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 
@@ -33,7 +34,7 @@ public class RequestMedia  {
 	private int frequencyInMS;
 	private String nameOfLocation;
 	private String mediaUrl;
-	
+	private List<MediaLite> media;
 	
 	public RequestMedia() {
 	}
@@ -227,6 +228,15 @@ public class RequestMedia  {
 
 	public void setMediaUrl(String mediaUrl) {
 		this.mediaUrl = mediaUrl;
+	}
+
+	@DynamoDBIgnore
+	public List<MediaLite> getMedia() {
+		return media;
+	}
+
+	public void setMedia(List<MediaLite> media) {
+		this.media = media;
 	}
 
 }

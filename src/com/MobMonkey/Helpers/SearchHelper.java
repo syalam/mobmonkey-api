@@ -10,6 +10,7 @@ import java.util.Map;
 import android.text.style.SuperscriptSpan;
 
 import com.MobMonkey.Helpers.FactualHelper;
+import com.MobMonkey.Models.Bookmark;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.LocationMedia;
@@ -69,7 +70,7 @@ public final class SearchHelper extends ResourceHelper {
 		return factual.AddressFilter(loc);
 	}
 
-	public List<Location> PopulateCounts(List<Location> locations) {
+	public List<Location> PopulateCounts(List<Location> locations, String eMailAddress) {
 		// "monkeys=1,images=3,videos=2,livestreaming=false"
 
 		for (Location loc : locations) {
@@ -86,6 +87,23 @@ public final class SearchHelper extends ResourceHelper {
 			loc.setImages(media.get("images"));
 			loc.setVideos(media.get("videos"));
 			loc.setLivestreaming(media.get("livestreaming"));
+		
+			if(!eMailAddress.equals("")){
+				
+				DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+						new AttributeValue().withS(eMailAddress));
+				
+				queryExpression.setRangeKeyCondition(new Condition().withComparisonOperator(ComparisonOperator.EQ)
+						.withAttributeValueList(new AttributeValue().withS(loc.getLocationId() + ":" + loc.getProviderId())));
+				if(super.mapper().count(Bookmark.class, queryExpression) > 0){
+					loc.setBookmark(true);
+				}else{
+					loc.setBookmark(false);
+				}
+				
+			}
+		
+		
 		}
 
 		return locations;

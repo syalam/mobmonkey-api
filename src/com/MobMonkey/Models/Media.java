@@ -22,6 +22,7 @@ public class Media {
 	private String mediaData;
 	private String mediaURL;
 	private Date uploadedDate;
+	private boolean accepted;
 	@JsonIgnore
 	private String originalRequestor;
 
@@ -116,6 +117,15 @@ public class Media {
 	@DynamoDBAttribute
 	public void setOriginalRequestor(String originalRequestor) {
 		this.originalRequestor = originalRequestor;
+	}
+
+	@DynamoDBAttribute
+	public boolean isAccepted() {
+		return accepted;
+	}
+
+	public void setAccepted(boolean accepted) {
+		this.accepted = accepted;
 	}
 
 }

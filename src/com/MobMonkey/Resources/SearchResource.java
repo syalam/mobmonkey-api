@@ -69,7 +69,7 @@ public class SearchResource extends ResourceHelper {
 					loc);
 
 			// Populate the counts!
-			locations = new SearchHelper().PopulateCounts(locations);
+			locations = new SearchHelper().PopulateCounts(locations, user.geteMailAddress());
 			
 			//If we have a user, check to see if these locations are bookmarked
 			if (user != null) {

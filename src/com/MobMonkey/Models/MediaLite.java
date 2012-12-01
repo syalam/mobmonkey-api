@@ -10,6 +10,7 @@ public class MediaLite {
 	private Date expiryDate;
 	private String type;
 	private String contentType;
+	private boolean accepted;
 	
 	public MediaLite(){
 		
@@ -61,6 +62,14 @@ public class MediaLite {
 
 	public void setContentType(String contentType) {
 		this.contentType = contentType;
+	}
+
+	public boolean isAccepted() {
+		return accepted;
+	}
+
+	public void setAccepted(boolean accepted) {
+		this.accepted = accepted;
 	}
 	
 }
