@@ -52,26 +52,32 @@ public class TrendingResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getNearMeInJSON(
 			@Context HttpHeaders headers,
-			@QueryParam("timeSpan") String timeSpan,
+		//	@QueryParam("timeSpan") String timeSpan,
 			@QueryParam("latitude") String latitude,
 			@QueryParam("longitude") String longitude,
 			@QueryParam("radius") String radius,
 			@QueryParam("categoryIds") String categoryIds,
 			@DefaultValue("false") @QueryParam("nearby") boolean nearby,
 			@DefaultValue("false") @QueryParam("myinterests") boolean myinterests,
-			@DefaultValue("false") @QueryParam("bookmarksonly") boolean bookmarks) {
+			@DefaultValue("false") @QueryParam("bookmarksonly") boolean bookmarks,
+			@DefaultValue("false") @QueryParam("countsonly") boolean countonly) {
 
 		String hashKey = "Media";
 		User user = super.getUser(headers);
 
-		if (timeSpan == null) {
+		HashMap<String, Integer> counts = new HashMap<String, Integer>();
+		int bookmarkCount = 0;
+		int interestCount = 0;
+		int topviewedCount = 0;
+		int nearbyCount = 0;
+	/*	if (timeSpan == null) {
 			return Response
 					.status(500)
 					.entity(new Status(
 							"Failure",
 							"Need to provide query parameter \'timeSpan\'. Valid timeSpan values are: day, week, or month",
 							"")).build();
-		}
+		}*/
 
 		ArrayList<String> catIds = new ArrayList<String>();
 
@@ -100,9 +106,12 @@ public class TrendingResource extends ResourceHelper {
 			}
 		}
 
-		List<Location> sortedList = GetTrends(timeSpan, hashKey, user.geteMailAddress());
+		List<Location> sortedList = GetTrends(hashKey, user.geteMailAddress());
+	/*	List<Location> sortedList = GetTrends(timeSpan, hashKey, user.geteMailAddress());*/
 		List<Location> itemsToRemove = new ArrayList<Location>();
 
+		 topviewedCount = sortedList.size();
+		
 		//
 		if (myinterests) {
 
@@ -112,6 +121,8 @@ public class TrendingResource extends ResourceHelper {
 				for (String s : locCats) {
 					if (!catIds.contains(s)) {
 						itemsToRemove.add(loc);
+					}else{
+						interestCount++;
 					}
 				}
 			}
@@ -124,6 +135,9 @@ public class TrendingResource extends ResourceHelper {
 						loc.getLongitude(), latitude, longitude,
 						Integer.parseInt(radius))) {
 					itemsToRemove.add(loc);
+				}else{
+					nearbyCount++;
+					
 				}
 			}
 
@@ -141,36 +155,42 @@ public class TrendingResource extends ResourceHelper {
 			}
 
 			for (Location loc : sortedList) {
-			
+			  
 				if (!ht.containsKey(loc.getLocationId() + ":" + loc.getProviderId())) {
 					itemsToRemove.add(loc);
+				}else{
+					bookmarkCount++;
 				}
 			}
 
 		}
 
+		
 		for (Location i : itemsToRemove) {
 			sortedList.remove(i);
 		}
 
-		return Response.ok().entity(sortedList).build();
+		if(countonly){
+			counts.put("topviewedCount", topviewedCount);
+			counts.put("nearbyCount", nearbyCount);
+			counts.put("bookmarkCount", bookmarkCount);
+			counts.put("interestCount", interestCount);
+			return Response.ok().entity(counts).build();
+		}else{
+			return Response.ok().entity(sortedList).build();
+		}
+	
 
 	}
 
-	private List<Location> GetTrends(String timeSpan, String type, String eMailAddress) {
-		int timeSpanInDays = 0;
-		if (timeSpan.toLowerCase().equals("day")) {
-			timeSpanInDays = 1;
-		} else if (timeSpan.toLowerCase().equals("week")) {
-			timeSpanInDays = 7;
-		} else if (timeSpan.toLowerCase().equals("month")) {
-			timeSpanInDays = 31;
-		}
-		long oneDay = 24L * 60L * 60L * 1000L;
+	//private List<Location> GetTrends(String timeSpan, String type, String eMailAddress) {
+	private List<Location> GetTrends(String type, String eMailAddress) {
+		
+		
+		long threeHours = 3L * 60L * 60L * 1000L;
 		Date now = new Date();
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-		String timeSpanString = dateFormatter.format(now.getTime() - oneDay
-				* timeSpanInDays);
+		String timeSpanString = dateFormatter.format(now.getTime() - threeHours);
 
 		DynamoDBQueryExpression scanExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(type));

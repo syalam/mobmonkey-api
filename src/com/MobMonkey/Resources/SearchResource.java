@@ -8,11 +8,13 @@ import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -44,16 +46,24 @@ public class SearchResource extends ResourceHelper {
 
 	}
 
-	//TODO - make this into GET and use query params.. maybe even a customprovider
+	// TODO - make this into GET and use query params.. maybe even a
+	// customprovider
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	@Path("/location")
 	public Response findLocationsInJSON(Location loc,
-			@Context HttpHeaders headers) {
+			@Context HttpHeaders headers,
+			@DefaultValue("-1") @QueryParam("mediaType") String mediaType) {
 
 		// Location now has a count attribute that will look like this:
 		// "monkeys=1,images=3,videos=2,livestreaming=false"
+		boolean filter = false;
+		int mediaTypeInt = -1;
+		if (mediaType != "-1") {
+			filter = true;
+			mediaTypeInt = Integer.parseInt(mediaType);
+		}
 
 		User user = null;
 		try {
@@ -62,24 +72,50 @@ public class SearchResource extends ResourceHelper {
 
 		}
 		if (loc.getLatitude() != null && loc.getLongitude() != null
-				&& loc.getName() != null && loc.getRadiusInYards() != null && loc.getCategoryIds() != null) {
+				&& loc.getName() != null && loc.getRadiusInYards() != null
+				&& loc.getCategoryIds() != null) {
 			// TODO validate lat/long with regex
 			loc.setCategoryIds(loc.getCategoryIds());
-			List<Location> locations = new SearchHelper().getLocationsByGeo(
-					loc);
+			List<Location> locations = new SearchHelper()
+					.getLocationsByGeo(loc);
 
 			// Populate the counts!
-			locations = new SearchHelper().PopulateCounts(locations, user.geteMailAddress());
-			
-			//If we have a user, check to see if these locations are bookmarked
-			if (user != null) {
-				List<Location> bookmarkedLocations = this.AssignBookmarks(
-						locations, user.geteMailAddress());
+			locations = new SearchHelper().PopulateCounts(locations,
+					user.geteMailAddress());
 
-				return Response.ok().entity(bookmarkedLocations).build();
-			} else {
-				return Response.ok().entity(locations).build();
+			List<Integer> itemsToRemove = new ArrayList<Integer>();
+			if (filter) {
+				int count = 0;
+				for (Location location : locations) {
+
+					if (mediaTypeInt == 1) { // image
+						if (location.getImages() == 0) {
+							itemsToRemove.add(count);
+						}
+					}
+
+					if (mediaTypeInt == 2) { // video
+						if (location.getVideos() == 0) {
+							itemsToRemove.add(count);
+						}
+					}
+					if (mediaTypeInt == 3) { // livestreaming
+						if (location.getLivestreaming() == 0) {
+							itemsToRemove.add(count);
+						}
+					}
+					count++;
+				}
+
 			}
+			for(int i : itemsToRemove){
+				locations.remove(i);
+			}
+			
+			List<Location> bookmarkedLocations = this.AssignBookmarks(
+					locations, user.geteMailAddress());
+
+			return Response.ok().entity(bookmarkedLocations).build();
 		}
 		if (loc.getLocality() != null && loc.getRegion() != null
 				&& loc.getPostcode() != null && loc.getName() != null) {
@@ -108,8 +144,8 @@ public class SearchResource extends ResourceHelper {
 			if (loc.getLatitude() != null && loc.getLongitude() != null
 					&& loc.getName() != null) {
 				// TODO validate lat/long with regex
-				List<Location> locList = new SearchHelper().getLocationsByGeo(
-						loc);
+				List<Location> locList = new SearchHelper()
+						.getLocationsByGeo(loc);
 				locations.addAll(locList);
 
 			}
@@ -240,16 +276,20 @@ public class SearchResource extends ResourceHelper {
 
 	}
 
-	
-/*	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	@Path("/category")
-	public Response findLocationsInJSON(Location loc,
-			@Context HttpHeaders headers) {
-		
-	}*/
-	
+	/*
+	 * @POST
+	 * 
+	 * @Consumes(MediaType.APPLICATION_JSON)
+	 * 
+	 * @Produces(MediaType.APPLICATION_JSON)
+	 * 
+	 * @Path("/category") public Response findLocationsInJSON(Location loc,
+	 * 
+	 * @Context HttpHeaders headers) {
+	 * 
+	 * }
+	 */
+
 	private List<Location> AssignBookmarks(List<Location> locations,
 			String eMailAddress) {
 		List<Location> bookmarks = new BookmarkResource()
@@ -267,5 +307,4 @@ public class SearchResource extends ResourceHelper {
 		return locations;
 	}
 
-	
 }

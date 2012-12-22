@@ -12,6 +12,10 @@
       <name>JBoss.org Maven repository</name>
       <url>https://repository.jboss.org/nexus/content/groups/public</url>
     </repository>  
+    <repository>
+  	<id>xuggle repo</id>
+   <url>http://xuggle.googlecode.com/svn/trunk/repo/share/java/</url>
+  </repository>
     </repositories>
   <build>
     <sourceDirectory>src</sourceDirectory>
@@ -35,6 +39,11 @@
     </plugins>
   </build>
   <dependencies>
+      <dependency>
+   <groupId>xuggle</groupId>
+   <artifactId>xuggle-xuggler</artifactId>
+   <version>5.4</version>
+  </dependency>
   	<dependency>
   		<groupId>com.factual</groupId>
   		<artifactId>factual-java-driver</artifactId>

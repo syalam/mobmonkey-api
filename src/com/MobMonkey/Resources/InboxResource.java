@@ -65,6 +65,20 @@ public class InboxResource extends ResourceHelper {
 
 	}
 
+	@GET
+	@Path("/counts")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getCountsInJSON(@Context HttpHeaders headers) {
+		// TODO answered requests
+
+		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
+				.toLowerCase();
+		Map<String, Integer> results = this.getCounts(eMailAddress);
+		
+		return Response.ok().entity(results).build();
+
+	}
+
 	public List<RequestMedia> getRequests(String type, String eMailAddress) {
 		List<RequestMedia> results = new ArrayList<RequestMedia>();
 
@@ -95,11 +109,12 @@ public class InboxResource extends ResourceHelper {
 							* 60000);
 					if (now.getTime() > expiryDate.getTime()) {
 						rm.setExpired(true);
+						// results.add(rm);
 					} else {
 						rm.setExpired(false);
+						results.add(rm);
 					}
 
-					results.add(rm);
 				}
 			}
 
@@ -203,6 +218,122 @@ public class InboxResource extends ResourceHelper {
 		return results;
 	}
 
+	public HashMap<String, Integer> getCounts(String eMailAddress) {
+		HashMap<String, Integer> results = new HashMap<String, Integer>();
+
+		// TODO add recurring requests to this list
+		// ALSO ADD FILTERING!!!!!!!!!!!!
+
+		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+				new AttributeValue().withS(eMailAddress));
+
+		PaginatedQueryList<RequestMedia> openRequests = super.mapper().query(
+				RequestMedia.class, queryExpression);
+
+		HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
+		for (RequestMedia rm : openRequests) {
+			unsorted.put(rm, rm.getScheduleDate().getTime());
+
+		}
+		int openCount = 0;
+
+		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
+			// check to see if request is fulfilled
+			RequestMedia rm = entry.getKey();
+			if (!rm.isRequestFulfilled()) {
+				Date now = new Date();
+				Date expiryDate = new Date();
+				int duration = rm.getDuration(); // in minutes
+				expiryDate.setTime(rm.getRequestDate().getTime() + duration
+						* 60000);
+				if (now.getTime() > expiryDate.getTime()) {
+					rm.setExpired(true);
+					// results.add(rm);
+				} else {
+
+					openCount++;
+				}
+
+			}
+		}
+		results.put("openrequests", openCount);
+
+		int assignedCount = 0;
+
+		queryExpression = new DynamoDBQueryExpression(
+				new AttributeValue().withS(eMailAddress));
+		PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
+				.query(AssignedRequest.class, queryExpression);
+
+		HashMap<AssignedRequest, Long> unsortedAssigned = new HashMap<AssignedRequest, Long>();
+		for (AssignedRequest rm : assignedToMe) {
+			unsortedAssigned.put(rm, rm.getAssignedDate().getTime());
+
+		}
+
+		for (Entry<AssignedRequest, Long> entry : entriesSortedByValues(unsortedAssigned)) {
+			AssignedRequest assReq = entry.getKey();
+			switch (assReq.getRequestType()) {
+			case 0:
+				RequestMedia rm = super.mapper().load(RequestMedia.class,
+						assReq.getRequestorEmail(), assReq.getRequestId());
+				assReq.setNameOfLocation(rm.getNameOfLocation());
+				assignedCount++;
+				break;
+			case 1:
+				// TODO convert rrm to a RequestMedia and add it to results
+				RecurringRequestMedia rrm = super.mapper()
+						.load(RecurringRequestMedia.class,
+								assReq.getRequestorEmail());
+				assReq.setNameOfLocation(rrm.getNameOfLocation());
+				break;
+			}
+
+		}
+
+		results.put("assignedrequests", assignedCount);
+
+		int fulfilledCount = 0;
+
+		// TODO add recurring requests to this list
+		// ALSO ADD FILTERING!!!!!!!!!!!!
+		long threeDaysAgo = (new Date()).getTime()
+				- (3L * 24L * 60L * 60L * 1000L);
+		queryExpression = new DynamoDBQueryExpression(
+				new AttributeValue().withS(eMailAddress));
+
+		openRequests = super.mapper()
+				.query(RequestMedia.class, queryExpression);
+
+		HashMap<RequestMedia, Long> unsortedMedia = new HashMap<RequestMedia, Long>();
+		for (RequestMedia rm : openRequests) {
+			if (rm.isRequestFulfilled()
+					&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
+				unsortedMedia.put(rm, rm.getScheduleDate().getTime());
+			}
+		}
+
+		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsortedMedia)) {
+			// check to see if request is fulfilled
+			RequestMedia rm = entry.getKey();
+
+			/*
+			 * if (rm.getProviderId() != null && rm.getLocationId() != null) {
+			 * rm.setNameOfLocation(new Locator().reverseLookUp(
+			 * rm.getProviderId(), rm.getLocationId()).getName()); }
+			 */
+
+			if (rm.isRequestFulfilled()) {
+
+				fulfilledCount++;
+
+			}
+		}
+		results.put("fulfilledCount", fulfilledCount);
+
+		return results;
+	}
+
 	private String getMediaType(int typeId) {
 		if (typeId == 1)
 			return "image";
@@ -230,27 +361,25 @@ public class InboxResource extends ResourceHelper {
 				.query(AssignedRequest.class, queryExpression);
 
 		for (AssignedRequest assReq : assignedToMe) {
-			switch (assReq.getRequestType()) {
-			case 0:
-				RequestMedia rm = super.mapper().load(RequestMedia.class,
-						assReq.getRequestorEmail(), assReq.getRequestId());
-				try {
-					assReq.setNameOfLocation(new Locator().reverseLookUp(
-							rm.getProviderId(), rm.getLocationId()).getName());
-
+			if (assReq.getExpiryDate().getTime() < new Date().getTime()) {
+				super.mapper().delete(assReq);
+			} else {
+				switch (assReq.getRequestType()) {
+				case 0:
+					RequestMedia rm = super.mapper().load(RequestMedia.class,
+							assReq.getRequestorEmail(), assReq.getRequestId());
+					assReq.setNameOfLocation(rm.getNameOfLocation());
 					results.add(assReq);
-				} catch (Exception exc) {
 
+					break;
+				case 1:
+					RecurringRequestMedia rrm = super.mapper().load(
+							RecurringRequestMedia.class,
+							assReq.getRequestorEmail());
+					assReq.setNameOfLocation(rrm.getNameOfLocation());
+					results.add(assReq);
+					break;
 				}
-				break;
-			case 1:
-				RecurringRequestMedia rrm = super.mapper()
-						.load(RecurringRequestMedia.class,
-								assReq.getRequestorEmail());
-				assReq.setNameOfLocation(new Locator().reverseLookUp(
-						rrm.getProviderId(), rrm.getLocationId()).getName());
-				results.add(assReq);
-				break;
 			}
 
 		}

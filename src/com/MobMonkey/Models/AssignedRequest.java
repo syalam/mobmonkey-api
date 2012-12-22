@@ -23,6 +23,8 @@ public class AssignedRequest {
 	private String nameOfLocation;
 	private String locationId;
 	private String providerId;
+	private String longitude;
+	private String latitude;
 	
 	
 
@@ -138,5 +140,22 @@ public class AssignedRequest {
 
 	public void setProviderId(String providerId) {
 		this.providerId = providerId;
+	}
+
+	@DynamoDBAttribute
+	public String getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(String longitude) {
+		this.longitude = longitude;
+	}
+	@DynamoDBAttribute
+	public String getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(String latitude) {
+		this.latitude = latitude;
 	}
 }

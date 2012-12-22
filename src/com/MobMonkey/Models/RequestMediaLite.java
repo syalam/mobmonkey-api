@@ -14,6 +14,8 @@ public class RequestMediaLite {
 	private Date expiryDate;
 	private String providerId;
 	private String locationId;
+	private String longitude;
+	private String latitude;
 	@JsonIgnore private String requestorEmail;
 	
 	public RequestMediaLite()
@@ -91,5 +93,21 @@ public class RequestMediaLite {
 
 	public void setLocationId(String locationId) {
 		this.locationId = locationId;
+	}
+
+	public String getLongitude() {
+		return longitude;
+	}
+
+	public void setLongitude(String longitude) {
+		this.longitude = longitude;
+	}
+
+	public String getLatitude() {
+		return latitude;
+	}
+
+	public void setLatitude(String latitude) {
+		this.latitude = latitude;
 	}
 }

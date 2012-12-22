@@ -18,6 +18,7 @@ import android.location.Location;
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Helpers.MobMonkeyCache;
+import com.MobMonkey.Helpers.NotificationHelper;
 import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Device;
@@ -90,26 +91,14 @@ public class CheckInResource extends ResourceHelper {
 		for (RequestMediaLite req : reqsNearBy) {
 			if (!req.getRequestorEmail().toLowerCase()
 					.equals(eMailAddress.toLowerCase())) {
-				AssignedRequest assReq = new AssignedRequest();
-				assReq.seteMailAddress(eMailAddress);
-				assReq.setRequestId(req.getRequestId());
-				assReq.setMediaType(req.getMediaType());
-				assReq.setRequestType(req.getRequestType());
-				assReq.setAssignedDate(new Date());
-				assReq.setMessage(req.getMessage());
-				assReq.setExpiryDate(req.getExpiryDate());
-				assReq.setRequestorEmail(req.getRequestorEmail());
-				assReq.setNameOfLocation(req.getLocationName());
-				assReq.setProviderId(req.getProviderId());
-				assReq.setLocationId(req.getLocationId());
-				super.mapper().save(assReq);
+				AssignRequest(eMailAddress, req);
 			}
 		}
 		try {
 			// Need to update our cache
 
 			Object o = super.getFromCache("CheckInData");
-		
+
 			if (o != null) {
 				int count = 0;
 				try {
@@ -139,5 +128,31 @@ public class CheckInResource extends ResourceHelper {
 		}
 		return Response.ok().entity(reqsNearBy).build();
 
+	}
+
+	public void AssignRequest(String eMailAddress, RequestMediaLite req) {
+		AssignedRequest assReq = new AssignedRequest();
+		assReq.seteMailAddress(eMailAddress);
+		assReq.setRequestId(req.getRequestId());
+		assReq.setMediaType(req.getMediaType());
+		assReq.setRequestType(req.getRequestType());
+		assReq.setAssignedDate(new Date());
+		assReq.setMessage(req.getMessage());
+		assReq.setExpiryDate(req.getExpiryDate());
+		assReq.setRequestorEmail(req.getRequestorEmail());
+		assReq.setNameOfLocation(req.getLocationName());
+		assReq.setProviderId(req.getProviderId());
+		assReq.setLocationId(req.getLocationId());
+		assReq.setLatitude(req.getLatitude());
+		assReq.setLongitude(req.getLongitude());
+
+		super.mapper().save(assReq);
+		NotificationHelper noteHelper = new NotificationHelper();
+		String[] deviceIds = noteHelper.getUserDevices(eMailAddress);
+		ApplePNSHelper.send(
+				deviceIds,
+				"You've been assigned a request for a(n) "
+						+ super.MediaType(req.getMediaType()) + " at "
+						+ req.getLocationName() + ".");
 	}
 }

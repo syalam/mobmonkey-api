@@ -8,9 +8,11 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import com.MobMonkey.Helpers.Locator;
+import com.MobMonkey.Helpers.NotificationHelper;
 import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
+import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.Trending;
 import com.MobMonkey.Models.User;
@@ -38,6 +40,58 @@ public class RequestMediaResource extends ResourceHelper {
 
 	}
 
+	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response deleteRequestMediaInJSON(@Context HttpHeaders headers,
+			@QueryParam("requestId") String requestId,
+			@QueryParam("isRecurring") boolean isRecurring) {
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+
+		if (isRecurring) {
+			try {
+				RecurringRequestMedia rm = super.mapper().load(
+						RecurringRequestMedia.class, username, requestId);
+				super.mapper().delete(rm);
+				return Response
+						.ok()
+						.entity(new Status("Success", "Successfully deleted",
+								requestId)).build();
+			} catch (Exception exc) {
+				return Response
+						.status(500)
+						.entity(new Status("Failure",
+								"Unable to find ID in database", requestId))
+						.build();
+			}
+		} else if (!isRecurring) {
+			try {
+				RequestMedia rm = super.mapper().load(RequestMedia.class,
+						username, requestId);
+				super.mapper().delete(rm);
+				return Response
+						.ok()
+						.entity(new Status("Success", "Successfully deleted",
+								requestId)).build();
+			} catch (Exception exc) {
+				return Response
+						.status(500)
+						.entity(new Status("Failure",
+								"Unable to find ID in database", requestId))
+						.build();
+			}
+		} else {
+
+			return Response
+					.status(500)
+					.entity(new Status(
+							"Failure",
+							"Please specify whether or not the request is recurring or non-recurring",
+							"")).build();
+		}
+
+	}
+
 	@POST
 	@Path("/{mediaType}")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -58,6 +112,8 @@ public class RequestMediaResource extends ResourceHelper {
 			mediaType = 2;
 		if (mediaTypeS.trim().toLowerCase().equals("livestreaming"))
 			mediaType = 3;
+		if (mediaTypeS.trim().toLowerCase().equals("text"))
+			mediaType = 4;
 
 		// Get username & PartnerId from header
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
@@ -88,7 +144,7 @@ public class RequestMediaResource extends ResourceHelper {
 			if (coords.getLatitude() != null && coords.getLongitude() != null) {
 				r.setLatitude(coords.getLatitude());
 				r.setLongitude(coords.getLongitude());
-				
+
 				// lets set the name of the location
 				r.setNameOfLocation(coords.getName());
 
@@ -151,6 +207,16 @@ public class RequestMediaResource extends ResourceHelper {
 		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
 		super.mapper().save(user);
 
+		// Check to see if there are users by and assign them the request
+		List<String> eMailAddresses = new Locator().findMonkeysNearBy(
+				r.getLatitude(), r.getLongitude(), r.getRadiusInYards());
+		CheckInResource cir = new CheckInResource();
+		for (String eMail : eMailAddresses) {
+			if (!eMail.toLowerCase().equals(r.geteMailAddress())) {
+				cir.AssignRequest(eMail, convertToRML(r));
+			}
+		}
+
 		// Trending metric!
 		Trending t = new Trending();
 		t.setLocationId(r.getLocationId());
@@ -167,8 +233,32 @@ public class RequestMediaResource extends ResourceHelper {
 			status.setDescription("DisplayAd=true");
 		else
 			status.setDescription("DisplayAd=false");
-	
+
 		return Response.ok().entity(status).build();
+
+	}
+
+	public RequestMediaLite convertToRML(RequestMedia r) {
+
+		Date expiryDate = new Date();
+		expiryDate.setTime(r.getScheduleDate().getTime()
+				+ (r.getDuration() * 60L * 1000L));
+
+		RequestMediaLite newReq = new RequestMediaLite();
+		newReq.setRequestId(r.getRequestId());
+		newReq.setMessage(r.getMessage());
+		newReq.setMediaType(r.getMediaType());
+		newReq.setExpiryDate(expiryDate);
+		newReq.setRequestorEmail(r.geteMailAddress());
+		newReq.setLocationId(r.getLocationId());
+		newReq.setProviderId(r.getProviderId());
+		newReq.setLatitude(r.getLatitude());
+		newReq.setLongitude(r.getLongitude());
+		if (r.isRecurring())
+			newReq.setRequestType(1);
+		else
+			newReq.setRequestType(0);
+		return newReq;
 
 	}
 

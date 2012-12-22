@@ -117,4 +117,19 @@ public class ResourceHelper {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
+	
+	public String MediaType(int i){
+		if(i == 1){
+			return "image";
+		}
+		if(i == 2){
+			return "video";
+		}
+		if(i == 3){
+			return "live streaming";
+		}else{
+			
+			return "unknown";
+		}
+	}
 }

@@ -18,6 +18,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 
 import com.MobMonkey.Helpers.ApplePNSHelper;
+import com.MobMonkey.Helpers.NotificationHelper;
 import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.LocationMedia;
@@ -270,7 +271,12 @@ public class MediaResource extends ResourceHelper {
 		} else if (requestType.equals("livestreaming")) {
 			media.setMediaType(3);
 			media.setRequestType("0");
-		} else {
+		}else if(requestType.equals("text")){
+			
+	
+		}
+		
+		else {
 			return Response
 					.status(500)
 					.entity(new Status("Error", requestType
@@ -301,7 +307,8 @@ public class MediaResource extends ResourceHelper {
 
 		// Send notification to apple device
 
-		String[] deviceIds = getUserDevices(originalRequestor);
+		NotificationHelper noteHelper = new NotificationHelper();
+		String[] deviceIds = noteHelper.getUserDevices(originalRequestor);
 		ApplePNSHelper.send(deviceIds, media.getMediaURL());
 
 		return Response
@@ -516,19 +523,5 @@ public class MediaResource extends ResourceHelper {
 		return results;
 	}
 
-	private String[] getUserDevices(String origRequestor) {
-		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(origRequestor));
-
-		List<Device> scanResult = super.mapper().query(Device.class,
-				queryExpression);
-
-		String[] deviceIds = new String[scanResult.size()];
-
-		for (int i = 0; i < deviceIds.length; i++) {
-			deviceIds[i] = scanResult.get(i).getDeviceId().toString();
-		}
-
-		return deviceIds;
-	}
+	
 }
