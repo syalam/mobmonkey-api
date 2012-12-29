@@ -271,11 +271,11 @@ public class MediaResource extends ResourceHelper {
 		} else if (requestType.equals("livestreaming")) {
 			media.setMediaType(3);
 			media.setRequestType("0");
-		}else if(requestType.equals("text")){
-			
-	
+		} else if (requestType.equals("text")) {
+			media.setMediaType(4);
+
 		}
-		
+
 		else {
 			return Response
 					.status(500)
@@ -289,14 +289,15 @@ public class MediaResource extends ResourceHelper {
 				259200, media);
 
 		// Add to the LocationMedia table for others to retrieve
-		LocationMedia lm = new LocationMedia();
-		lm.setLocationProviderId(locationId + ":" + providerId);
-		lm.setUploadedDate(media.getUploadedDate());
-		lm.setRequestId(media.getRequestId());
-		lm.setMediaId(media.getMediaId());
+		if (media.getMediaType() != 4) {
+			LocationMedia lm = new LocationMedia();
+			lm.setLocationProviderId(locationId + ":" + providerId);
+			lm.setUploadedDate(media.getUploadedDate());
+			lm.setRequestId(media.getRequestId());
+			lm.setMediaId(media.getMediaId());
 
-		super.mapper().save(lm);
-
+			super.mapper().save(lm);
+		}
 		// Trending
 		Trending t = new Trending();
 		t.setType("Media");
@@ -308,8 +309,13 @@ public class MediaResource extends ResourceHelper {
 		// Send notification to apple device
 
 		NotificationHelper noteHelper = new NotificationHelper();
-		String[] deviceIds = noteHelper.getUserDevices(originalRequestor);
-		ApplePNSHelper.send(deviceIds, media.getMediaURL());
+		String[] deviceIds = noteHelper.getUserDevices(media
+				.getOriginalRequestor());
+
+		ApplePNSHelper.send(deviceIds,
+				"Your " + getMediaType(media.getMediaType()) + " request at "
+						+ reqDetails.get("nameOfLocation")
+						+ " has been fulfilled.");
 
 		return Response
 				.status(201)
@@ -318,14 +324,15 @@ public class MediaResource extends ResourceHelper {
 				.build();
 
 	}
-	
-	@POST 
+
+	@POST
 	@Path("/testAPNS")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response testAPNSInJSON(@QueryParam("deviceId") String deviceId){
+	public Response testAPNSInJSON(@QueryParam("deviceId") String deviceId) {
 		String[] deviceIds = new String[1];
 		deviceIds[0] = deviceId;
-		String result = ApplePNSHelper.testSend(deviceIds, "This is a test. Sent on: " + (new Date()).toString());
+		String result = ApplePNSHelper.testSend(deviceIds,
+				"This is a test. Sent on: " + (new Date()).toString());
 		return Response.ok().entity("Result: " + result).build();
 	}
 
@@ -372,6 +379,7 @@ public class MediaResource extends ResourceHelper {
 			ml.setAccepted(m.isAccepted());
 			ml.setExpiryDate(getExpiryDate(m.getUploadedDate().getTime()));
 			ml.setType(getMediaType(m.getMediaType()));
+			ml.setUploadedDate(m.getUploadedDate());
 			if (m.getMediaType() == 3) {
 				ml.setExpiryDate(null);
 			}
@@ -391,6 +399,8 @@ public class MediaResource extends ResourceHelper {
 			return "video";
 		if (typeId == 3)
 			return "livestreaming";
+		if (typeId == 4)
+			return "text";
 		else
 			return "unknown";
 	}
@@ -449,14 +459,12 @@ public class MediaResource extends ResourceHelper {
 		putObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
 		super.s3cli().putObject(putObjectRequest);
 		String url = "";
-	
 
 		if (m.getMediaType() == 1) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
 		} else if (m.getMediaType() == 2) {
-			url = "https://s3.amazonaws.com/" + bucket + "/"
-					+ mediaFileName;
+			url = "https://s3.amazonaws.com/" + bucket + "/" + mediaFileName;
 
 		}
 
@@ -469,6 +477,7 @@ public class MediaResource extends ResourceHelper {
 		Map<String, String> results = new HashMap<String, String>();
 		String locationId = "";
 		String providerId = "";
+		String nameOfLocation = "";
 
 		AssignedRequest assReq = new AssignedRequest();
 		if (!m.getRequestType().equals("3")) {
@@ -496,6 +505,7 @@ public class MediaResource extends ResourceHelper {
 			// TODO rrm.setMediaUrl
 			locationId = rrm.getLocationId();
 			providerId = rrm.getProviderId();
+			nameOfLocation = rrm.getNameOfLocation();
 			super.mapper().save(rrm);
 		} else if (m.getRequestType().equals("0")) {
 			RequestMedia rm = super.mapper().load(RequestMedia.class,
@@ -512,6 +522,7 @@ public class MediaResource extends ResourceHelper {
 			rm.setMediaUrl(m.getMediaURL());
 			locationId = rm.getLocationId();
 			providerId = rm.getProviderId();
+			nameOfLocation = rm.getNameOfLocation();
 			super.mapper().save(rm);
 		}
 
@@ -520,8 +531,8 @@ public class MediaResource extends ResourceHelper {
 		results.put("origRequestor", origRequestor);
 		results.put("locationId", locationId);
 		results.put("providerId", providerId);
+		results.put("nameOfLocation", nameOfLocation);
 		return results;
 	}
 
-	
 }

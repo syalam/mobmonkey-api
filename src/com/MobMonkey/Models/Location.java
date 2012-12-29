@@ -39,7 +39,9 @@ public class Location implements Serializable {
 	private int videos;
 	private int livestreaming;
 	private int rank;
+	private String message;
 	private List<RequestMedia> requests;
+	
 	
 	public Location() {
 	}
@@ -252,6 +254,15 @@ public class Location implements Serializable {
 
 	public void setRank(int rank) {
 		this.rank = rank;
+	}
+
+	@DynamoDBIgnore
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
 	}
 
 	@DynamoDBIgnore

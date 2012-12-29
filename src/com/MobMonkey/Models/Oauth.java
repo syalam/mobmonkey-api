@@ -9,7 +9,6 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 public class Oauth {
 	private String eMailAddress;
 	private String oAuthToken;
-	private String oAuthTokenSecret;
 	private String oAuthProvider;
 	private boolean eMailVerified;
 	
@@ -33,15 +32,6 @@ public class Oauth {
 
 	public void setoAuthToken(String oauthToken) {
 		oAuthToken = oauthToken;
-	}
-
-	@DynamoDBAttribute
-	public String getoAuthTokenSecret() {
-		return oAuthTokenSecret;
-	}
-
-	public void setoAuthTokenSecret(String oauthTokenSecret) {
-		oAuthTokenSecret = oauthTokenSecret;
 	}
 
 	@DynamoDBAttribute

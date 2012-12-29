@@ -119,10 +119,10 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		try {
 			// Before with auth the user using email and pass, lets see if we
 			// have an oauth header
-			if (null != oauthToken || null != oauthTokenSecret) {
+			if (null != oauthToken) {
 				Oauth ou = mapper.load(Oauth.class, eMailAddress, oauthToken);
 				
-				if(ou.getoAuthTokenSecret().equals(oauthTokenSecret)){
+				if(ou != null){
 					return true;  // we have a valid oauthtoken !!
 				}
 				

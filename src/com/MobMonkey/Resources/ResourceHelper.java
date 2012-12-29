@@ -127,8 +127,11 @@ public class ResourceHelper {
 		}
 		if(i == 3){
 			return "live streaming";
-		}else{
-			
+		}
+		if(i == 4){
+			return "text";
+		}
+		else{	
 			return "unknown";
 		}
 	}

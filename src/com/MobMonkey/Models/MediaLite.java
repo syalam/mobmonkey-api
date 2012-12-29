@@ -8,6 +8,7 @@ public class MediaLite {
 	private String mediaId;
 	private String requestId;
 	private Date expiryDate;
+	private Date uploadedDate;
 	private String type;
 	private String contentType;
 	private boolean accepted;
@@ -70,6 +71,14 @@ public class MediaLite {
 
 	public void setAccepted(boolean accepted) {
 		this.accepted = accepted;
+	}
+
+	public Date getUploadedDate() {
+		return uploadedDate;
+	}
+
+	public void setUploadedDate(Date uploadedDate) {
+		this.uploadedDate = uploadedDate;
 	}
 	
 }

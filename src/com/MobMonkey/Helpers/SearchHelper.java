@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import android.text.style.SuperscriptSpan;
 
@@ -14,6 +15,7 @@ import com.MobMonkey.Models.Bookmark;
 import com.MobMonkey.Models.CheckIn;
 import com.MobMonkey.Models.Location;
 import com.MobMonkey.Models.LocationMedia;
+import com.MobMonkey.Models.LocationMessage;
 import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Resources.ResourceHelper;
@@ -33,16 +35,48 @@ public final class SearchHelper extends ResourceHelper {
 		super();
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Location> getLocationsByGeo(Location loc) {
 		// TODO add limiting, and paging
+		List<Location> tmp = new ArrayList<Location>();
 		List<Location> results = new ArrayList<Location>();
 
 		FactualHelper factual = new FactualHelper();
 		List<Location> factualLocs = factual.GeoFilter(loc);
 		List<Location> mobMonkeyLocs = getMobMonkeyLocationsByGeo(loc);
 
-		results.addAll(mobMonkeyLocs);
-		results.addAll(factualLocs);
+		tmp.addAll(mobMonkeyLocs);
+		tmp.addAll(factualLocs);
+
+		for (Location location : tmp) {
+			HashMap<String, LocationMessage> map = new HashMap<String, LocationMessage>();
+			String key = location.getLocationId() + ":"
+					+ location.getProviderId();
+			Object o = super.getFromCache("LOCMSG" + key);
+			if (o != null) {
+				map = (HashMap<String, LocationMessage>) o;
+			} else {
+
+				DynamoDBQueryExpression scanExpression = new DynamoDBQueryExpression(
+						new AttributeValue().withS(key));
+				PaginatedQueryList<LocationMessage> locMsgs = super.mapper()
+						.query(LocationMessage.class, scanExpression);
+				for (LocationMessage locmsg : locMsgs) {
+					map.put(locmsg.getMessageId(), locmsg);
+				}
+				super.storeInCache("LOCMSG" + key, 259200, map);
+
+			}
+			if (map.size() > 0) {
+				Random random = new Random();
+				List<String> keys = new ArrayList<String>(map.keySet());
+				String randomKey = keys.get(random.nextInt(keys.size()));
+				LocationMessage value = map.get(randomKey);
+				location.setMessage(value.getMessage());
+			}
+			results.add(location);
+		}
+
 		return results;
 	}
 
@@ -59,6 +93,7 @@ public final class SearchHelper extends ResourceHelper {
 					location.getLongitude(), loc.getLatitude(),
 					loc.getLongitude(),
 					Integer.parseInt(loc.getRadiusInYards()))) {
+
 				results.add(location);
 			}
 		}
@@ -70,7 +105,8 @@ public final class SearchHelper extends ResourceHelper {
 		return factual.AddressFilter(loc);
 	}
 
-	public List<Location> PopulateCounts(List<Location> locations, String eMailAddress) {
+	public List<Location> PopulateCounts(List<Location> locations,
+			String eMailAddress) {
 		// "monkeys=1,images=3,videos=2,livestreaming=false"
 
 		for (Location loc : locations) {
@@ -87,23 +123,25 @@ public final class SearchHelper extends ResourceHelper {
 			loc.setImages(media.get("images"));
 			loc.setVideos(media.get("videos"));
 			loc.setLivestreaming(media.get("livestreaming"));
-		
-			if(!eMailAddress.equals("")){
-				
+
+			if (!eMailAddress.equals("")) {
+
 				DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 						new AttributeValue().withS(eMailAddress));
-				
-				queryExpression.setRangeKeyCondition(new Condition().withComparisonOperator(ComparisonOperator.EQ)
-						.withAttributeValueList(new AttributeValue().withS(loc.getLocationId() + ":" + loc.getProviderId())));
-				if(super.mapper().count(Bookmark.class, queryExpression) > 0){
+
+				queryExpression.setRangeKeyCondition(new Condition()
+						.withComparisonOperator(ComparisonOperator.EQ)
+						.withAttributeValueList(
+								new AttributeValue().withS(loc.getLocationId()
+										+ ":" + loc.getProviderId())));
+				if (super.mapper().count(Bookmark.class, queryExpression) > 0) {
 					loc.setBookmark(true);
-				}else{
+				} else {
 					loc.setBookmark(false);
 				}
-				
+
 			}
-		
-		
+
 		}
 
 		return locations;

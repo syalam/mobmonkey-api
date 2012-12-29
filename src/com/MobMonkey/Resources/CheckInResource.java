@@ -155,4 +155,6 @@ public class CheckInResource extends ResourceHelper {
 						+ super.MediaType(req.getMediaType()) + " at "
 						+ req.getLocationName() + ".");
 	}
+	
+	
 }

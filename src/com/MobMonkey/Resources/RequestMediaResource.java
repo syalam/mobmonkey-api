@@ -254,6 +254,8 @@ public class RequestMediaResource extends ResourceHelper {
 		newReq.setProviderId(r.getProviderId());
 		newReq.setLatitude(r.getLatitude());
 		newReq.setLongitude(r.getLongitude());
+		newReq.setLocationName(r.getNameOfLocation());
+		
 		if (r.isRecurring())
 			newReq.setRequestType(1);
 		else

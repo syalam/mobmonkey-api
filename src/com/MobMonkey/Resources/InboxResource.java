@@ -74,7 +74,7 @@ public class InboxResource extends ResourceHelper {
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
 				.toLowerCase();
 		Map<String, Integer> results = this.getCounts(eMailAddress);
-		
+
 		return Response.ok().entity(results).build();
 
 	}
@@ -220,7 +220,8 @@ public class InboxResource extends ResourceHelper {
 
 	public HashMap<String, Integer> getCounts(String eMailAddress) {
 		HashMap<String, Integer> results = new HashMap<String, Integer>();
-
+		long threeDaysAgo = (new Date()).getTime()
+				- (3L * 24L * 60L * 60L * 1000L);
 		// TODO add recurring requests to this list
 		// ALSO ADD FILTERING!!!!!!!!!!!!
 
@@ -247,13 +248,19 @@ public class InboxResource extends ResourceHelper {
 				expiryDate.setTime(rm.getRequestDate().getTime() + duration
 						* 60000);
 				if (now.getTime() > expiryDate.getTime()) {
-					rm.setExpired(true);
+					super.mapper().delete(rm);
 					// results.add(rm);
 				} else {
 
 					openCount++;
 				}
 
+			}else{
+				Date now = new Date();
+				if(rm.getFulfilledDate().getTime() < threeDaysAgo){
+					super.mapper().delete(rm);
+				}
+				
 			}
 		}
 		results.put("openrequests", openCount);
@@ -277,15 +284,29 @@ public class InboxResource extends ResourceHelper {
 			case 0:
 				RequestMedia rm = super.mapper().load(RequestMedia.class,
 						assReq.getRequestorEmail(), assReq.getRequestId());
-				assReq.setNameOfLocation(rm.getNameOfLocation());
-				assignedCount++;
+				if (rm == null) {
+					super.mapper().delete(assReq);
+				} else {
+					Date now = new Date();
+					if (now.getTime() > assReq.getExpiryDate().getTime()) {
+						super.mapper().delete(assReq);
+					} else {
+						assignedCount++;
+					}
+				}
+
 				break;
 			case 1:
 				// TODO convert rrm to a RequestMedia and add it to results
 				RecurringRequestMedia rrm = super.mapper()
 						.load(RecurringRequestMedia.class,
 								assReq.getRequestorEmail());
-				assReq.setNameOfLocation(rrm.getNameOfLocation());
+				if (rrm == null) {
+					super.mapper().delete(assReq);
+				} else {
+
+					assignedCount++;
+				}
 				break;
 			}
 
@@ -297,8 +318,7 @@ public class InboxResource extends ResourceHelper {
 
 		// TODO add recurring requests to this list
 		// ALSO ADD FILTERING!!!!!!!!!!!!
-		long threeDaysAgo = (new Date()).getTime()
-				- (3L * 24L * 60L * 60L * 1000L);
+		
 		queryExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(eMailAddress));
 
