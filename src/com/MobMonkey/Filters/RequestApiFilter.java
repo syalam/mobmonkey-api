@@ -70,8 +70,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
 		String oauthToken = req.getHeaderValue("OauthToken");
-		String oauthTokenSecret = req.getHeaderValue("OauthTokenSecret");
-
+		
 		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
 				.matches(".*/rest/verify.*$")) {
@@ -105,7 +104,8 @@ public class RequestApiFilter implements ContainerRequestFilter {
 				// If that's the case then we will let them through without
 				// user:pass creds.
 				if (req.getRequestUri().getPath().toLowerCase()
-						.matches(".*/rest/signup/user.*$")) {
+						.matches(".*/rest/signup/user.*$") || req.getRequestUri().getPath().toLowerCase()
+						.matches(".*/rest/signin.*$")) {
 					return true;
 				}
 

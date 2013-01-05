@@ -131,30 +131,35 @@ public class CheckInResource extends ResourceHelper {
 	}
 
 	public void AssignRequest(String eMailAddress, RequestMediaLite req) {
-		AssignedRequest assReq = new AssignedRequest();
-		assReq.seteMailAddress(eMailAddress);
-		assReq.setRequestId(req.getRequestId());
-		assReq.setMediaType(req.getMediaType());
-		assReq.setRequestType(req.getRequestType());
-		assReq.setAssignedDate(new Date());
-		assReq.setMessage(req.getMessage());
-		assReq.setExpiryDate(req.getExpiryDate());
-		assReq.setRequestorEmail(req.getRequestorEmail());
-		assReq.setNameOfLocation(req.getLocationName());
-		assReq.setProviderId(req.getProviderId());
-		assReq.setLocationId(req.getLocationId());
-		assReq.setLatitude(req.getLatitude());
-		assReq.setLongitude(req.getLongitude());
 
-		super.mapper().save(assReq);
-		NotificationHelper noteHelper = new NotificationHelper();
-		String[] deviceIds = noteHelper.getUserDevices(eMailAddress);
-		ApplePNSHelper.send(
-				deviceIds,
-				"You've been assigned a request for a(n) "
-						+ super.MediaType(req.getMediaType()) + " at "
-						+ req.getLocationName() + ".");
+		AssignedRequest assReq = super.mapper().load(AssignedRequest.class,
+				eMailAddress, req.getRequestId());
+		if (assReq == null) {
+			assReq = new AssignedRequest();
+			assReq.seteMailAddress(eMailAddress);
+			assReq.setRequestId(req.getRequestId());
+			assReq.setMediaType(req.getMediaType());
+			assReq.setRequestType(req.getRequestType());
+			assReq.setAssignedDate(new Date());
+			assReq.setMessage(req.getMessage());
+			assReq.setExpiryDate(req.getExpiryDate());
+			assReq.setRequestorEmail(req.getRequestorEmail());
+			assReq.setNameOfLocation(req.getLocationName());
+			assReq.setProviderId(req.getProviderId());
+			assReq.setLocationId(req.getLocationId());
+			assReq.setLatitude(req.getLatitude());
+			assReq.setLongitude(req.getLongitude());
+
+			super.mapper().save(assReq);
+
+			NotificationHelper noteHelper = new NotificationHelper();
+			String[] deviceIds = noteHelper.getUserDevices(eMailAddress);
+			ApplePNSHelper.send(
+					deviceIds,
+					"You've been assigned a request for a(n) "
+							+ super.MediaType(req.getMediaType()) + " at "
+							+ req.getLocationName() + ".");
+		}
 	}
-	
-	
+
 }

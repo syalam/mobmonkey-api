@@ -196,9 +196,33 @@ public class RequestMediaResource extends ResourceHelper {
 			rm.setRequestDate(now);
 			rm.setNameOfLocation(r.getNameOfLocation());
 			super.mapper().save(rm);
+			
+			//Update the cache
+			Object o = super.getFromCache("ReccuringRequestTable");
+
+			if (o != null) {
+				@SuppressWarnings("unchecked")
+				List<RecurringRequestMedia> tmp = (List<RecurringRequestMedia>) o;
+				
+				tmp.add(rm);
+				super.storeInCache("ReccuringRequestTable", 259200, tmp);
+			}
+			
+			
 		} else {
 			r.setRequestType(0);
 			super.mapper().save(r);
+			
+			//Update the cache
+			Object o = super.getFromCache("RequestTable");
+
+			if (o != null) {
+				@SuppressWarnings("unchecked")
+				List<RequestMedia> tmp = (List<RequestMedia>) o;
+				
+				tmp.add(r);
+				super.storeInCache("RequestTable", 259200, tmp);
+			}
 		}
 
 		// user officially makes a request.. lets increment his request value

@@ -47,6 +47,7 @@ public final class Locator extends ResourceHelper {
 		// 15L*24L*60L*60L*1000L = 15 days
 		// DAYL*HOURS*L*MINSL*SECSL*MILLISECSL
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
+		List<RequestMedia> scanResult = null;
 		ArrayList<RequestMediaLite> results = new ArrayList<RequestMediaLite>();
 		long rightNowPlus3Hours = (new Date()).getTime()
 				- (3L * 60L * 60L * 1000L); // subtracted 3 hours
@@ -58,29 +59,35 @@ public final class Locator extends ResourceHelper {
 		String rightNowDate = dateFormatter.format(rightNowMilli);
 
 		// This is for non-recurring media requests.
-		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-		/*
-		 * scanExpression.addFilterCondition("requestFulfilled", new Condition()
-		 * .withComparisonOperator(ComparisonOperator.EQ)
-		 * .withAttributeValueList(new AttributeValue().withS("0")));
-		 */
+		// Check cache first
+		Object o = super.getFromCache("RequestTable");
 
-		scanExpression.addFilterCondition(
-				"scheduleDate",
-				new Condition().withComparisonOperator(ComparisonOperator.GT)
-						.withAttributeValueList(
-								new AttributeValue()
-										.withS(rightNowMinus3HourDate)));
-		// If schedule date is > than rightnow - 3 hours. The request is open.
+		if (o != null) {
+			@SuppressWarnings("unchecked")
+			List<RequestMedia> tmp = (List<RequestMedia>) o;
+			scanResult = tmp;
 
-		List<RequestMedia> scanResult = super.mapper().scan(RequestMedia.class,
-				scanExpression);
+		} else {
+
+			DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+
+			scanExpression
+					.addFilterCondition(
+							"scheduleDate",
+							new Condition()
+									.withComparisonOperator(
+											ComparisonOperator.GT)
+									.withAttributeValueList(
+											new AttributeValue()
+													.withS(rightNowMinus3HourDate)));
+
+			scanResult = super.mapper()
+					.scan(RequestMedia.class, scanExpression);
+			super.storeInCache("RequestTable", 259200, scanResult);
+
+		}
 
 		for (RequestMedia req : scanResult) {
-			// TODO need to take the requests scheduled date and duration and
-			// check to see if the current time is
-			// greater than this value.. because the request is expired!
-
 			Date expiryDate = new Date();
 			expiryDate.setTime(req.getScheduleDate().getTime()
 					+ (req.getDuration() * 60L * 1000L));
@@ -127,6 +134,7 @@ public final class Locator extends ResourceHelper {
 					newReq.setProviderId(req.getProviderId());
 					newReq.setLatitude(req.getLatitude());
 					newReq.setLongitude(req.getLongitude());
+					newReq.setLocationName(req.getNameOfLocation());
 					if (req.isRecurring())
 						newReq.setRequestType(1);
 					else
@@ -138,9 +146,25 @@ public final class Locator extends ResourceHelper {
 
 		// This is for recurring requests.. let the fun begin!
 
-		DynamoDBScanExpression scanExpressionRecurring = new DynamoDBScanExpression();
-		List<RecurringRequestMedia> recurringScanResult = super.mapper().scan(
-				RecurringRequestMedia.class, scanExpressionRecurring);
+		List<RecurringRequestMedia> recurringScanResult = null;
+
+		// This is for recurring media requests.
+		// Check cache first
+		Object o2 = super.getFromCache("RecurringRequestTable");
+
+		if (o2 != null) {
+			@SuppressWarnings("unchecked")
+			List<RecurringRequestMedia> tmp2 = (List<RecurringRequestMedia>) o;
+			recurringScanResult = tmp2;
+
+		} else {
+			DynamoDBScanExpression scanExpressionRecurring = new DynamoDBScanExpression();
+			recurringScanResult = super.mapper().scan(
+					RecurringRequestMedia.class, scanExpressionRecurring);
+			super.storeInCache("RecurringRequestTable", 259200, scanResult);
+
+		}
+
 		for (RecurringRequestMedia rm : recurringScanResult) {
 
 			if (isInVicinity(rm.getLatitude(), rm.getLongitude(), latitude,
@@ -157,6 +181,9 @@ public final class Locator extends ResourceHelper {
 						newSReq.setExpiryDate((Date) result[1]);
 						newSReq.setLocationId(rm.getLocationId());
 						newSReq.setProviderId(rm.getProviderId());
+						newSReq.setLocationName(rm.getNameOfLocation());
+						newSReq.setRequestorEmail(rm.geteMailAddress());
+						
 						results.add(newSReq);
 					}
 				}
@@ -167,7 +194,8 @@ public final class Locator extends ResourceHelper {
 
 	}
 
-	public List<String> findMonkeysNearBy(String latitude, String longitude, int radiusInYards) {
+	public List<String> findMonkeysNearBy(String latitude, String longitude,
+			int radiusInYards) {
 
 		List<String> results = new ArrayList<String>();
 		Object o = super.getFromCache("CheckInData");
@@ -175,26 +203,29 @@ public final class Locator extends ResourceHelper {
 			try {
 				@SuppressWarnings("unchecked")
 				List<CheckIn> checkIn = (List<CheckIn>) o;
-				
-				for(CheckIn c : checkIn){
-					if(Locator.isInVicinity(latitude, longitude, c.getLatitude(), c.getLongitude(), radiusInYards)){
+
+				for (CheckIn c : checkIn) {
+					if (Locator.isInVicinity(latitude, longitude,
+							c.getLatitude(), c.getLongitude(), radiusInYards)) {
 						results.add(c.geteMailAddress());
 					}
 				}
-				
+
 			} catch (IllegalArgumentException e) {
 
 			}
 		} else {
 			DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
-			PaginatedScanList<CheckIn> checkIn = super.mapper().scan(CheckIn.class, scanExpression);
-			
-			for(CheckIn c : checkIn){
-				if(Locator.isInVicinity(latitude, longitude, c.getLatitude(), c.getLongitude(), radiusInYards)){
+			PaginatedScanList<CheckIn> checkIn = super.mapper().scan(
+					CheckIn.class, scanExpression);
+
+			for (CheckIn c : checkIn) {
+				if (Locator.isInVicinity(latitude, longitude, c.getLatitude(),
+						c.getLongitude(), radiusInYards)) {
 					results.add(c.geteMailAddress());
 				}
 			}
-			
+
 			super.storeInCache("CheckInData", 259200, (List<CheckIn>) checkIn);
 		}
 
@@ -208,7 +239,7 @@ public final class Locator extends ResourceHelper {
 		long rightNow = now.getTime() / 1000;
 		long scheduleDate = rm.getScheduleDate().getTime() / 1000;
 		long frequencyInMS = rm.getFrequencyInMS();
-		long duration = rm.getDuration();
+		long duration = rm.getDuration() * 60000; // convert duration to milliseconds
 
 		double x = Math.abs((scheduleDate - rightNow) % frequencyInMS);
 		double y = ((x * 1000) / frequencyInMS);

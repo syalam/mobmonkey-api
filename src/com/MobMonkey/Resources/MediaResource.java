@@ -70,6 +70,7 @@ public class MediaResource extends ResourceHelper {
 			ml.setMediaURL(m.getMediaURL());
 			ml.setRequestId(m.getRequestId());
 			ml.setType(getMediaType(m.getMediaType()));
+			ml.setText(m.getText());
 
 			return Response.ok().entity(ml).build();
 		} catch (Exception exc) {
@@ -317,10 +318,17 @@ public class MediaResource extends ResourceHelper {
 						+ reqDetails.get("nameOfLocation")
 						+ " has been fulfilled.");
 
+		String resp = "";
+		if(media.getMediaType() == 4){
+			resp = media.getText();
+		}else{
+			resp = media.getMediaURL();
+		}
+		
 		return Response
 				.status(201)
 				.entity(new Status("Success", "Successfully uploaded "
-						+ requestType + ": " + media.getMediaURL(), ""))
+						+ requestType + ": " + resp, ""))
 				.build();
 
 	}
@@ -495,18 +503,30 @@ public class MediaResource extends ResourceHelper {
 					RecurringRequestMedia.class, origRequestor,
 					m.getRequestId());
 			if (rrm.equals(null)) {
-				results.put("Error", "Request is no longer assigned to user");
+				results.put("Error", "Request does not exist, removing assignment");
 				super.mapper().delete(assReq);
 				return results;
 			}
 			rrm.setRequestId(m.getRequestId());
 			rrm.setRequestFulfilled(true);
 			rrm.setFulfilledDate(m.getUploadedDate());
-			// TODO rrm.setMediaUrl
 			locationId = rrm.getLocationId();
 			providerId = rrm.getProviderId();
 			nameOfLocation = rrm.getNameOfLocation();
+			
 			super.mapper().save(rrm);
+			
+			//Update the cache
+			Object o = super.getFromCache("RecurringRequestTable");
+
+			if (o != null) {
+				@SuppressWarnings("unchecked")
+				List<RecurringRequestMedia> tmp = (List<RecurringRequestMedia>) o;
+				
+				tmp.add(rrm);
+				super.storeInCache("RecurringRequestTable", 259200, tmp);
+			}
+			
 		} else if (m.getRequestType().equals("0")) {
 			RequestMedia rm = super.mapper().load(RequestMedia.class,
 					origRequestor, m.getRequestId());
@@ -524,6 +544,16 @@ public class MediaResource extends ResourceHelper {
 			providerId = rm.getProviderId();
 			nameOfLocation = rm.getNameOfLocation();
 			super.mapper().save(rm);
+			//Update the cache
+			Object o = super.getFromCache("RequestTable");
+
+			if (o != null) {
+				@SuppressWarnings("unchecked")
+				List<RequestMedia> tmp = (List<RequestMedia>) o;
+				
+				tmp.add(rm);
+				super.storeInCache("RecurringRequestTable", 259200, tmp);
+			}
 		}
 
 		super.mapper().delete(assReq);

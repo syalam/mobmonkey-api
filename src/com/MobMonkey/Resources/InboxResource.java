@@ -105,7 +105,7 @@ public class InboxResource extends ResourceHelper {
 					Date now = new Date();
 					Date expiryDate = new Date();
 					int duration = rm.getDuration(); // in minutes
-					expiryDate.setTime(rm.getRequestDate().getTime() + duration
+					expiryDate.setTime(rm.getScheduleDate().getTime() + duration
 							* 60000);
 					if (now.getTime() > expiryDate.getTime()) {
 						rm.setExpired(true);
@@ -197,6 +197,7 @@ public class InboxResource extends ResourceHelper {
 						ml.setExpiryDate(getExpiryDate(m.getUploadedDate()
 								.getTime()));
 						ml.setType(getMediaType(m.getMediaType()));
+						ml.setText(m.getText());
 						if (m.getMediaType() == 3) {
 							ml.setExpiryDate(null);
 							mediaL.add(ml);
@@ -255,12 +256,12 @@ public class InboxResource extends ResourceHelper {
 					openCount++;
 				}
 
-			}else{
+			} else {
 				Date now = new Date();
-				if(rm.getFulfilledDate().getTime() < threeDaysAgo){
+				if (rm.getFulfilledDate().getTime() < threeDaysAgo) {
 					super.mapper().delete(rm);
 				}
-				
+
 			}
 		}
 		results.put("openrequests", openCount);
@@ -318,7 +319,7 @@ public class InboxResource extends ResourceHelper {
 
 		// TODO add recurring requests to this list
 		// ALSO ADD FILTERING!!!!!!!!!!!!
-		
+
 		queryExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(eMailAddress));
 

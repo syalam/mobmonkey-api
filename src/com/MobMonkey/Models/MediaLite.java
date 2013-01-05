@@ -2,6 +2,8 @@ package com.MobMonkey.Models;
 
 import java.util.Date;
 
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
+
 public class MediaLite {
 
 	private String MediaURL;
@@ -11,6 +13,7 @@ public class MediaLite {
 	private Date uploadedDate;
 	private String type;
 	private String contentType;
+	private String text;
 	private boolean accepted;
 	
 	public MediaLite(){
@@ -79,6 +82,14 @@ public class MediaLite {
 
 	public void setUploadedDate(Date uploadedDate) {
 		this.uploadedDate = uploadedDate;
+	}
+
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
 	}
 	
 }

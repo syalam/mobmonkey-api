@@ -21,6 +21,7 @@ public class Media {
 	private String eMailAddress;
 	private String mediaData;
 	private String mediaURL;
+	private String text;
 	private Date uploadedDate;
 	private boolean accepted;
 	@JsonIgnore
@@ -126,6 +127,15 @@ public class Media {
 
 	public void setAccepted(boolean accepted) {
 		this.accepted = accepted;
+	}
+
+	@DynamoDBAttribute
+	public String getText() {
+		return text;
+	}
+
+	public void setText(String text) {
+		this.text = text;
 	}
 
 }

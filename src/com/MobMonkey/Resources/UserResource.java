@@ -103,7 +103,7 @@ public class UserResource extends ResourceHelper {
 
 	}
 
-	@POST
+	/*@POST
 	@Path("/user/oauth/{oauthprovider}")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
@@ -207,5 +207,5 @@ public class UserResource extends ResourceHelper {
 
 		}
 
-	}
+	}*/
 }
