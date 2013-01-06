@@ -3,6 +3,8 @@ package com.MobMonkey.Filters;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
@@ -11,6 +13,7 @@ import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
 import com.amazonaws.auth.AWSCredentials;
+import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
@@ -70,7 +73,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
 		String oauthToken = req.getHeaderValue("OauthToken");
-		
+
 		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
 				.matches(".*/rest/verify.*$")) {
@@ -104,8 +107,9 @@ public class RequestApiFilter implements ContainerRequestFilter {
 				// If that's the case then we will let them through without
 				// user:pass creds.
 				if (req.getRequestUri().getPath().toLowerCase()
-						.matches(".*/rest/signup/user.*$") || req.getRequestUri().getPath().toLowerCase()
-						.matches(".*/rest/signin.*$")) {
+						.matches(".*/rest/signup/user.*$")
+						|| req.getRequestUri().getPath().toLowerCase()
+								.matches(".*/rest/signin.*$")) {
 					return true;
 				}
 
@@ -121,11 +125,22 @@ public class RequestApiFilter implements ContainerRequestFilter {
 			// have an oauth header
 			if (null != oauthToken) {
 				Oauth ou = mapper.load(Oauth.class, eMailAddress, oauthToken);
-				
-				if(ou != null){
-					return true;  // we have a valid oauthtoken !!
+
+				if (ou != null) {
+					InBoundHeaders in = new InBoundHeaders();
+					in.putAll(req.getRequestHeaders());
+
+					List<String> eMailAddressHeader = new ArrayList<String>();
+					try {
+						eMailAddressHeader.add(ou.geteMailAddress());
+					} catch (Exception exc) {
+						return false;
+					}
+					in.put("MobMonkey-user", eMailAddressHeader);
+					req.setHeaders(in);
+					return true; // we have a valid oauthtoken !!
 				}
-				
+
 			}
 
 			// No Oauth token.. lets see if we have a user & pass

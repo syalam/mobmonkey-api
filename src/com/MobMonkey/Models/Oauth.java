@@ -8,6 +8,7 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable( tableName = "Oauth")
 public class Oauth {
 	private String eMailAddress;
+	private String providerUserName;
 	private String oAuthToken;
 	private String oAuthProvider;
 	private boolean eMailVerified;
@@ -16,13 +17,22 @@ public class Oauth {
 		
 	}
 
-	@DynamoDBHashKey
+	@DynamoDBAttribute
 	public String geteMailAddress() {
 		return eMailAddress;
 	}
 
 	public void seteMailAddress(String eMailAddress) {
 		this.eMailAddress = eMailAddress;
+	}
+
+	@DynamoDBHashKey
+	public String getProviderUserName() {
+		return providerUserName;
+	}
+
+	public void setProviderUserName(String providerUserName) {
+		this.providerUserName = providerUserName;
 	}
 
 	@DynamoDBRangeKey
