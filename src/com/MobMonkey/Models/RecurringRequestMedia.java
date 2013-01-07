@@ -1,6 +1,7 @@
 package com.MobMonkey.Models;
 
 import java.util.Date;
+import java.util.List;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
@@ -13,8 +14,9 @@ public class RecurringRequestMedia  {
 	private String partnerId;
 	private String eMailAddress;
 	private String requestId;
-	private int requestType;
 	private Date requestDate;
+	private int requestType;
+	private int mediaType;
 	private String message;
 	private String locationId;
 	private String providerId;
@@ -25,10 +27,11 @@ public class RecurringRequestMedia  {
 	private int duration;
 	private boolean requestFulfilled;
 	private Date fulfilledDate;
-	private boolean expired;
-	private String nameOfLocation;
 	private boolean recurring;
+	private boolean expired;
 	private int frequencyInMS;
+	private String nameOfLocation;
+	private List<MediaLite> media;
 	
 	public RecurringRequestMedia() {
 	}
@@ -206,6 +209,15 @@ public class RecurringRequestMedia  {
 
 	public void setNameOfLocation(String nameOfLocation) {
 		this.nameOfLocation = nameOfLocation;
+	}
+	
+	@DynamoDBIgnore
+	public List<MediaLite> getMedia() {
+		return media;
+	}
+
+	public void setMedia(List<MediaLite> media) {
+		this.media = media;
 	}
 
 }

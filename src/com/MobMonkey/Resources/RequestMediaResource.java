@@ -175,26 +175,15 @@ public class RequestMediaResource extends ResourceHelper {
 
 		// lets check if its a recurring request
 		if (r.isRecurring()) {
-
-			RecurringRequestMedia rm = new RecurringRequestMedia();
-			rm.setDuration(r.getDuration());
-			rm.seteMailAddress(r.geteMailAddress());
-			rm.setFulfilledDate(r.getFulfilledDate());
-			rm.setLatitude(r.getLatitude());
-			rm.setLocationId(r.getLocationId());
-			rm.setLongitude(r.getLongitude());
-			rm.setMessage(r.getMessage());
-			rm.setPartnerId(partnerId);
-			rm.setProviderId(r.getProviderId());
-			rm.setRadiusInYards(r.getRadiusInYards());
-			rm.setRecurring(true);
-			rm.setRequestFulfilled(false);
-			rm.setRequestId(r.getRequestId());
-			rm.setRequestType(1);
-			rm.setScheduleDate(r.getScheduleDate());
-			rm.setFrequencyInMS(r.getFrequencyInMS());
-			rm.setRequestDate(now);
-			rm.setNameOfLocation(r.getNameOfLocation());
+			
+			r.setPartnerId(partnerId);
+			r.setRecurring(true);
+			r.setRequestFulfilled(false);
+			r.setRequestType(1);
+			r.setRequestDate(now);
+			RecurringRequestMedia rm = convertToRRM(r);
+			
+			
 			super.mapper().save(rm);
 			
 			//Update the cache
@@ -287,5 +276,59 @@ public class RequestMediaResource extends ResourceHelper {
 		return newReq;
 
 	}
+	
+	public RequestMedia convertToRM(RecurringRequestMedia r){
+	
+	    RequestMedia rm = new RequestMedia();
+		rm.setDuration(r.getDuration());
+		rm.seteMailAddress(r.geteMailAddress());
+		rm.setFulfilledDate(r.getFulfilledDate());
+		rm.setLatitude(r.getLatitude());
+		rm.setLocationId(r.getLocationId());
+		rm.setLongitude(r.getLongitude());
+		rm.setMessage(r.getMessage());
+		rm.setPartnerId(r.getPartnerId());
+		rm.setProviderId(r.getProviderId());
+		rm.setRadiusInYards(r.getRadiusInYards());
+		rm.setRecurring(r.isRecurring());
+		rm.setRequestFulfilled(r.isRequestFulfilled());
+		rm.setRequestId(r.getRequestId());
+		rm.setRequestType(1);
+		rm.setScheduleDate(r.getScheduleDate());
+		rm.setFrequencyInMS(r.getFrequencyInMS());
+		rm.setRequestDate(r.getRequestDate());
+		rm.setNameOfLocation(r.getNameOfLocation());
+		rm.setExpired(r.isExpired());
+		
+		return rm;
+		
+	}
 
+	public RecurringRequestMedia convertToRRM(RequestMedia r){
+		
+	    RecurringRequestMedia rm = new RecurringRequestMedia();
+		rm.setDuration(r.getDuration());
+		rm.seteMailAddress(r.geteMailAddress());
+		rm.setFulfilledDate(r.getFulfilledDate());
+		rm.setLatitude(r.getLatitude());
+		rm.setLocationId(r.getLocationId());
+		rm.setLongitude(r.getLongitude());
+		rm.setMessage(r.getMessage());
+		rm.setPartnerId(r.getPartnerId());
+		rm.setProviderId(r.getProviderId());
+		rm.setRadiusInYards(r.getRadiusInYards());
+		rm.setRecurring(r.isRecurring());
+		rm.setRequestFulfilled(r.isRequestFulfilled());
+		rm.setRequestId(r.getRequestId());
+		rm.setRequestType(1);
+		rm.setScheduleDate(r.getScheduleDate());
+		rm.setFrequencyInMS(r.getFrequencyInMS());
+		rm.setRequestDate(r.getRequestDate());
+		rm.setNameOfLocation(r.getNameOfLocation());
+		rm.setExpired(r.isExpired());
+		
+		return rm;
+		
+	}
+	
 }

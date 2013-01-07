@@ -9,6 +9,7 @@ import java.util.List;
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Models.Oauth;
+import com.MobMonkey.Resources.ResourceHelper;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
@@ -17,12 +18,13 @@ import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
-public class RequestApiFilter implements ContainerRequestFilter {
+public class RequestApiFilter extends ResourceHelper implements ContainerRequestFilter{
 	private AWSCredentials credentials;
 	private AmazonDynamoDBClient ddb;
 	private DynamoDBMapper mapper;
 
 	public RequestApiFilter() {
+		super();
 		try {
 			credentials = new PropertiesCredentials(getClass().getClassLoader()
 					.getResourceAsStream("AwsCredentials.properties"));
@@ -97,6 +99,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 			// See if we have a valid partner ID, and that it is enabled (User
 			// verified email)
+			//TODO Cache this
 			Partner p = mapper.load(Partner.class, partnerId.trim().toString());
 			if (p.equals(null) || !p.isEnabled()) {
 				return false; // Quickly deny the request
@@ -124,6 +127,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 			// Before with auth the user using email and pass, lets see if we
 			// have an oauth header
 			if (null != oauthToken) {
+				//TODO Cache this
 				Oauth ou = mapper.load(Oauth.class, eMailAddress, oauthToken);
 
 				if (ou != null) {
@@ -145,6 +149,7 @@ public class RequestApiFilter implements ContainerRequestFilter {
 
 			// No Oauth token.. lets see if we have a user & pass
 			// Pull the user information
+			//TODO Cache this
 			User user = mapper.load(User.class, eMailAddress.trim(),
 					partnerId.trim());
 

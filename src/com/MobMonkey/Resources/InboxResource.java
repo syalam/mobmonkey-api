@@ -92,8 +92,22 @@ public class InboxResource extends ResourceHelper {
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
 
+			DynamoDBQueryExpression queryExpression2 = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+
+			PaginatedQueryList<RecurringRequestMedia> openRecRequests = super
+					.mapper().query(RecurringRequestMedia.class,
+							queryExpression2);
+
 			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
+				unsorted.put(rm, rm.getScheduleDate().getTime());
+
+			}
+
+			RequestMediaResource rmr = new RequestMediaResource();
+			for (RecurringRequestMedia rrm : openRecRequests) {
+				RequestMedia rm = rmr.convertToRM(rrm);
 				unsorted.put(rm, rm.getScheduleDate().getTime());
 
 			}
@@ -102,19 +116,23 @@ public class InboxResource extends ResourceHelper {
 				// check to see if request is fulfilled
 				RequestMedia rm = entry.getKey();
 				if (!rm.isRequestFulfilled()) {
-					Date now = new Date();
-					Date expiryDate = new Date();
-					int duration = rm.getDuration(); // in minutes
-					expiryDate.setTime(rm.getScheduleDate().getTime() + duration
-							* 60000);
-					if (now.getTime() > expiryDate.getTime()) {
-						rm.setExpired(true);
-						// results.add(rm);
-					} else {
-						rm.setExpired(false);
-						results.add(rm);
-					}
 
+					if (rm.isRecurring()) {
+						results.add(rm);
+					} else {
+						Date now = new Date();
+						Date expiryDate = new Date();
+						int duration = rm.getDuration(); // in minutes
+						expiryDate.setTime(rm.getScheduleDate().getTime()
+								+ duration * 60000);
+						if (now.getTime() > expiryDate.getTime()) {
+							rm.setExpired(true);
+							// results.add(rm);
+						} else {
+							rm.setExpired(false);
+							results.add(rm);
+						}
+					}
 				}
 			}
 
@@ -140,10 +158,12 @@ public class InboxResource extends ResourceHelper {
 					results.add(rm);
 					break;
 				case 1:
-					// TODO convert rrm to a RequestMedia and add it to results
+					RequestMediaResource rmr = new RequestMediaResource();
 					RecurringRequestMedia rrm = super.mapper().load(
 							RecurringRequestMedia.class,
 							assReq.getRequestorEmail());
+					results.add(rmr.convertToRM(rrm));
+
 					break;
 				}
 
@@ -151,15 +171,23 @@ public class InboxResource extends ResourceHelper {
 
 		}
 		if (type.toLowerCase().equals("fulfilledrequests")) {
-			// TODO add recurring requests to this list
-			// ALSO ADD FILTERING!!!!!!!!!!!!
+			// TODO Caching
 			long threeDaysAgo = (new Date()).getTime()
 					- (3L * 24L * 60L * 60L * 1000L);
+			// Regular requests
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
 
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
+
+			// Recurring requests
+			DynamoDBQueryExpression queryExpression2 = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+
+			PaginatedQueryList<RecurringRequestMedia> openRecRequests = super
+					.mapper().query(RecurringRequestMedia.class,
+							queryExpression2);
 
 			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
@@ -167,6 +195,13 @@ public class InboxResource extends ResourceHelper {
 						&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
 					unsorted.put(rm, rm.getScheduleDate().getTime());
 				}
+			}
+
+			RequestMediaResource rmr = new RequestMediaResource();
+			for (RecurringRequestMedia rrm : openRecRequests) {
+				RequestMedia rm = rmr.convertToRM(rrm);
+				unsorted.put(rm, rm.getScheduleDate().getTime());
+
 			}
 
 			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
@@ -223,8 +258,6 @@ public class InboxResource extends ResourceHelper {
 		HashMap<String, Integer> results = new HashMap<String, Integer>();
 		long threeDaysAgo = (new Date()).getTime()
 				- (3L * 24L * 60L * 60L * 1000L);
-		// TODO add recurring requests to this list
-		// ALSO ADD FILTERING!!!!!!!!!!!!
 
 		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(eMailAddress));
@@ -232,40 +265,96 @@ public class InboxResource extends ResourceHelper {
 		PaginatedQueryList<RequestMedia> openRequests = super.mapper().query(
 				RequestMedia.class, queryExpression);
 
+		// Recurring requests
+		DynamoDBQueryExpression queryExpression2 = new DynamoDBQueryExpression(
+				new AttributeValue().withS(eMailAddress));
+
+		PaginatedQueryList<RecurringRequestMedia> openRecRequests = super
+				.mapper().query(RecurringRequestMedia.class, queryExpression2);
+
 		HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 		for (RequestMedia rm : openRequests) {
 			unsorted.put(rm, rm.getScheduleDate().getTime());
 
 		}
+
+		RequestMediaResource rmr = new RequestMediaResource();
+		for (RecurringRequestMedia rrm : openRecRequests) {
+			RequestMedia rm = rmr.convertToRM(rrm);
+			unsorted.put(rm, rm.getScheduleDate().getTime());
+
+		}
+
 		int openCount = 0;
 
 		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
 			// check to see if request is fulfilled
 			RequestMedia rm = entry.getKey();
-			if (!rm.isRequestFulfilled()) {
-				Date now = new Date();
-				Date expiryDate = new Date();
-				int duration = rm.getDuration(); // in minutes
-				expiryDate.setTime(rm.getRequestDate().getTime() + duration
-						* 60000);
-				if (now.getTime() > expiryDate.getTime()) {
-					super.mapper().delete(rm);
-					// results.add(rm);
+			if (rm.isRecurring()) {
+				openCount++;
+			} else {
+				if (!rm.isRequestFulfilled()) {
+					Date now = new Date();
+					Date expiryDate = new Date();
+					int duration = rm.getDuration(); // in minutes
+					expiryDate.setTime(rm.getRequestDate().getTime() + duration
+							* 60000);
+					if (now.getTime() > expiryDate.getTime()) {
+						super.mapper().delete(rm);
+						// results.add(rm);
+					} else {
+
+						openCount++;
+					}
+
 				} else {
 
-					openCount++;
-				}
+					if (rm.getFulfilledDate().getTime() < threeDaysAgo) {
+						super.mapper().delete(rm);
+					}
 
-			} else {
-				Date now = new Date();
-				if (rm.getFulfilledDate().getTime() < threeDaysAgo) {
-					super.mapper().delete(rm);
 				}
 
 			}
 		}
 		results.put("openrequests", openCount);
 
+		
+
+		int fulfilledCount = 0;
+
+		// TODO add recurring requests to this list
+		// ALSO ADD FILTERING!!!!!!!!!!!!
+
+		HashMap<RequestMedia, Long> unsortedMedia = new HashMap<RequestMedia, Long>();
+
+		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
+			RequestMedia rm = entry.getKey();
+
+			if (rm.isRequestFulfilled()
+					&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
+				unsortedMedia.put(rm, rm.getScheduleDate().getTime());
+			}
+
+		}
+		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsortedMedia)) {
+			// check to see if request is fulfilled
+			RequestMedia rm = entry.getKey();
+
+			/*
+			 * if (rm.getProviderId() != null && rm.getLocationId() != null) {
+			 * rm.setNameOfLocation(new Locator().reverseLookUp(
+			 * rm.getProviderId(), rm.getLocationId()).getName()); }
+			 */
+
+			if (rm.isRequestFulfilled()) {
+
+				fulfilledCount++;
+
+			}
+		}
+		results.put("fulfilledCount", fulfilledCount);
+		
 		int assignedCount = 0;
 
 		queryExpression = new DynamoDBQueryExpression(
@@ -298,14 +387,14 @@ public class InboxResource extends ResourceHelper {
 
 				break;
 			case 1:
-				// TODO convert rrm to a RequestMedia and add it to results
+
 				RecurringRequestMedia rrm = super.mapper()
 						.load(RecurringRequestMedia.class,
-								assReq.getRequestorEmail());
+								assReq.getRequestorEmail(), assReq.getRequestId());
 				if (rrm == null) {
 					super.mapper().delete(assReq);
 				} else {
-
+					//TODO if the window for this request has expired, remove it from the users assigned queue
 					assignedCount++;
 				}
 				break;
@@ -314,43 +403,6 @@ public class InboxResource extends ResourceHelper {
 		}
 
 		results.put("assignedrequests", assignedCount);
-
-		int fulfilledCount = 0;
-
-		// TODO add recurring requests to this list
-		// ALSO ADD FILTERING!!!!!!!!!!!!
-
-		queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(eMailAddress));
-
-		openRequests = super.mapper()
-				.query(RequestMedia.class, queryExpression);
-
-		HashMap<RequestMedia, Long> unsortedMedia = new HashMap<RequestMedia, Long>();
-		for (RequestMedia rm : openRequests) {
-			if (rm.isRequestFulfilled()
-					&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
-				unsortedMedia.put(rm, rm.getScheduleDate().getTime());
-			}
-		}
-
-		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsortedMedia)) {
-			// check to see if request is fulfilled
-			RequestMedia rm = entry.getKey();
-
-			/*
-			 * if (rm.getProviderId() != null && rm.getLocationId() != null) {
-			 * rm.setNameOfLocation(new Locator().reverseLookUp(
-			 * rm.getProviderId(), rm.getLocationId()).getName()); }
-			 */
-
-			if (rm.isRequestFulfilled()) {
-
-				fulfilledCount++;
-
-			}
-		}
-		results.put("fulfilledCount", fulfilledCount);
 
 		return results;
 	}
@@ -396,7 +448,7 @@ public class InboxResource extends ResourceHelper {
 				case 1:
 					RecurringRequestMedia rrm = super.mapper().load(
 							RecurringRequestMedia.class,
-							assReq.getRequestorEmail());
+							assReq.getRequestorEmail(), assReq.getRequestId());
 					assReq.setNameOfLocation(rrm.getNameOfLocation());
 					results.add(assReq);
 					break;

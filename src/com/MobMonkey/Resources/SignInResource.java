@@ -33,10 +33,9 @@ public class SignInResource extends ResourceHelper {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@Path("/{type}/{deviceId}")
 	public Response SignInInJSON(@Context HttpHeaders headers,
-			@PathParam("deviceId") String deviceId,
-			@PathParam("type") String type,
+			@QueryParam("deviceId") String deviceId,
+			@QueryParam("deviceType") String type,
 			@DefaultValue("false") @QueryParam("useOAuth") boolean useOAuth,
 			@QueryParam("provider") String provider,
 			@QueryParam("oauthToken") String token,
@@ -47,38 +46,102 @@ public class SignInResource extends ResourceHelper {
 			Oauth ou = super.mapper()
 					.load(Oauth.class, providerUserName, token);
 
-			if (ou == null) {
-				// we do not have a user, so we should create one
+			if (provider.toLowerCase().equals("twitter")) {
+				if (ou == null) {
+					// we do not have a user, so we should create one
 
-				ou = new Oauth();
-				ou.setoAuthToken(token);
-				ou.seteMailVerified(false);
-				ou.setoAuthProvider(provider);
-				ou.setProviderUserName(providerUserName);
-				super.mapper().save(ou);
-				return Response
-						.ok()
-						.entity(new Status(
-								"Success",
-								"Email and token combination not found in DB. Setting up user with user & token, please present user with email registration screen",
-								"300")).build();
+					ou = new Oauth();
+					ou.setoAuthToken(token);
+					ou.seteMailVerified(false);
+					ou.setoAuthProvider(provider);
+					ou.setProviderUserName(providerUserName);
+					super.mapper().save(ou);
+					return Response
+							.status(404)
+							.entity(new Status(
+									"Success",
+									"Email and token combination not found in DB. Setting up user with user & token, please present user with email registration screen",
+									"404")).build();
 
-			} else {
-				if (ou.geteMailAddress() == null) {
+				} else {
+					if (ou.geteMailAddress() == null) {
+						return Response
+								.status(404)
+								.entity(new Status(
+										"Failure",
+										"This user needs to register their email address",
+										"404")).build();
+
+					} else {
+						if(!addDevice(providerUserName, deviceId, type)){
+							return Response
+									.status(500)
+									.entity(new Status("Failure",
+											"You must specify a device type (Android or iOS)",
+											"500")).build();
+						}
+						return Response
+								.ok()
+								.entity(new Status("Success",
+										"User successfully signed in", "200"))
+								.build();
+					}
+				}
+			}
+			else if(provider.toLowerCase().equals("facebook")){
+				if (ou == null) {
+					// we do not have a user, so we should create one
+
+					ou = new Oauth();
+					ou.setoAuthToken(token);
+					ou.seteMailVerified(true);
+					ou.setoAuthProvider(provider);
+					ou.setProviderUserName(providerUserName);
+					ou.seteMailAddress(providerUserName);
+					
+					super.mapper().save(ou);
+					if(!addDevice(providerUserName, deviceId, type)){
+						return Response
+								.status(500)
+								.entity(new Status("Failure",
+										"You must specify a device type (Android or iOS)",
+										"500")).build();
+					}
+
 					return Response
 							.ok()
 							.entity(new Status(
-									"Failure",
-									"This user needs to register their email address",
-									"300")).build();
+									"Success",
+									"Successfully added email & token to DB.",
+									"200")).build();
 
 				} else {
-					return Response
-							.ok()
-							.entity(new Status("Success",
-									"User successfully signed in", "")).build();
+					if (ou.geteMailAddress() == null) {
+						return Response
+								.status(404)
+								.entity(new Status(
+										"Failure",
+										"This user needs to register their email address",
+										"404")).build();
+
+					} else {
+						return Response
+								.ok()
+								.entity(new Status("Success",
+										"User successfully signed in", "200"))
+								.build();
+					}
 				}
 			}
+			else{
+				//Not supported
+				return Response
+						.status(500)
+						.entity(new Status("Failure",
+								"There is no support for " + provider + " at this time.", "500"))
+						.build();
+			}
+
 		} else {
 
 			User user = super.getUser(headers);
@@ -87,7 +150,7 @@ public class SignInResource extends ResourceHelper {
 			return Response
 					.ok()
 					.entity(new Status("Success",
-							"User successfully signed in", "")).build();
+							"User successfully signed in", "200")).build();
 
 		}
 
@@ -96,22 +159,52 @@ public class SignInResource extends ResourceHelper {
 	@POST
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	@Path("/registeremail/{providerUserName}/{token}")
+	@Path("/registeremail")
 	public Response registerEmailInJSON(@Context HttpHeaders headers,
-			@PathParam("providerUserName") String providerUserName,
-			@PathParam("token") String token,
+			@QueryParam("providerUserName") String providerUserName,
+			@QueryParam("oauthToken") String token,
 			@QueryParam("deviceType") String type,
-			@QueryParam("deviceId") String deviceId) {
+			@QueryParam("deviceId")	String deviceId,
+			@QueryParam("eMailAddress") String eMailAddress) {
 
-		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
+	
 		boolean validEmail = new EmailValidator().validate(eMailAddress);
 		if (!validEmail) {
 			return Response
 					.status(500)
 					.entity(new Status("Failure",
-							"Invalid email address specified", "")).build();
+							"Invalid email address specified", "500")).build();
 		}
 
+		if(!addDevice(eMailAddress, deviceId, type)){
+			return Response
+					.status(500)
+					.entity(new Status("Failure",
+							"You must specify a device type (Android or iOS)",
+							"500")).build();
+		}
+
+		Oauth ou = super.mapper().load(Oauth.class, providerUserName, token);
+		if (ou == null) {
+			return Response
+					.status(404)
+					.entity(new Status(
+							"Failure",
+							"The username & token specified is not found in the DB",
+							"404")).build();
+		}
+	
+		ou.seteMailAddress(eMailAddress);
+		ou.setoAuthToken(token);
+		super.mapper().save(ou);
+
+		return Response
+				.ok()
+				.entity(new Status("Success", "Registered email address in DB",
+						"200")).build();
+	}
+	
+	public boolean addDevice(String eMailAddress, String deviceId, String type){
 		Device d = new Device();
 		d.seteMailAddress(eMailAddress);
 		if (type.toLowerCase().equals("ios")) {
@@ -119,33 +212,13 @@ public class SignInResource extends ResourceHelper {
 		} else if (type.toLowerCase().equals("android")) {
 			d.setDeviceType("Android");
 		} else {
-			return Response
-					.status(500)
-					.entity(new Status("Failure",
-							"You must specify a device type (Android or iOS)",
-							"")).build();
+			return false;
 		}
 
 		d.setDeviceId(deviceId);
 
 		super.mapper().save(d);
-
-		Oauth ou = super.mapper().load(Oauth.class, providerUserName, token);
-		if (ou == null) {
-			return Response
-					.status(500)
-					.entity(new Status(
-							"Failure",
-							"The username & token specified is not found in the DB",
-							"")).build();
-		}
-		ou.seteMailAddress(eMailAddress);
-		super.mapper().save(ou);
-
-		return Response
-				.ok()
-				.entity(new Status("Success", "Registered email address in DB",
-						"")).build();
+		return true;
 	}
 
 }

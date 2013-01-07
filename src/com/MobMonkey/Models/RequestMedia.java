@@ -33,7 +33,6 @@ public class RequestMedia  {
 	private boolean expired;
 	private int frequencyInMS;
 	private String nameOfLocation;
-	private String mediaUrl;
 	private List<MediaLite> media;
 	
 	public RequestMedia() {
@@ -220,16 +219,7 @@ public class RequestMedia  {
 	public void setNameOfLocation(String nameOfLocation) {
 		this.nameOfLocation = nameOfLocation;
 	}
-
-	@DynamoDBAttribute
-	public String getMediaUrl() {
-		return mediaUrl;
-	}
-
-	public void setMediaUrl(String mediaUrl) {
-		this.mediaUrl = mediaUrl;
-	}
-
+	
 	@DynamoDBIgnore
 	public List<MediaLite> getMedia() {
 		return media;

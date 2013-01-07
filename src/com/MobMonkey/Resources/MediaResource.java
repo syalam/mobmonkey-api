@@ -539,7 +539,6 @@ public class MediaResource extends ResourceHelper {
 			}
 			rm.setRequestFulfilled(true);
 			rm.setFulfilledDate(m.getUploadedDate());
-			rm.setMediaUrl(m.getMediaURL());
 			locationId = rm.getLocationId();
 			providerId = rm.getProviderId();
 			nameOfLocation = rm.getNameOfLocation();
