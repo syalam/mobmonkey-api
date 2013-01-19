@@ -1,5 +1,7 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
+
 import org.codehaus.jackson.annotate.JsonIgnore;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
@@ -9,7 +11,7 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable( tableName = "Bookmark")
-public class Bookmark {
+public class Bookmark implements Serializable {
 
 	private String eMailAddress;
 	@JsonIgnore private String locprovId;

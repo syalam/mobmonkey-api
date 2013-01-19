@@ -144,9 +144,7 @@ public class SignInResource extends ResourceHelper {
 
 		} else {
 
-			User user = super.getUser(headers);
-			user.setLastSignIn(new Date());
-			super.mapper().save(user);
+		
 			return Response
 					.ok()
 					.entity(new Status("Success",

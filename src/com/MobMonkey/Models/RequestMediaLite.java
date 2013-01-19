@@ -1,11 +1,16 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
 
-public class RequestMediaLite {
+public class RequestMediaLite implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 407073572639653011L;
 	private String RequestId;
 	private String message;
 	private String locationName;

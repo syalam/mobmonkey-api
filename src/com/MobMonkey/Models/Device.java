@@ -1,12 +1,14 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable( tableName="Device")
-public class Device {
+public class Device implements Serializable {
 	private String eMailAddress;
 	private String deviceId;
 	private String deviceType;

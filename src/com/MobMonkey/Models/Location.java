@@ -41,7 +41,8 @@ public class Location implements Serializable {
 	private int rank;
 	private String message;
 	private List<RequestMedia> requests;
-	
+	private MediaLite media;
+
 	
 	public Location() {
 	}
@@ -273,5 +274,16 @@ public class Location implements Serializable {
 	public void setRequests(List<RequestMedia> requests) {
 		this.requests = requests;
 	}
+
+	@DynamoDBIgnore
+	public MediaLite getMedia() {
+		return media;
+	}
+
+	public void setMedia(MediaLite media) {
+		this.media = media;
+	}
+
+	
 
 }

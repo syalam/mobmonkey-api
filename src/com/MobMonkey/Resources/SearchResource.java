@@ -108,8 +108,12 @@ public class SearchResource extends ResourceHelper {
 				}
 
 			}
+			int xcount = 0;
 			for(int i : itemsToRemove){
-				locations.remove(i);
+				
+				locations.remove(i - xcount);
+				xcount++;
+				
 			}
 			
 			List<Location> bookmarkedLocations = this.AssignBookmarks(

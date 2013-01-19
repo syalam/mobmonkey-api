@@ -63,8 +63,15 @@ public class ResourceHelper {
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
 		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
 				0);
+		User user = new User();
+		if (headers.getRequestHeader("OauthToken") != null) {
+			user.seteMailAddress(eMailAddress);
+			user.setPartnerId(partnerId);
 
-		User user = mapper.load(User.class, eMailAddress, partnerId);
+		} else {
+
+			user = mapper.load(User.class, eMailAddress, partnerId);
+		}
 		return user;
 	}
 
@@ -79,30 +86,23 @@ public class ResourceHelper {
 
 		return o;
 	}
-	
-	public void storeInCache(String key, int duration, Object o){
+
+	public void storeInCache(String key, int duration, Object o) {
 		try {
-			MobMonkeyCache
-					.getInstance()
-					.getCache()
-					.set(key,
-							duration, o);
+			MobMonkeyCache.getInstance().getCache().set(key, duration, o);
 		} catch (Exception exc) {
 
 		}
 	}
-	
-	public void deleteFromCache(String key){
+
+	public void deleteFromCache(String key) {
 		try {
-			MobMonkeyCache
-					.getInstance()
-					.getCache()
-					.delete(key);
+			MobMonkeyCache.getInstance().getCache().delete(key);
 		} catch (Exception exc) {
 
 		}
 	}
-	
+
 	static <K, V extends Comparable<? super V>> SortedSet<Map.Entry<K, V>> entriesSortedByValues(
 			Map<K, V> map) {
 		SortedSet<Map.Entry<K, V>> sortedEntries = new TreeSet<Map.Entry<K, V>>(
@@ -117,21 +117,20 @@ public class ResourceHelper {
 		sortedEntries.addAll(map.entrySet());
 		return sortedEntries;
 	}
-	
-	public String MediaType(int i){
-		if(i == 1){
+
+	public String MediaType(int i) {
+		if (i == 1) {
 			return "image";
 		}
-		if(i == 2){
+		if (i == 2) {
 			return "video";
 		}
-		if(i == 3){
+		if (i == 3) {
 			return "live streaming";
 		}
-		if(i == 4){
+		if (i == 4) {
 			return "text";
-		}
-		else{	
+		} else {
 			return "unknown";
 		}
 	}

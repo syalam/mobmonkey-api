@@ -1,11 +1,16 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 
-public class MediaLite {
+public class MediaLite implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3746229667638415329L;
 	private String MediaURL;
 	private String mediaId;
 	private String requestId;

@@ -122,19 +122,26 @@ public class RequestMediaResource extends ResourceHelper {
 
 		// TODO Has user verified their email? Need to move this to a helper
 		// class, we're going to use it a bunch
-		User user = super.mapper().load(User.class, username, partnerId);
-		try {
-			if (!user.isVerified()) {
-				return Response.status(401)
-						.entity("User has not verified their email address")
+		User user = new User();
+		if (headers.getRequestHeader("OauthToken") != null) {
+			user.seteMailAddress(username);
+			user.setPartnerId(partnerId);
+		} else {
+			user = super.mapper().load(User.class, username, partnerId);
+			try {
+				if (!user.isVerified()) {
+					return Response
+							.status(401)
+							.entity("User has not verified their email address")
+							.build();
+				}
+			} catch (Exception e) {
+				return Response
+						.status(500)
+						.entity("User was not found in the MobMonkey database.")
 						.build();
 			}
-		} catch (Exception e) {
-			return Response.status(500)
-					.entity("User was not found in the MobMonkey database.")
-					.build();
 		}
-
 		Location coords = new Location();
 		// so lets reverse lookup some coords if they havent proivded them
 		if (r.getProviderId() != null && r.getLocationId() != null) {
@@ -175,40 +182,38 @@ public class RequestMediaResource extends ResourceHelper {
 
 		// lets check if its a recurring request
 		if (r.isRecurring()) {
-			
+
 			r.setPartnerId(partnerId);
 			r.setRecurring(true);
 			r.setRequestFulfilled(false);
 			r.setRequestType(1);
 			r.setRequestDate(now);
 			RecurringRequestMedia rm = convertToRRM(r);
-			
-			
+
 			super.mapper().save(rm);
-			
-			//Update the cache
+
+			// Update the cache
 			Object o = super.getFromCache("ReccuringRequestTable");
 
 			if (o != null) {
 				@SuppressWarnings("unchecked")
 				List<RecurringRequestMedia> tmp = (List<RecurringRequestMedia>) o;
-				
+
 				tmp.add(rm);
 				super.storeInCache("ReccuringRequestTable", 259200, tmp);
 			}
-			
-			
+
 		} else {
 			r.setRequestType(0);
 			super.mapper().save(r);
-			
-			//Update the cache
+
+			// Update the cache
 			Object o = super.getFromCache("RequestTable");
 
 			if (o != null) {
 				@SuppressWarnings("unchecked")
 				List<RequestMedia> tmp = (List<RequestMedia>) o;
-				
+
 				tmp.add(r);
 				super.storeInCache("RequestTable", 259200, tmp);
 			}
@@ -268,7 +273,7 @@ public class RequestMediaResource extends ResourceHelper {
 		newReq.setLatitude(r.getLatitude());
 		newReq.setLongitude(r.getLongitude());
 		newReq.setLocationName(r.getNameOfLocation());
-		
+
 		if (r.isRecurring())
 			newReq.setRequestType(1);
 		else
@@ -276,10 +281,10 @@ public class RequestMediaResource extends ResourceHelper {
 		return newReq;
 
 	}
-	
-	public RequestMedia convertToRM(RecurringRequestMedia r){
-	
-	    RequestMedia rm = new RequestMedia();
+
+	public RequestMedia convertToRM(RecurringRequestMedia r) {
+
+		RequestMedia rm = new RequestMedia();
 		rm.setDuration(r.getDuration());
 		rm.seteMailAddress(r.geteMailAddress());
 		rm.setFulfilledDate(r.getFulfilledDate());
@@ -299,14 +304,14 @@ public class RequestMediaResource extends ResourceHelper {
 		rm.setRequestDate(r.getRequestDate());
 		rm.setNameOfLocation(r.getNameOfLocation());
 		rm.setExpired(r.isExpired());
-		
+
 		return rm;
-		
+
 	}
 
-	public RecurringRequestMedia convertToRRM(RequestMedia r){
-		
-	    RecurringRequestMedia rm = new RecurringRequestMedia();
+	public RecurringRequestMedia convertToRRM(RequestMedia r) {
+
+		RecurringRequestMedia rm = new RecurringRequestMedia();
 		rm.setDuration(r.getDuration());
 		rm.seteMailAddress(r.geteMailAddress());
 		rm.setFulfilledDate(r.getFulfilledDate());
@@ -326,9 +331,9 @@ public class RequestMediaResource extends ResourceHelper {
 		rm.setRequestDate(r.getRequestDate());
 		rm.setNameOfLocation(r.getNameOfLocation());
 		rm.setExpired(r.isExpired());
-		
+
 		return rm;
-		
+
 	}
-	
+
 }

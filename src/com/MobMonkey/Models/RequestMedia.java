@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -12,7 +13,11 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "RequestMedia")
-public class RequestMedia  {
+public class RequestMedia implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 290402442784513815L;
 	private String partnerId;
 	private String eMailAddress;
 	private String requestId;

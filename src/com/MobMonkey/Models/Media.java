@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -11,8 +12,12 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "Media")
-public class Media {
+public class Media implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1707348759222416465L;
 	private String mediaId;
 	private String requestId;
 	private int mediaType; // image = 1, video = 2, live streaming = 3

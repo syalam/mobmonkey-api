@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -12,8 +13,12 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "LocationMedia")
-public class LocationMedia {
+public class LocationMedia implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1824588315368993433L;
 	@JsonIgnore
 	private String locationProviderId;
 	@JsonIgnore

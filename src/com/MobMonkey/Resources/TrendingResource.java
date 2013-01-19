@@ -29,6 +29,7 @@ import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Helpers.SearchHelper;
 import com.MobMonkey.Models.Bookmark;
 import com.MobMonkey.Models.Location;
+import com.MobMonkey.Models.MediaLite;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.Trending;
 import com.MobMonkey.Models.User;
@@ -169,6 +170,21 @@ public class TrendingResource extends ResourceHelper {
 		for (Location i : itemsToRemove) {
 			sortedList.remove(i);
 		}
+		
+		for(Location i : sortedList){
+		
+		
+		Object o = super.getFromCache("m" + i.getLocationId().toLowerCase().trim() + i.getProviderId().toLowerCase().trim());
+		
+			if (o != null) {
+				
+				i.setMedia((MediaLite) o);
+				
+			} 
+		
+		}
+		
+		
 
 		if(countonly){
 			counts.put("topviewedCount", topviewedCount);

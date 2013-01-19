@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
@@ -7,7 +8,13 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "Partner")
-public class Partner {
+public class Partner implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -2686904044675490933L;
+
+
 	public Partner(){
 	}
 	private String partnerId;

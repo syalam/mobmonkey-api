@@ -1,5 +1,6 @@
 package com.MobMonkey.Resources;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,7 +28,12 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
 
 @Path("/checkin")
-public class CheckInResource extends ResourceHelper {
+public class CheckInResource  extends ResourceHelper implements Serializable {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7922156377734286617L;
 
 	public CheckInResource() {
 		super();

@@ -2,6 +2,7 @@ package com.MobMonkey.Resources;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -39,7 +40,11 @@ import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
 
 @Path("/media")
-public class MediaResource extends ResourceHelper {
+public class MediaResource extends ResourceHelper implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6763705967945152547L;
 	static SimpleDateFormat dateFormatter = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
@@ -61,16 +66,9 @@ public class MediaResource extends ResourceHelper {
 				m = (Media) o;
 			} else {
 				m = super.mapper().load(Media.class, requestId, mediaId);
-				super.storeInCache(requestId + ":" + mediaId, 259200, o);
+				super.storeInCache(requestId + ":" + mediaId, 259200, m);
 			}
-			MediaLite ml = new MediaLite();
-			ml.setContentType(m.getContentType());
-			ml.setExpiryDate(getExpiryDate(m.getUploadedDate().getTime()));
-			ml.setMediaId(m.getMediaId());
-			ml.setMediaURL(m.getMediaURL());
-			ml.setRequestId(m.getRequestId());
-			ml.setType(getMediaType(m.getMediaType()));
-			ml.setText(m.getText());
+			MediaLite ml = this.convertMediaToMediaLite(m);
 
 			return Response.ok().entity(ml).build();
 		} catch (Exception exc) {
@@ -235,16 +233,6 @@ public class MediaResource extends ResourceHelper {
 		media.setUploadedDate(now);
 		media.setOriginalRequestor(originalRequestor); // for livestreaming
 		media.setAccepted(false);
-		Map<String, String> reqDetails = getRequestDetails(media);
-		if (reqDetails.containsKey("Error"))
-			return Response.status(500)
-					.entity(new Status("Error", reqDetails.get("Error"), ""))
-					.build();
-		if (media.getMediaType() != 3) // livestreaming does not follow the same
-										// rules.
-			media.setOriginalRequestor(reqDetails.get("origRequestor"));
-		locationId = reqDetails.get("locationId");
-		providerId = reqDetails.get("providerId");
 
 		if (requestType.equals("image")) {
 			media.setMediaType(1);
@@ -284,7 +272,32 @@ public class MediaResource extends ResourceHelper {
 							+ " is not a supported endpoint.", "")).build();
 		}
 
+		Map<String, String> reqDetails = new HashMap<String, String>();
+
+		reqDetails = getRequestDetails(media);
+
+		media.setOriginalRequestor(reqDetails.get("origRequestor"));
+		if (reqDetails.containsKey("Error"))
+			return Response.status(500)
+					.entity(new Status("Error", reqDetails.get("Error"), ""))
+					.build();
+		locationId = reqDetails.get("locationId");
+		providerId = reqDetails.get("providerId");
+
+		MediaLite ml = convertMediaToMediaLite(media);
+		super.storeInCache("m" + locationId.toLowerCase().trim()
+				+ providerId.toLowerCase().trim(), 259200, ml);
+
 		super.mapper().save(media);
+
+		NotificationHelper noteHelper = new NotificationHelper();
+		String[] deviceIds = noteHelper.getUserDevices(media
+				.getOriginalRequestor());
+
+		ApplePNSHelper.send(deviceIds,
+				"Your " + getMediaType(media.getMediaType()) + " request at "
+						+ reqDetails.get("nameOfLocation")
+						+ " has been fulfilled.");
 
 		super.storeInCache(media.getRequestId() + ":" + media.getMediaId(),
 				259200, media);
@@ -309,27 +322,17 @@ public class MediaResource extends ResourceHelper {
 
 		// Send notification to apple device
 
-		NotificationHelper noteHelper = new NotificationHelper();
-		String[] deviceIds = noteHelper.getUserDevices(media
-				.getOriginalRequestor());
-
-		ApplePNSHelper.send(deviceIds,
-				"Your " + getMediaType(media.getMediaType()) + " request at "
-						+ reqDetails.get("nameOfLocation")
-						+ " has been fulfilled.");
-
 		String resp = "";
-		if(media.getMediaType() == 4){
+		if (media.getMediaType() == 4) {
 			resp = media.getText();
-		}else{
+		} else {
 			resp = media.getMediaURL();
 		}
-		
+
 		return Response
 				.status(201)
 				.entity(new Status("Success", "Successfully uploaded "
-						+ requestType + ": " + resp, ""))
-				.build();
+						+ requestType + ": " + resp, "")).build();
 
 	}
 
@@ -380,19 +383,14 @@ public class MediaResource extends ResourceHelper {
 			LocationMedia locMedia = entry.getKey();
 			Media m = super.mapper().load(Media.class, locMedia.getRequestId(),
 					locMedia.getMediaId());
-			MediaLite ml = new MediaLite();
-			ml.setMediaURL(m.getMediaURL());
-			ml.setRequestId(locMedia.getRequestId());
-			ml.setMediaId(locMedia.getMediaId());
-			ml.setAccepted(m.isAccepted());
-			ml.setExpiryDate(getExpiryDate(m.getUploadedDate().getTime()));
-			ml.setType(getMediaType(m.getMediaType()));
-			ml.setUploadedDate(m.getUploadedDate());
-			if (m.getMediaType() == 3) {
-				ml.setExpiryDate(null);
+			if (m == null) {
+				// Media was removed, remove from LocMedia
+				super.mapper().delete(locMedia);
+			} else {
+				MediaLite ml = this.convertMediaToMediaLite(m);
+				media.add(ml);
 			}
 
-			media.add(ml);
 		}
 
 		result.setMedia(media);
@@ -471,6 +469,7 @@ public class MediaResource extends ResourceHelper {
 		if (m.getMediaType() == 1) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
+
 		} else if (m.getMediaType() == 2) {
 			url = "https://s3.amazonaws.com/" + bucket + "/" + mediaFileName;
 
@@ -481,14 +480,14 @@ public class MediaResource extends ResourceHelper {
 	}
 
 	private Map<String, String> getRequestDetails(Media m) {
-		String origRequestor = "";
+		String origRequestor = m.getOriginalRequestor();
 		Map<String, String> results = new HashMap<String, String>();
 		String locationId = "";
 		String providerId = "";
 		String nameOfLocation = "";
 
 		AssignedRequest assReq = new AssignedRequest();
-		if (!m.getRequestType().equals("3")) {
+		if (m.getMediaType() != 3) {
 			assReq = super.mapper().load(AssignedRequest.class,
 					m.geteMailAddress(), m.getRequestId());
 			if (assReq == null) {
@@ -503,7 +502,8 @@ public class MediaResource extends ResourceHelper {
 					RecurringRequestMedia.class, origRequestor,
 					m.getRequestId());
 			if (rrm.equals(null)) {
-				results.put("Error", "Request does not exist, removing assignment");
+				results.put("Error",
+						"Request does not exist, removing assignment");
 				super.mapper().delete(assReq);
 				return results;
 			}
@@ -513,55 +513,81 @@ public class MediaResource extends ResourceHelper {
 			locationId = rrm.getLocationId();
 			providerId = rrm.getProviderId();
 			nameOfLocation = rrm.getNameOfLocation();
-			
+
 			super.mapper().save(rrm);
-			
-			//Update the cache
+
+			// Update the cache
 			Object o = super.getFromCache("RecurringRequestTable");
 
 			if (o != null) {
 				@SuppressWarnings("unchecked")
 				List<RecurringRequestMedia> tmp = (List<RecurringRequestMedia>) o;
-				
+
 				tmp.add(rrm);
 				super.storeInCache("RecurringRequestTable", 259200, tmp);
 			}
-			
+
 		} else if (m.getRequestType().equals("0")) {
 			RequestMedia rm = super.mapper().load(RequestMedia.class,
 					origRequestor, m.getRequestId());
 			if (rm == null) {
-				if (!m.getRequestType().equals("3"))
+				if (m.getMediaType() != 3) {
 					results.put("Error",
 							"Request is no longer assigned to user");
-				super.mapper().delete(assReq);
-				return results;
+					super.mapper().delete(assReq);
+					return results;
+				}
 			}
+
 			rm.setRequestFulfilled(true);
 			rm.setFulfilledDate(m.getUploadedDate());
 			locationId = rm.getLocationId();
 			providerId = rm.getProviderId();
 			nameOfLocation = rm.getNameOfLocation();
+			rm.setRequestId(m.getRequestId());
 			super.mapper().save(rm);
-			//Update the cache
+			// Update the cache
 			Object o = super.getFromCache("RequestTable");
 
 			if (o != null) {
 				@SuppressWarnings("unchecked")
 				List<RequestMedia> tmp = (List<RequestMedia>) o;
-				
+
 				tmp.add(rm);
 				super.storeInCache("RecurringRequestTable", 259200, tmp);
 			}
 		}
 
-		super.mapper().delete(assReq);
+		try {
+			super.mapper().delete(assReq);
+		} catch (Exception exc) {
+
+		}
 
 		results.put("origRequestor", origRequestor);
 		results.put("locationId", locationId);
 		results.put("providerId", providerId);
 		results.put("nameOfLocation", nameOfLocation);
 		return results;
+	}
+
+	public MediaLite convertMediaToMediaLite(Media m) {
+		MediaLite ml = new MediaLite();
+		ml.setMediaURL(m.getMediaURL());
+		ml.setRequestId(m.getRequestId());
+		ml.setMediaId(m.getMediaId());
+		ml.setAccepted(m.isAccepted());
+		ml.setExpiryDate(getExpiryDate(m.getUploadedDate().getTime()));
+		ml.setType(getMediaType(m.getMediaType()));
+		ml.setUploadedDate(m.getUploadedDate());
+		ml.setContentType(m.getContentType());
+		ml.setText(m.getText());
+
+		if (m.getMediaType() == 3) {
+			ml.setExpiryDate(null);
+		}
+
+		return ml;
 	}
 
 }

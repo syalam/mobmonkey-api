@@ -135,12 +135,15 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 					in.putAll(req.getRequestHeaders());
 
 					List<String> eMailAddressHeader = new ArrayList<String>();
+					List<String> providerUserName = new ArrayList<String>();
 					try {
 						eMailAddressHeader.add(ou.geteMailAddress());
+						providerUserName.add(eMailAddress);
 					} catch (Exception exc) {
 						return false;
 					}
 					in.put("MobMonkey-user", eMailAddressHeader);
+					in.put("ProviderUserName", providerUserName);
 					req.setHeaders(in);
 					return true; // we have a valid oauthtoken !!
 				}

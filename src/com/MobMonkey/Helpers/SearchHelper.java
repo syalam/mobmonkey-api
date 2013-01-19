@@ -194,6 +194,7 @@ public final class SearchHelper extends ResourceHelper {
 		int images = 0;
 		int videos = 0;
 		int livestreaming = 0;
+		String mediaURL = "";
 		long rightNowMinus3Days = (new Date()).getTime()
 				- (3L * 24L * 60L * 60L * 1000L); // subtracted 3 days
 
@@ -233,12 +234,14 @@ public final class SearchHelper extends ResourceHelper {
 					livestreaming++;
 				}
 			}
+			
+			
 		}
-
+		
 		results.put("images", images);
 		results.put("videos", videos);
 		results.put("livestreaming", livestreaming);
-
+		
 		return results;
 	}
 
