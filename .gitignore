@@ -3,3 +3,5 @@ AwsCredentials.properties
 target
 .classpath
 .project
+test
+.DS_Store
