@@ -53,7 +53,7 @@ public class TrendingResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getNearMeInJSON(
 			@Context HttpHeaders headers,
-		//	@QueryParam("timeSpan") String timeSpan,
+			// @QueryParam("timeSpan") String timeSpan,
 			@QueryParam("latitude") String latitude,
 			@QueryParam("longitude") String longitude,
 			@QueryParam("radius") String radius,
@@ -71,14 +71,12 @@ public class TrendingResource extends ResourceHelper {
 		int interestCount = 0;
 		int topviewedCount = 0;
 		int nearbyCount = 0;
-	/*	if (timeSpan == null) {
-			return Response
-					.status(500)
-					.entity(new Status(
-							"Failure",
-							"Need to provide query parameter \'timeSpan\'. Valid timeSpan values are: day, week, or month",
-							"")).build();
-		}*/
+		/*
+		 * if (timeSpan == null) { return Response .status(500) .entity(new
+		 * Status( "Failure",
+		 * "Need to provide query parameter \'timeSpan\'. Valid timeSpan values are: day, week, or month"
+		 * , "")).build(); }
+		 */
 
 		ArrayList<String> catIds = new ArrayList<String>();
 
@@ -108,15 +106,19 @@ public class TrendingResource extends ResourceHelper {
 		}
 
 		List<Location> sortedList = GetTrends(hashKey, user.geteMailAddress());
-	/*	List<Location> sortedList = GetTrends(timeSpan, hashKey, user.geteMailAddress());*/
+		/*
+		 * List<Location> sortedList = GetTrends(timeSpan, hashKey,
+		 * user.geteMailAddress());
+		 */
 		List<Location> itemsToRemove = new ArrayList<Location>();
 
-		 topviewedCount = sortedList.size();
-		
+		topviewedCount = sortedList.size();
+
 		//
 		if (myinterests) {
 
 			for (Location loc : sortedList) {
+<<<<<<< HEAD
 				String[] locCats = loc.getCategoryIds().split(",");
 
 				for (String s : locCats) {
@@ -126,6 +128,17 @@ public class TrendingResource extends ResourceHelper {
 						itemsToRemove.add(loc);
 					}else{
 						interestCount++;
+=======
+				if (loc.getCategoryIds() != null) {
+					String[] locCats = loc.getCategoryIds().split(",");
+
+					for (String s : locCats) {
+						if (!catIds.contains(s)) {
+							itemsToRemove.add(loc);
+						} else {
+							interestCount++;
+						}
+>>>>>>> 4702417b6a78be3c865a21c2d42390ce85a21f74
 					}
 				}
 			}
@@ -138,9 +151,9 @@ public class TrendingResource extends ResourceHelper {
 						loc.getLongitude(), latitude, longitude,
 						Integer.parseInt(radius))) {
 					itemsToRemove.add(loc);
-				}else{
+				} else {
 					nearbyCount++;
-					
+
 				}
 			}
 
@@ -158,57 +171,56 @@ public class TrendingResource extends ResourceHelper {
 			}
 
 			for (Location loc : sortedList) {
-			  
-				if (!ht.containsKey(loc.getLocationId() + ":" + loc.getProviderId())) {
+
+				if (!ht.containsKey(loc.getLocationId() + ":"
+						+ loc.getProviderId())) {
 					itemsToRemove.add(loc);
-				}else{
+				} else {
 					bookmarkCount++;
 				}
 			}
 
 		}
 
-		
 		for (Location i : itemsToRemove) {
 			sortedList.remove(i);
 		}
-		
-		for(Location i : sortedList){
-		
-		
-		Object o = super.getFromCache("m" + i.getLocationId().toLowerCase().trim() + i.getProviderId().toLowerCase().trim());
-		
-			if (o != null) {
-				
-				i.setMedia((MediaLite) o);
-				
-			} 
-		
-		}
-		
-		
 
-		if(countonly){
+		for (Location i : sortedList) {
+
+			Object o = super.getFromCache("m"
+					+ i.getLocationId().toLowerCase().trim()
+					+ i.getProviderId().toLowerCase().trim());
+
+			if (o != null) {
+
+				i.setMedia((MediaLite) o);
+
+			}
+
+		}
+
+		if (countonly) {
 			counts.put("topviewedCount", topviewedCount);
 			counts.put("nearbyCount", nearbyCount);
 			counts.put("bookmarkCount", bookmarkCount);
 			counts.put("interestCount", interestCount);
 			return Response.ok().entity(counts).build();
-		}else{
+		} else {
 			return Response.ok().entity(sortedList).build();
 		}
-	
 
 	}
 
-	//private List<Location> GetTrends(String timeSpan, String type, String eMailAddress) {
+	// private List<Location> GetTrends(String timeSpan, String type, String
+	// eMailAddress) {
 	private List<Location> GetTrends(String type, String eMailAddress) {
-		
-		
+
 		long threeHours = 3L * 60L * 60L * 1000L;
 		Date now = new Date();
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
-		String timeSpanString = dateFormatter.format(now.getTime() - threeHours);
+		String timeSpanString = dateFormatter
+				.format(now.getTime() - threeHours);
 
 		DynamoDBQueryExpression scanExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(type));
@@ -248,8 +260,8 @@ public class TrendingResource extends ResourceHelper {
 						count++;
 						sortedList.add(loc);
 						if (count == 11) {
-							sortedList = new SearchHelper()
-									.PopulateCounts(sortedList, eMailAddress);
+							sortedList = new SearchHelper().PopulateCounts(
+									sortedList, eMailAddress);
 							return sortedList;
 						}
 					}
