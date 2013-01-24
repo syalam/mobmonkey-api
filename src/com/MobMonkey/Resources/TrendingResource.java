@@ -118,7 +118,7 @@ public class TrendingResource extends ResourceHelper {
 		if (myinterests) {
 
 			for (Location loc : sortedList) {
-<<<<<<< HEAD
+
 				String[] locCats = loc.getCategoryIds().split(",");
 
 				for (String s : locCats) {
@@ -128,17 +128,7 @@ public class TrendingResource extends ResourceHelper {
 						itemsToRemove.add(loc);
 					}else{
 						interestCount++;
-=======
-				if (loc.getCategoryIds() != null) {
-					String[] locCats = loc.getCategoryIds().split(",");
 
-					for (String s : locCats) {
-						if (!catIds.contains(s)) {
-							itemsToRemove.add(loc);
-						} else {
-							interestCount++;
-						}
->>>>>>> 4702417b6a78be3c865a21c2d42390ce85a21f74
 					}
 				}
 			}
