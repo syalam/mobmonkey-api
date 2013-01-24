@@ -120,7 +120,9 @@ public class TrendingResource extends ResourceHelper {
 				String[] locCats = loc.getCategoryIds().split(",");
 
 				for (String s : locCats) {
-					if (!catIds.contains(s)) {
+					String tmp = s.replaceAll("[^0-9]", "");
+					if (!catIds.contains(tmp)) {
+						
 						itemsToRemove.add(loc);
 					}else{
 						interestCount++;

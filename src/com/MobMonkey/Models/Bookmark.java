@@ -13,6 +13,11 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable( tableName = "Bookmark")
 public class Bookmark implements Serializable {
 
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6783827100517082796L;
 	private String eMailAddress;
 	@JsonIgnore private String locprovId;
 	private String locationId;

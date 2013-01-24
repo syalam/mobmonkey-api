@@ -10,6 +10,7 @@ import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
@@ -74,12 +75,12 @@ public class BookmarkResource extends ResourceHelper {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteBookmarkInJSON(@Context HttpHeaders headers,
-			Bookmark b) {
+			@QueryParam("locationId") String locationId, @QueryParam("providerId") String providerId) {
 
 		User user = super.getUser(headers);
-
+		Bookmark b = new Bookmark();
 		b.seteMailAddress(user.geteMailAddress());
-		b.setLocprovId(b.getLocationId() + ":" + b.getProviderId());
+		b.setLocprovId(locationId + ":" + providerId);
 
 		try {
 			super.mapper().delete(b);

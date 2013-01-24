@@ -81,6 +81,9 @@ public class InboxResource extends ResourceHelper {
 
 	public List<RequestMedia> getRequests(String type, String eMailAddress) {
 		List<RequestMedia> results = new ArrayList<RequestMedia>();
+	//	long threeDaysAgo = (new Date()).getTime()
+		//		- (3L * 24L * 60L * 60L * 1000L);
+		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L);
 
 		if (type.toLowerCase().equals("openrequests")) {
 			// TODO add recurring requests to this list
@@ -155,13 +158,16 @@ public class InboxResource extends ResourceHelper {
 				case 0:
 					RequestMedia rm = super.mapper().load(RequestMedia.class,
 							assReq.getRequestorEmail(), assReq.getRequestId());
-					results.add(rm);
+					if (rm.getRequestDate().getTime() > threeHoursAgo) {
+						results.add(rm);
+					}
 					break;
 				case 1:
 					RequestMediaResource rmr = new RequestMediaResource();
 					RecurringRequestMedia rrm = super.mapper().load(
 							RecurringRequestMedia.class,
 							assReq.getRequestorEmail());
+
 					results.add(rmr.convertToRM(rrm));
 
 					break;
@@ -172,8 +178,7 @@ public class InboxResource extends ResourceHelper {
 		}
 		if (type.toLowerCase().equals("fulfilledrequests")) {
 			// TODO Caching
-			long threeDaysAgo = (new Date()).getTime()
-					- (3L * 24L * 60L * 60L * 1000L);
+
 			// Regular requests
 			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
@@ -192,7 +197,7 @@ public class InboxResource extends ResourceHelper {
 			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
 				if (rm.isRequestFulfilled()
-						&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
+						&& rm.getFulfilledDate().getTime() > threeHoursAgo) {
 					unsorted.put(rm, rm.getScheduleDate().getTime());
 				}
 			}
@@ -238,7 +243,7 @@ public class InboxResource extends ResourceHelper {
 							mediaL.add(ml);
 						} else {
 
-							if (m.getUploadedDate().getTime() >= threeDaysAgo) {
+							if (m.getUploadedDate().getTime() >= threeHoursAgo) {
 								mediaL.add(ml);
 							}
 						}
@@ -256,8 +261,9 @@ public class InboxResource extends ResourceHelper {
 
 	public HashMap<String, Integer> getCounts(String eMailAddress) {
 		HashMap<String, Integer> results = new HashMap<String, Integer>();
-		long threeDaysAgo = (new Date()).getTime()
-				- (3L * 24L * 60L * 60L * 1000L);
+		//long threeDaysAgo = (new Date()).getTime()
+		//		- (3L * 24L * 60L * 60L * 1000L);
+		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L);
 
 		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(eMailAddress));
@@ -309,7 +315,7 @@ public class InboxResource extends ResourceHelper {
 
 				} else {
 
-					if (rm.getFulfilledDate().getTime() < threeDaysAgo) {
+					if (rm.getFulfilledDate().getTime() < threeHoursAgo) {
 						super.mapper().delete(rm);
 					}
 
@@ -318,8 +324,6 @@ public class InboxResource extends ResourceHelper {
 			}
 		}
 		results.put("openrequests", openCount);
-
-		
 
 		int fulfilledCount = 0;
 
@@ -332,7 +336,7 @@ public class InboxResource extends ResourceHelper {
 			RequestMedia rm = entry.getKey();
 
 			if (rm.isRequestFulfilled()
-					&& rm.getFulfilledDate().getTime() > threeDaysAgo) {
+					&& rm.getFulfilledDate().getTime() > threeHoursAgo) {
 				unsortedMedia.put(rm, rm.getScheduleDate().getTime());
 			}
 
@@ -354,7 +358,7 @@ public class InboxResource extends ResourceHelper {
 			}
 		}
 		results.put("fulfilledCount", fulfilledCount);
-		
+
 		int assignedCount = 0;
 
 		queryExpression = new DynamoDBQueryExpression(
@@ -388,13 +392,14 @@ public class InboxResource extends ResourceHelper {
 				break;
 			case 1:
 
-				RecurringRequestMedia rrm = super.mapper()
-						.load(RecurringRequestMedia.class,
-								assReq.getRequestorEmail(), assReq.getRequestId());
+				RecurringRequestMedia rrm = super.mapper().load(
+						RecurringRequestMedia.class,
+						assReq.getRequestorEmail(), assReq.getRequestId());
 				if (rrm == null) {
 					super.mapper().delete(assReq);
 				} else {
-					//TODO if the window for this request has expired, remove it from the users assigned queue
+					// TODO if the window for this request has expired, remove
+					// it from the users assigned queue
 					assignedCount++;
 				}
 				break;
@@ -419,9 +424,10 @@ public class InboxResource extends ResourceHelper {
 	}
 
 	private Date getExpiryDate(long uploadDate) {
-		long threedays = 3L * 24L * 60L * 60L * 1000L;
+	//	long threedays = 3L * 24L * 60L * 60L * 1000L;
+		long threehours = 3L * 60L * 60L * 1000L;
 		Date expiryDate = new Date();
-		expiryDate.setTime(uploadDate + threedays);
+		expiryDate.setTime(uploadDate + threehours);
 		return expiryDate;
 	}
 

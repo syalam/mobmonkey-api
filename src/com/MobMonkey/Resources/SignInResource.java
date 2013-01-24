@@ -195,6 +195,7 @@ public class SignInResource extends ResourceHelper {
 		ou.seteMailAddress(eMailAddress);
 		ou.setoAuthToken(token);
 		super.mapper().save(ou);
+		
 
 		return Response
 				.ok()

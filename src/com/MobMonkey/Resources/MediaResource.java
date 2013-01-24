@@ -311,14 +311,17 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			lm.setMediaId(media.getMediaId());
 
 			super.mapper().save(lm);
+			
+			// Trending
+			Trending t = new Trending();
+			t.setType("Media");
+			t.setTimeStamp(now);
+			t.setLocationId(locationId);
+			t.setProviderId(providerId);
+			super.mapper().save(t);
+			
 		}
-		// Trending
-		Trending t = new Trending();
-		t.setType("Media");
-		t.setTimeStamp(now);
-		t.setLocationId(locationId);
-		t.setProviderId(providerId);
-		super.mapper().save(t);
+	
 
 		// Send notification to apple device
 
@@ -355,10 +358,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		// Query location media table for date range today - 3 days.
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-		long threeDaysAgo = (new Date()).getTime()
-				- (3L * 24L * 60L * 60L * 1000L); // three days in milliseconds
+		long threeHoursAgo = (new Date()).getTime()
+				- (3L * 60L * 60L * 1000L); // three hours in milliseconds
 
-		String threeDaysAgoDate = dateFormatter.format(threeDaysAgo);
+		String threeHoursAgoDate = dateFormatter.format(threeHoursAgo);
 
 		LocationMedia result = new LocationMedia();
 		result.setLocationId(locationId);
@@ -368,7 +371,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		queryExpression.setRangeKeyCondition(new Condition()
 				.withComparisonOperator(ComparisonOperator.GT)
 				.withAttributeValueList(
-						new AttributeValue().withS(threeDaysAgoDate)));
+						new AttributeValue().withS(threeHoursAgoDate)));
 
 		PaginatedQueryList<LocationMedia> results = super.mapper().query(
 				LocationMedia.class, queryExpression);
@@ -412,9 +415,9 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	}
 
 	private Date getExpiryDate(long uploadDate) {
-		long threedays = 3L * 24L * 60L * 60L * 1000L;
+		long threehours = 3L * 60L * 60L * 1000L;
 		Date expiryDate = new Date();
-		expiryDate.setTime(uploadDate + threedays);
+		expiryDate.setTime(uploadDate + threehours);
 		return expiryDate;
 	}
 
@@ -554,7 +557,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				List<RequestMedia> tmp = (List<RequestMedia>) o;
 
 				tmp.add(rm);
-				super.storeInCache("RecurringRequestTable", 259200, tmp);
+				super.storeInCache("RequestTable", 259200, tmp);
 			}
 		}
 
