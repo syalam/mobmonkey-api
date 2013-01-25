@@ -12,11 +12,21 @@ import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.Map.Entry;
+import java.awt.geom.AffineTransform;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
+
+import javax.imageio.*;
 
 import javax.xml.bind.*;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.NotificationHelper;
@@ -454,6 +464,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			return "Error:Missing the ContentType attribute";
 		}
 		String mediaFileName = prefix + m.getMediaId() + ext;
+		String mediaThumbnailFileName = mediaFileName + ".thumbnail.png"; // (we could do something like prefix + m.getMediaId() + ".png" but this should be easier to handle everywhere)
 
 		byte[] btDataFile = DatatypeConverter.parseBase64Binary(m
 				.getMediaData());
@@ -469,13 +480,43 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		super.s3cli().putObject(putObjectRequest);
 		String url = "";
 
-		if (m.getMediaType() == 1) {
+		if (m.getMediaType() == 1) { // image
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
+			// TODO / FIXME - factor this out to a thumbnail method
+	        try {
+	            Image originalImage = ImageIO.read(new ByteArrayInputStream(btDataFile));
+	            // TODO / FIXME - use the correct thumbnail geometry
+	            Integer thumbnailWidth = 100;
+	            Integer thumbnailHeight = 100;
 
-		} else if (m.getMediaType() == 2) {
+	            RenderedImage thumbnailImage = (RenderedImage)originalImage.getScaledInstance(thumbnailWidth, thumbnailHeight, Image.SCALE_SMOOTH);
+
+	            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+	            ImageIO.write(thumbnailImage, "PNG", byteArrayOutputStream);
+
+	            byte[] thumbnailDataFile = byteArrayOutputStream.toByteArray();
+
+	            ObjectMetadata thumbnailObjectMetadata = new ObjectMetadata();
+	            thumbnailObjectMetadata.setContentLength(thumbnailDataFile.length);
+	            objmeta.setContentType("image/png");
+	            objmeta.setExpirationTimeRuleId("images");
+
+	            PutObjectRequest thumbnailPutObjectRequest = new PutObjectRequest(
+	            		bucket,
+	    	            mediaThumbnailFileName, 
+	    				new ByteArrayInputStream(thumbnailDataFile), // I'm sure there is a cleaner way to do this
+	    				objmeta);
+	            thumbnailPutObjectRequest.setRequestCredentials(super.credentials());
+	            thumbnailPutObjectRequest.setCannedAcl(CannedAccessControlList.PublicRead);
+	    		super.s3cli().putObject(thumbnailPutObjectRequest);
+	        } catch (IOException e) {
+	        	// TODO / FIXME - recover from exception
+	        }
+
+		} else if (m.getMediaType() == 2) { // movie 
 			url = "https://s3.amazonaws.com/" + bucket + "/" + mediaFileName;
-
+			// TODO / FIXME - generate thumbnail from video bytestream
 		}
 
 		return url;
