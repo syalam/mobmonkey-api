@@ -67,6 +67,12 @@ public class UserResource extends ResourceHelper {
 		User.setPartnerId(partnerId);
 		User.setVerified(false);
 		User.setDateRegistered(new Date());
+		User.setBirthday(birthday);
+		User.setFirstName(firstName);
+		User.setLastName(lastName);
+		User.setGender(gender);
+		User.setCity(city);
+//		User.setPassword(password);
 		super.mapper().save(User);
 		// Let's save the user's device Id as well
 		// TODO in signin API send the users deviceId so we will keep adding to
