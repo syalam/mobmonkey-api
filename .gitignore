@@ -1,2 +1,5 @@
 *.class
 AwsCredentials.properties
+.DS_Store
+maven-archiver
+target/*SNAPSHOT*
