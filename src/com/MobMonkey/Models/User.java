@@ -28,6 +28,7 @@ public class User  {
 	private String deviceId;
 	private String deviceType;
 	private Date lastSignIn;
+	private boolean admin;
 	
 	@DynamoDBHashKey
 	public String geteMailAddress() {
@@ -197,6 +198,15 @@ public class User  {
 
 	public void setLastSignIn(Date lastSignIn) {
 		this.lastSignIn = lastSignIn;
+	}
+
+	@DynamoDBAttribute
+	public boolean isAdmin() {
+		return admin;
+	}
+
+	public void setAdmin(boolean admin) {
+		this.admin = admin;
 	}
 
 	

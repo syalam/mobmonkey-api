@@ -148,6 +148,13 @@ public class RequestMediaResource extends ResourceHelper {
 			new Locator();
 			coords = new Locator().reverseLookUp(r.getProviderId(),
 					r.getLocationId());
+			if(coords == null){
+				return Response
+						.status(500)
+						.entity("Location not found in factual or MobMonkey's location database.")
+						.build();
+				
+			}
 			if (coords.getLatitude() != null && coords.getLongitude() != null) {
 				r.setLatitude(coords.getLatitude());
 				r.setLongitude(coords.getLongitude());
@@ -176,6 +183,7 @@ public class RequestMediaResource extends ResourceHelper {
 		r.seteMailAddress(username);
 		r.setMediaType(mediaType);
 		r.setRequestDate(now);
+		r.setMarkAsRead(false);
 		if (r.getScheduleDate() == null) {
 			r.setScheduleDate(now);
 		}
@@ -304,6 +312,7 @@ public class RequestMediaResource extends ResourceHelper {
 		rm.setRequestDate(r.getRequestDate());
 		rm.setNameOfLocation(r.getNameOfLocation());
 		rm.setExpired(r.isExpired());
+		rm.setMediaType(r.getMediaType());
 
 		return rm;
 
@@ -331,6 +340,8 @@ public class RequestMediaResource extends ResourceHelper {
 		rm.setRequestDate(r.getRequestDate());
 		rm.setNameOfLocation(r.getNameOfLocation());
 		rm.setExpired(r.isExpired());
+		rm.setMarkAsRead(r.isMarkAsRead());
+		rm.setMediaType(r.getMediaType());
 
 		return rm;
 

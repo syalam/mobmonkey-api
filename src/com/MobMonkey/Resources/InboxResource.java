@@ -81,8 +81,8 @@ public class InboxResource extends ResourceHelper {
 
 	public List<RequestMedia> getRequests(String type, String eMailAddress) {
 		List<RequestMedia> results = new ArrayList<RequestMedia>();
-	//	long threeDaysAgo = (new Date()).getTime()
-		//		- (3L * 24L * 60L * 60L * 1000L);
+		// long threeDaysAgo = (new Date()).getTime()
+		// - (3L * 24L * 60L * 60L * 1000L);
 		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L);
 
 		if (type.toLowerCase().equals("openrequests")) {
@@ -152,6 +152,7 @@ public class InboxResource extends ResourceHelper {
 
 			}
 
+			List<AssignedRequest> requestsToSave = new ArrayList<AssignedRequest>();
 			for (Entry<AssignedRequest, Long> entry : entriesSortedByValues(unsorted)) {
 				AssignedRequest assReq = entry.getKey();
 				switch (assReq.getRequestType()) {
@@ -159,7 +160,21 @@ public class InboxResource extends ResourceHelper {
 					RequestMedia rm = super.mapper().load(RequestMedia.class,
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					if (rm.getRequestDate().getTime() > threeHoursAgo) {
+						if (assReq.isMarkAsRead())
+							rm.setMarkAsRead(true);
+						else
+							rm.setMarkAsRead(false);
 						results.add(rm);
+
+						try {
+							AssignedRequest newReq = (AssignedRequest) assReq.clone();
+							newReq.setMarkAsRead(true);
+							requestsToSave.add(newReq);
+							
+						} catch (CloneNotSupportedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 					break;
 				case 1:
@@ -167,14 +182,28 @@ public class InboxResource extends ResourceHelper {
 					RecurringRequestMedia rrm = super.mapper().load(
 							RecurringRequestMedia.class,
 							assReq.getRequestorEmail());
+					RequestMedia tmp = rmr.convertToRM(rrm);
+					if (assReq.isMarkAsRead())
+						tmp.setMarkAsRead(true);
+					else
+						tmp.setMarkAsRead(false);
+					results.add(tmp);
 
-					results.add(rmr.convertToRM(rrm));
+					try {
+						AssignedRequest newReq = (AssignedRequest) assReq.clone();
+						newReq.setMarkAsRead(true);
+						requestsToSave.add(newReq);
+						
+					} catch (CloneNotSupportedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 
 					break;
 				}
 
 			}
-
+			super.mapper().batchSave(requestsToSave);
 		}
 		if (type.toLowerCase().equals("fulfilledrequests")) {
 			// TODO Caching
@@ -194,20 +223,39 @@ public class InboxResource extends ResourceHelper {
 					.mapper().query(RecurringRequestMedia.class,
 							queryExpression2);
 
+			List<RequestMedia> requestsToSave = new ArrayList<RequestMedia>();
 			HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
 			for (RequestMedia rm : openRequests) {
 				if (rm.isRequestFulfilled()
 						&& rm.getFulfilledDate().getTime() > threeHoursAgo) {
 					unsorted.put(rm, rm.getScheduleDate().getTime());
+					try {
+						RequestMedia tmp = (RequestMedia) rm.clone();
+						tmp.setMarkAsRead(true);
+						requestsToSave.add(tmp);
+					} catch (CloneNotSupportedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
 			}
-
+			super.mapper().batchSave(requestsToSave);
+		
+			List<RecurringRequestMedia> recurringRequestsToSave = new ArrayList<RecurringRequestMedia>();
 			RequestMediaResource rmr = new RequestMediaResource();
 			for (RecurringRequestMedia rrm : openRecRequests) {
 				RequestMedia rm = rmr.convertToRM(rrm);
 				unsorted.put(rm, rm.getScheduleDate().getTime());
-
+				try {
+					RecurringRequestMedia tmp = (RecurringRequestMedia) rrm.clone();
+					tmp.setMarkAsRead(true);
+					recurringRequestsToSave.add(tmp);
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
+			super.mapper().batchSave(recurringRequestsToSave);
 
 			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
 				// check to see if request is fulfilled
@@ -261,8 +309,8 @@ public class InboxResource extends ResourceHelper {
 
 	public HashMap<String, Integer> getCounts(String eMailAddress) {
 		HashMap<String, Integer> results = new HashMap<String, Integer>();
-		//long threeDaysAgo = (new Date()).getTime()
-		//		- (3L * 24L * 60L * 60L * 1000L);
+		// long threeDaysAgo = (new Date()).getTime()
+		// - (3L * 24L * 60L * 60L * 1000L);
 		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L);
 
 		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
@@ -351,7 +399,7 @@ public class InboxResource extends ResourceHelper {
 			 * rm.getProviderId(), rm.getLocationId()).getName()); }
 			 */
 
-			if (rm.isRequestFulfilled()) {
+			if (rm.isRequestFulfilled() && !rm.isMarkAsRead()) {
 
 				fulfilledCount++;
 
@@ -385,7 +433,8 @@ public class InboxResource extends ResourceHelper {
 					if (now.getTime() > assReq.getExpiryDate().getTime()) {
 						super.mapper().delete(assReq);
 					} else {
-						assignedCount++;
+						if (!assReq.isMarkAsRead())
+							assignedCount++;
 					}
 				}
 
@@ -400,7 +449,8 @@ public class InboxResource extends ResourceHelper {
 				} else {
 					// TODO if the window for this request has expired, remove
 					// it from the users assigned queue
-					assignedCount++;
+					if (!assReq.isMarkAsRead())
+						assignedCount++;
 				}
 				break;
 			}
@@ -424,7 +474,7 @@ public class InboxResource extends ResourceHelper {
 	}
 
 	private Date getExpiryDate(long uploadDate) {
-	//	long threedays = 3L * 24L * 60L * 60L * 1000L;
+		// long threedays = 3L * 24L * 60L * 60L * 1000L;
 		long threehours = 3L * 60L * 60L * 1000L;
 		Date expiryDate = new Date();
 		expiryDate.setTime(uploadDate + threehours);
@@ -439,6 +489,7 @@ public class InboxResource extends ResourceHelper {
 		PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
 				.query(AssignedRequest.class, queryExpression);
 
+		List<AssignedRequest> requestsToSave = new ArrayList<AssignedRequest>();
 		for (AssignedRequest assReq : assignedToMe) {
 			if (assReq.getExpiryDate().getTime() < new Date().getTime()) {
 				super.mapper().delete(assReq);
@@ -449,6 +500,7 @@ public class InboxResource extends ResourceHelper {
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					assReq.setNameOfLocation(rm.getNameOfLocation());
 					results.add(assReq);
+				
 
 					break;
 				case 1:
@@ -459,9 +511,20 @@ public class InboxResource extends ResourceHelper {
 					results.add(assReq);
 					break;
 				}
+				AssignedRequest newReq;
+				try {
+					newReq = (AssignedRequest) assReq.clone();
+					newReq.setMarkAsRead(true);
+					requestsToSave.add(newReq);
+				} catch (CloneNotSupportedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 			}
 
 		}
+		super.mapper().batchSave(requestsToSave);
 		return results;
 	}
 

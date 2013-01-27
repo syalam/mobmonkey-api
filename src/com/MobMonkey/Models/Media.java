@@ -29,6 +29,8 @@ public class Media implements Serializable {
 	private String text;
 	private Date uploadedDate;
 	private boolean accepted;
+	private boolean flaggedAsInappropriate;
+	private boolean confirmedInappropriate;
 	@JsonIgnore
 	private String originalRequestor;
 
@@ -141,6 +143,23 @@ public class Media implements Serializable {
 
 	public void setText(String text) {
 		this.text = text;
+	}
+
+	@DynamoDBAttribute
+	public boolean isFlaggedAsInappropriate() {
+		return flaggedAsInappropriate;
+	}
+
+	public void setFlaggedAsInappropriate(boolean flaggedAsInappropriate) {
+		this.flaggedAsInappropriate = flaggedAsInappropriate;
+	}
+	@DynamoDBAttribute
+	public boolean isConfirmedInappropriate() {
+		return confirmedInappropriate;
+	}
+
+	public void setConfirmedInappropriate(boolean confirmedInappropriate) {
+		this.confirmedInappropriate = confirmedInappropriate;
 	}
 
 }

@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -11,7 +12,11 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable( tableName = "AssignedRequest")
-public class AssignedRequest {
+public class AssignedRequest implements Serializable, Cloneable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 933763842407476406L;
 	@JsonIgnore private String eMailAddress;
 	private String requestId;
 	private String message;
@@ -25,6 +30,7 @@ public class AssignedRequest {
 	private String providerId;
 	private String longitude;
 	private String latitude;
+	private boolean markAsRead;
 	
 	
 
@@ -158,4 +164,17 @@ public class AssignedRequest {
 	public void setLatitude(String latitude) {
 		this.latitude = latitude;
 	}
+
+	@DynamoDBAttribute
+	public boolean isMarkAsRead() {
+		return markAsRead;
+	}
+
+	public void setMarkAsRead(boolean markAsRead) {
+		this.markAsRead = markAsRead;
+	}
+	
+	 public Object clone() throws CloneNotSupportedException {
+	        return super.clone();
+	  }
 }

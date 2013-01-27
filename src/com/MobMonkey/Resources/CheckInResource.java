@@ -155,6 +155,7 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 			assReq.setLocationId(req.getLocationId());
 			assReq.setLatitude(req.getLatitude());
 			assReq.setLongitude(req.getLongitude());
+			assReq.setMarkAsRead(false);
 
 			super.mapper().save(assReq);
 

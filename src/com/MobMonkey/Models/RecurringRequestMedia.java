@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
 
@@ -10,7 +11,11 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "RecurringRequestMedia")
-public class RecurringRequestMedia  {
+public class RecurringRequestMedia implements Serializable,Cloneable  {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 6922348300565657566L;
 	private String partnerId;
 	private String eMailAddress;
 	private String requestId;
@@ -31,6 +36,7 @@ public class RecurringRequestMedia  {
 	private boolean expired;
 	private int frequencyInMS;
 	private String nameOfLocation;
+	private boolean markAsRead;
 	private List<MediaLite> media;
 	
 	public RecurringRequestMedia() {
@@ -139,6 +145,15 @@ public class RecurringRequestMedia  {
 	}
 
 	@DynamoDBAttribute()
+	public int getMediaType() {
+		return mediaType;
+	}
+
+	public void setMediaType(int mediaType) {
+		this.mediaType = mediaType;
+	}
+
+	@DynamoDBAttribute()
 	public Date getScheduleDate() {
 		return scheduleDate;
 	}
@@ -220,4 +235,16 @@ public class RecurringRequestMedia  {
 		this.media = media;
 	}
 
+	@DynamoDBAttribute
+	public boolean isMarkAsRead() {
+		return markAsRead;
+	}
+
+	public void setMarkAsRead(boolean markAsRead) {
+		this.markAsRead = markAsRead;
+	}
+
+	 public Object clone() throws CloneNotSupportedException {
+	        return super.clone();
+	  }
 }

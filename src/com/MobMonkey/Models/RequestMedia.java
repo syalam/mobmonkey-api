@@ -13,7 +13,7 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "RequestMedia")
-public class RequestMedia implements Serializable {
+public class RequestMedia implements Serializable,Cloneable {
 	/**
 	 * 
 	 */
@@ -38,6 +38,7 @@ public class RequestMedia implements Serializable {
 	private boolean expired;
 	private int frequencyInMS;
 	private String nameOfLocation;
+	private boolean markAsRead;
 	private List<MediaLite> media;
 	
 	public RequestMedia() {
@@ -225,13 +226,27 @@ public class RequestMedia implements Serializable {
 		this.nameOfLocation = nameOfLocation;
 	}
 	
+	@DynamoDBAttribute
+	public boolean isMarkAsRead() {
+		return markAsRead;
+	}
+
+	public void setMarkAsRead(boolean markAsRead) {
+		this.markAsRead = markAsRead;
+	}
+	
 	@DynamoDBIgnore
 	public List<MediaLite> getMedia() {
 		return media;
 	}
 
+	
+
 	public void setMedia(List<MediaLite> media) {
 		this.media = media;
 	}
-
+	
+	 public Object clone() throws CloneNotSupportedException {
+	        return super.clone();
+	  }
 }

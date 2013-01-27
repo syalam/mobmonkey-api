@@ -592,5 +592,67 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		return ml;
 	}
+	
+	@POST
+	@Path("/flaginappropriate")
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response flagMediaInappropriateInJSON(
+			@QueryParam("requestId") String requestId,
+			@QueryParam("mediaId") String mediaId, @Context HttpHeaders headers) {
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+		Media m = new Media();
+
+		try {
+			m = super.mapper().load(Media.class, requestId, mediaId);
+			if (!m.getOriginalRequestor().toLowerCase()
+					.equals(username.toLowerCase())) {
+				return Response
+						.status(500)
+						.entity(new Status(
+								"Error",
+								"The requestId provided is not associated with your username",
+								"")).build();
+			}
+		} catch (Exception exc) {
+			return Response
+					.status(500)
+					.entity(new Status(
+							"Error",
+							"There was a problem loading this media from the DB",
+							"")).build();
+		}
+		if (m.getRequestType().equals("0")) {
+			try {
+
+				m.setAccepted(true);
+				super.mapper().save(m);
+				super.storeInCache(requestId + ":" + mediaId, 259200, m);
+
+				return Response
+						.ok()
+						.entity(new Status("Success",
+								"Successfully accepted media", "")).build();
+
+			} catch (Exception exc) {
+				return Response
+						.status(500)
+						.entity(new Status(
+								"Error",
+								"The requestId provided is not associated with your username",
+								"")).build();
+			}
+		} else {
+			// super.ampper().load(RecurringRequstMedia)
+			// TODO implement recurring
+			return Response
+					.ok()
+					.entity(new Status("NEED TO IMPLEMENT",
+							"NEED TO IMPLEMENT", "")).build();
+
+		}
+
+	}
+
 
 }
