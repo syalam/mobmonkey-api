@@ -17,6 +17,8 @@ public final class ApplePNSHelper {
 
 	public static void send(String[] devices, String msg) {
 
+		//TODO sanitize the Id's before sending them
+		
 		InputStream keyStore = ApplePNSHelper.class
 				.getResourceAsStream(keyStoreFile);
 		try {

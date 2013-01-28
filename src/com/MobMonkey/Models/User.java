@@ -1,11 +1,17 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 import com.amazonaws.services.dynamodb.datamodeling.*;
 
 @DynamoDBTable(tableName = "User")
-public class User  {
+public class User implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 7724538794944214988L;
+
 	public User()
 	{
 	}

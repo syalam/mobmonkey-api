@@ -1,5 +1,6 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
@@ -11,8 +12,12 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable(tableName = "LocationMessage")
-public class LocationMessage {
+public class LocationMessage implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -3758474678223983980L;
 	@JsonIgnore private String locprovId;
 	private String messageId;
 	private String message;

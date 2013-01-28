@@ -1,5 +1,6 @@
 package com.MobMonkey.Helpers;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.MobMonkey.Models.Device;
@@ -9,24 +10,33 @@ import com.amazonaws.services.dynamodb.model.AttributeValue;
 
 public class NotificationHelper extends ResourceHelper {
 
-	public NotificationHelper(){
+	public NotificationHelper() {
 		super();
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	public String[] getUserDevices(String eMailAddress) {
-		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(eMailAddress));
 
-		List<Device> scanResult = super.mapper().query(Device.class,
-				queryExpression);
+		List<Device> results = new ArrayList<Device>();
+		results = (List<Device>) super.getFromCache("DEV" + eMailAddress);
 
-		String[] deviceIds = new String[scanResult.size()];
+		if (results == null) {
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+
+			results = super.mapper().query(Device.class, queryExpression);
+
+			super.storeInCache("DEV" + eMailAddress, 259200,
+					results.subList(0, results.size()));
+		}
+
+		String[] deviceIds = new String[results.size()];
 
 		for (int i = 0; i < deviceIds.length; i++) {
-			deviceIds[i] = scanResult.get(i).getDeviceId().toString();
+			deviceIds[i] = results.get(i).getDeviceId().toString();
 		}
 
 		return deviceIds;
 	}
-	
+
 }

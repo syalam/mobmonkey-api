@@ -151,14 +151,14 @@ public final class SearchHelper extends ResourceHelper {
 	public int UserCountAtLocation(Location loc) {
 		int count = 0;
 
-		List<CheckIn> checkIn = null;
+		Map<String, CheckIn> checkIn = new HashMap<String, CheckIn>();
 
 		// Check if its in cache first
 		Object o = super.getFromCache("CheckInData");
 
 		if (o != null) {
 			try {
-				checkIn = (List<CheckIn>) o;
+				checkIn = (HashMap<String, CheckIn>) o;
 
 			} catch (IllegalArgumentException e) {
 
@@ -169,12 +169,14 @@ public final class SearchHelper extends ResourceHelper {
 
 			PaginatedScanList<CheckIn> results = super.mapper().scan(
 					CheckIn.class, scanExpression);
-			checkIn = results.subList(0, results.size());
+			for(CheckIn c : results){
+				checkIn.put(c.geteMailAddress(), c);
+			}
 
 			super.storeInCache("CheckInData", 259200, checkIn);
 		}
 
-		for (CheckIn c : checkIn) {
+		for (CheckIn c : checkIn.values()) {
 			new Locator();
 			if (loc.getLongitude() != null && loc.getLatitude() != null
 					&& c.getLatitude() != null && c.getLongitude() != null) {
@@ -214,17 +216,8 @@ public final class SearchHelper extends ResourceHelper {
 				LocationMedia.class, queryExpression);
 
 		for (LocationMedia l : requests) {
-			Media r = null;
-			Object o = super.getFromCache(l.getRequestId() + ":"
-					+ l.getMediaId());
-			if (o != null) {
-				r = (Media) o;
-			} else {
-				r = super.mapper().load(Media.class, l.getRequestId(),
-						l.getMediaId());
-				super.storeInCache(l.getRequestId() + ":" + l.getMediaId(),
-						259200, r);
-			}
+			Media r = (Media) super.load(Media.class, l.getRequestId(), l.getMediaId());
+			
 			if (r != null) {
 				if (r.getMediaType() == 1) {
 					images++;

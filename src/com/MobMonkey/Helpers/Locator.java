@@ -3,7 +3,9 @@ package com.MobMonkey.Helpers;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 
 import com.MobMonkey.Models.CheckIn;
@@ -36,7 +38,7 @@ public final class Locator extends ResourceHelper {
 			loc = factual.reverseLookUp(locationId);
 		} else if (providerId.toLowerCase().equals(
 				mobmonkey_providerId.toLowerCase())) {
-			loc = super.mapper().load(Location.class, locationId, providerId);
+			loc = (Location) super.load(Location.class, locationId, providerId);
 		}
 
 		return loc;
@@ -202,9 +204,9 @@ public final class Locator extends ResourceHelper {
 		if (o != null) {
 			try {
 				@SuppressWarnings("unchecked")
-				List<CheckIn> checkIn = (List<CheckIn>) o;
+				Map<String, CheckIn> checkIn = (HashMap<String,CheckIn>) o;
 
-				for (CheckIn c : checkIn) {
+				for (CheckIn c : checkIn.values()) {
 					if (Locator.isInVicinity(latitude, longitude,
 							c.getLatitude(), c.getLongitude(), radiusInYards)) {
 						results.add(c.geteMailAddress());
@@ -225,8 +227,6 @@ public final class Locator extends ResourceHelper {
 					results.add(c.geteMailAddress());
 				}
 			}
-
-			super.storeInCache("CheckInData", 259200, (List<CheckIn>) checkIn);
 		}
 
 		return results;

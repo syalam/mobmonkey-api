@@ -38,7 +38,7 @@ public class BookmarkResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getBookmarksInJSON(@Context HttpHeaders headers) {
 		User user = super.getUser(headers);
-		
+
 		List<Location> results = this.getBookmarks(user.geteMailAddress());
 
 		return Response.ok().entity(results).build();
@@ -56,7 +56,8 @@ public class BookmarkResource extends ResourceHelper {
 
 		b.seteMailAddress(user.geteMailAddress());
 		try {
-			super.mapper().save(b);
+			super.save(b, user.geteMailAddress(), b.getLocprovId());
+			super.deleteFromCache("BM" + user.geteMailAddress()); // we need to clear the cache so this new bookmark is seen
 		} catch (ConditionalCheckFailedException exc) {
 			return Response
 					.status(500)
@@ -65,7 +66,7 @@ public class BookmarkResource extends ResourceHelper {
 							"This book mark is already present in the database",
 							"")).build();
 		}
-		
+
 		return Response.ok()
 				.entity(new Status("Success", "Added bookmark.", "")).build();
 
@@ -75,7 +76,8 @@ public class BookmarkResource extends ResourceHelper {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response deleteBookmarkInJSON(@Context HttpHeaders headers,
-			@QueryParam("locationId") String locationId, @QueryParam("providerId") String providerId) {
+			@QueryParam("locationId") String locationId,
+			@QueryParam("providerId") String providerId) {
 
 		User user = super.getUser(headers);
 		Bookmark b = new Bookmark();
@@ -83,24 +85,37 @@ public class BookmarkResource extends ResourceHelper {
 		b.setLocprovId(locationId + ":" + providerId);
 
 		try {
-			super.mapper().delete(b);
+			super.delete(b, user.geteMailAddress(), b.getLocprovId());
+			super.deleteFromCache("BM" + user.geteMailAddress());
 			return Response.ok()
-					.entity(new Status("Success", "Deleted bookmark.", "")).build();
+					.entity(new Status("Success", "Deleted bookmark.", ""))
+					.build();
 		} catch (Exception exc) {
-			return Response.status(500)
-					.entity(new Status("Failure", "Unable to delete bookmark.", "")).build();
+			return Response
+					.status(500)
+					.entity(new Status("Failure", "Unable to delete bookmark.",
+							"")).build();
 		}
-	
 
 	}
 
-	public List<Location> getBookmarks(String eMailAddress){
+	@SuppressWarnings("unchecked")
+	public List<Location> getBookmarks(String eMailAddress) {
 		List<Location> results = new ArrayList<Location>();
-		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(eMailAddress));
-		
-		PaginatedQueryList<Bookmark> bookmarks = super.mapper().query(
-				Bookmark.class, queryExpression);
+		List<Bookmark> bookmarks = new ArrayList<Bookmark>();
+
+		Object o = super.getFromCache("BM" + eMailAddress);
+		if (o != null) {
+			bookmarks = (List<Bookmark>) o;
+		} else {
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+
+			PaginatedQueryList<Bookmark> tmp = super.mapper().query(
+					Bookmark.class, queryExpression);
+			bookmarks = tmp.subList(0, tmp.size());
+			super.storeInCache("BM" + eMailAddress, 259200, bookmarks);
+		}
 		for (Bookmark b : bookmarks) {
 			String[] locprov = b.getLocprovId().split(":");
 			b.setLocationId(locprov[0]);

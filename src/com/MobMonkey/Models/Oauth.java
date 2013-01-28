@@ -1,12 +1,18 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable( tableName = "Oauth")
-public class Oauth {
+public class Oauth implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6860235706938145496L;
 	private String eMailAddress;
 	private String providerUserName;
 	private String oAuthToken;

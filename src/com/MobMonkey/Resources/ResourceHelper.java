@@ -134,4 +134,52 @@ public class ResourceHelper {
 			return "unknown";
 		}
 	}
+
+	public Object load(Class<?> c, String hashKey) {
+		Object o = null;
+		o = this.getFromCache(hashKey);
+		if (o == null) {
+			try {
+				o = this.mapper().load(c, hashKey);
+			} catch (Exception exc) {
+				return null;
+			}
+		}
+		this.storeInCache(hashKey, 259200, o);
+		return o;
+	}
+
+	public Object load(Class<?> c, String hashKey, String rangeKey) {
+		Object o = null;
+		o = this.getFromCache(hashKey + ":" + rangeKey);
+		if (o == null) {
+			try {
+				o = this.mapper().load(c, hashKey, rangeKey);
+			} catch (Exception exc) {
+				return null;
+			}
+		}
+		this.storeInCache(hashKey, 259200, o);
+		return o;
+	}
+	
+	public void delete(Object o, String hashKey){
+		this.mapper().delete(o);
+		this.deleteFromCache(hashKey);
+	}
+	
+	public void delete(Object o, String hashKey, String rangeKey){
+		this.mapper().delete(o);
+		this.deleteFromCache(hashKey + ":" + rangeKey);
+	}
+	
+	public void save(Object o, String hashKey){
+		this.mapper().save(o);
+		this.storeInCache(hashKey, 259200, o);
+	}
+	
+	public void save(Object o, String hashKey, String rangeKey){
+		this.mapper().save(o);
+		this.storeInCache(hashKey +":"+ rangeKey, 259200, o);
+	}
 }

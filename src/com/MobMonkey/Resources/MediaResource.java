@@ -60,14 +60,9 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			@QueryParam("mediaId") String mediaId) {
 
 		try {
-			Media m = null;
-			Object o = super.getFromCache(requestId + ":" + mediaId);
-			if (o != null) {
-				m = (Media) o;
-			} else {
-				m = super.mapper().load(Media.class, requestId, mediaId);
-				super.storeInCache(requestId + ":" + mediaId, 259200, m);
-			}
+		
+			Media m = (Media)super.load(Media.class, requestId, mediaId);
+			
 			MediaLite ml = this.convertMediaToMediaLite(m);
 
 			return Response.ok().entity(ml).build();
@@ -288,8 +283,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		super.storeInCache("m" + locationId.toLowerCase().trim()
 				+ providerId.toLowerCase().trim(), 259200, ml);
 
-		super.mapper().save(media);
+		super.save(media, media.getRequestId(), media.getMediaId());
 
+		
+		// Send notification to apple device
 		NotificationHelper noteHelper = new NotificationHelper();
 		String[] deviceIds = noteHelper.getUserDevices(media
 				.getOriginalRequestor());
@@ -310,7 +307,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			lm.setRequestId(media.getRequestId());
 			lm.setMediaId(media.getMediaId());
 
-			super.mapper().save(lm);
+			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate().toString());
 			
 			// Trending
 			Trending t = new Trending();
@@ -322,8 +319,6 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			
 		}
 	
-
-		// Send notification to apple device
 
 		String resp = "";
 		if (media.getMediaType() == 4) {

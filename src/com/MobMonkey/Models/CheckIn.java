@@ -11,6 +11,10 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 @DynamoDBTable(tableName = "CheckIn")
 public class CheckIn implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -4994070369001457318L;
 	private String partnerId;
 	private String eMailAddress;
 	private String locationId;

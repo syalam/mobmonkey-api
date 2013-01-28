@@ -167,10 +167,11 @@ public class InboxResource extends ResourceHelper {
 						results.add(rm);
 
 						try {
-							AssignedRequest newReq = (AssignedRequest) assReq.clone();
+							AssignedRequest newReq = (AssignedRequest) assReq
+									.clone();
 							newReq.setMarkAsRead(true);
 							requestsToSave.add(newReq);
-							
+
 						} catch (CloneNotSupportedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
@@ -190,10 +191,11 @@ public class InboxResource extends ResourceHelper {
 					results.add(tmp);
 
 					try {
-						AssignedRequest newReq = (AssignedRequest) assReq.clone();
+						AssignedRequest newReq = (AssignedRequest) assReq
+								.clone();
 						newReq.setMarkAsRead(true);
 						requestsToSave.add(newReq);
-						
+
 					} catch (CloneNotSupportedException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -240,14 +242,15 @@ public class InboxResource extends ResourceHelper {
 				}
 			}
 			super.mapper().batchSave(requestsToSave);
-		
+
 			List<RecurringRequestMedia> recurringRequestsToSave = new ArrayList<RecurringRequestMedia>();
 			RequestMediaResource rmr = new RequestMediaResource();
 			for (RecurringRequestMedia rrm : openRecRequests) {
 				RequestMedia rm = rmr.convertToRM(rrm);
 				unsorted.put(rm, rm.getScheduleDate().getTime());
 				try {
-					RecurringRequestMedia tmp = (RecurringRequestMedia) rrm.clone();
+					RecurringRequestMedia tmp = (RecurringRequestMedia) rrm
+							.clone();
 					tmp.setMarkAsRead(true);
 					recurringRequestsToSave.add(tmp);
 				} catch (CloneNotSupportedException e) {
@@ -373,8 +376,8 @@ public class InboxResource extends ResourceHelper {
 		}
 		results.put("openrequests", openCount);
 
-		int fulfilledCount = 0;
-
+		int fulfilledReadCount = 0;
+		int fulfilledUnreadCount = 0;
 		// TODO add recurring requests to this list
 		// ALSO ADD FILTERING!!!!!!!!!!!!
 
@@ -399,15 +402,20 @@ public class InboxResource extends ResourceHelper {
 			 * rm.getProviderId(), rm.getLocationId()).getName()); }
 			 */
 
-			if (rm.isRequestFulfilled() && !rm.isMarkAsRead()) {
-
-				fulfilledCount++;
+			if (rm.isRequestFulfilled()) {
+				if (rm.isMarkAsRead()) {
+					fulfilledReadCount++;
+				}else{
+					fulfilledUnreadCount++;
+				}
 
 			}
 		}
-		results.put("fulfilledCount", fulfilledCount);
+		results.put("fulfilledReadCount", fulfilledReadCount);
+		results.put("fulfilledUnreadCount", fulfilledUnreadCount);
 
-		int assignedCount = 0;
+		int assignedReadCount = 0;
+		int assignedUnreadCount = 0;
 
 		queryExpression = new DynamoDBQueryExpression(
 				new AttributeValue().withS(eMailAddress));
@@ -433,8 +441,10 @@ public class InboxResource extends ResourceHelper {
 					if (now.getTime() > assReq.getExpiryDate().getTime()) {
 						super.mapper().delete(assReq);
 					} else {
-						if (!assReq.isMarkAsRead())
-							assignedCount++;
+						if (assReq.isMarkAsRead())
+							assignedReadCount++;
+						else
+							assignedUnreadCount++;
 					}
 				}
 
@@ -449,16 +459,18 @@ public class InboxResource extends ResourceHelper {
 				} else {
 					// TODO if the window for this request has expired, remove
 					// it from the users assigned queue
-					if (!assReq.isMarkAsRead())
-						assignedCount++;
+					if (assReq.isMarkAsRead())
+						assignedReadCount++;
+					else
+						assignedUnreadCount++;
 				}
 				break;
 			}
 
 		}
 
-		results.put("assignedrequests", assignedCount);
-
+		results.put("assignedReadRequests", assignedReadCount);
+		results.put("assignedUnreadRequests", assignedUnreadCount);
 		return results;
 	}
 
@@ -500,7 +512,6 @@ public class InboxResource extends ResourceHelper {
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					assReq.setNameOfLocation(rm.getNameOfLocation());
 					results.add(assReq);
-				
 
 					break;
 				case 1:
@@ -520,7 +531,7 @@ public class InboxResource extends ResourceHelper {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				
+
 			}
 
 		}

@@ -57,9 +57,9 @@ public class FactualHelper extends ResourceHelper {
 		// TODO Working for only factual, need to add MobMonkey
 		// Check to see if it's in the cache first
 
-		Location results = null;
+		Location result = null;
 
-		Object o = super.getFromCache(locationId + ":" + factual_providerId);
+		Object o = super.load(Location.class, locationId, factual_providerId);
 		if (o != null) {
 			return (Location) o;
 		}
@@ -72,9 +72,11 @@ public class FactualHelper extends ResourceHelper {
 		List<Map<String, Object>> data = resp.getData();
 		for (Map<String, Object> map : data) {
 			// Add to the catch when I create mobmonkey location
-			results = this.createMobMonkeyLocation(map);
+			result = this.createMobMonkeyLocation(map);
+			super.storeInCache(locationId + ":" + factual_providerId, 259200, result);
+			
 		}
-		return results;
+		return result;
 	}
 
 	public List<Location> GeoFilter(Location loc) {
@@ -92,6 +94,7 @@ public class FactualHelper extends ResourceHelper {
 		if (loc.getCategoryIds() != "") {
 			query.field("category_ids").search(loc.getCategoryIds());
 		}
+		query.limit(25);
 		ReadResponse resp = factual.fetch("places-v3", query);
 		List<Map<String, Object>> data = resp.getData();
 
@@ -115,7 +118,7 @@ public class FactualHelper extends ResourceHelper {
 		query.field("postcode").equal(loc.getPostcode());
 		query.field("address").search(loc.getAddress());
 
-		query.limit(50);
+		query.limit(20);
 
 		ReadResponse resp = factual.fetch("places-v3", query);
 
@@ -185,9 +188,6 @@ public class FactualHelper extends ResourceHelper {
 		returnedLoc.setCategoryLabels(this.FixCategoryLabel(category_labels));
 		returnedLoc.setNeighborhood(neighborhood);
 		returnedLoc.setDistance(distance);
-
-		super.storeInCache(returnedLoc.getLocationId() + ":" + factual_providerId,
-							259200, returnedLoc);
 		
 		return returnedLoc;
 	}

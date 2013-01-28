@@ -9,6 +9,10 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable( tableName="Device")
 public class Device implements Serializable {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3505201573153901019L;
 	private String eMailAddress;
 	private String deviceId;
 	private String deviceType;

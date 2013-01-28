@@ -3,7 +3,9 @@ package com.MobMonkey.Resources;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.POST;
@@ -106,21 +108,12 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 			Object o = super.getFromCache("CheckInData");
 
 			if (o != null) {
-				int count = 0;
 				try {
 					@SuppressWarnings("unchecked")
-					List<CheckIn> checkIn = (List<CheckIn>) o;
-					for (int i = 0; i < checkIn.size(); i++) {
-						if (checkIn.get(i).geteMailAddress().toLowerCase()
-								.equals(c.geteMailAddress().toLowerCase()))
-							;
-						{
-							count = i;
-						}
-					}
-					checkIn.remove(count);
-					checkIn.add(c);
-
+					Map<String, CheckIn> checkIn = (HashMap<String, CheckIn>) o;
+					
+					checkIn.put(eMailAddress, c);
+					
 					super.storeInCache("CheckInData", 259200, checkIn);
 
 				} catch (IllegalArgumentException e) {

@@ -73,10 +73,11 @@ public class SignInResource extends ResourceHelper {
 										"404")).build();
 
 					} else {
-						if(!addDevice(providerUserName, deviceId, type)){
+						if (!addDevice(providerUserName, deviceId, type)) {
 							return Response
 									.status(500)
-									.entity(new Status("Failure",
+									.entity(new Status(
+											"Failure",
 											"You must specify a device type (Android or iOS)",
 											"500")).build();
 						}
@@ -87,8 +88,7 @@ public class SignInResource extends ResourceHelper {
 								.build();
 					}
 				}
-			}
-			else if(provider.toLowerCase().equals("facebook")){
+			} else if (provider.toLowerCase().equals("facebook")) {
 				if (ou == null) {
 					// we do not have a user, so we should create one
 
@@ -98,20 +98,20 @@ public class SignInResource extends ResourceHelper {
 					ou.setoAuthProvider(provider);
 					ou.setProviderUserName(providerUserName);
 					ou.seteMailAddress(providerUserName);
-					
+
 					super.mapper().save(ou);
-					if(!addDevice(providerUserName, deviceId, type)){
+					if (!addDevice(providerUserName, deviceId, type)) {
 						return Response
 								.status(500)
-								.entity(new Status("Failure",
+								.entity(new Status(
+										"Failure",
 										"You must specify a device type (Android or iOS)",
 										"500")).build();
 					}
 
 					return Response
 							.ok()
-							.entity(new Status(
-									"Success",
+							.entity(new Status("Success",
 									"Successfully added email & token to DB.",
 									"200")).build();
 
@@ -132,19 +132,41 @@ public class SignInResource extends ResourceHelper {
 								.build();
 					}
 				}
-			}
-			else{
-				//Not supported
+			} else {
+				// Not supported
 				return Response
 						.status(500)
 						.entity(new Status("Failure",
-								"There is no support for " + provider + " at this time.", "500"))
-						.build();
+								"There is no support for " + provider
+										+ " at this time.", "500")).build();
 			}
 
 		} else {
-
-		
+			// TODO we have a regular MobMonkey signin, need to authenticate
+			String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
+			String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
+					0);
+			String password = headers.getRequestHeader("MobMonkey-auth").get(
+					0);
+			
+			User u = (User) super.load(User.class, eMailAddress, partnerId);
+			
+			if(u == null || !u.getPassword().equals(password)){
+				return Response
+						.status(401)
+						.entity(new Status(
+								"Failure",
+								"Unauthorized.  Please provide valid credentials.",
+								"500")).build();
+			}
+			if (!addDevice(u.geteMailAddress(), deviceId, type)) {
+				return Response
+						.status(500)
+						.entity(new Status(
+								"Failure",
+								"You must specify a device type (Android or iOS)",
+								"500")).build();
+			}
 			return Response
 					.ok()
 					.entity(new Status("Success",
@@ -162,10 +184,9 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("providerUserName") String providerUserName,
 			@QueryParam("oauthToken") String token,
 			@QueryParam("deviceType") String type,
-			@QueryParam("deviceId")	String deviceId,
+			@QueryParam("deviceId") String deviceId,
 			@QueryParam("eMailAddress") String eMailAddress) {
 
-	
 		boolean validEmail = new EmailValidator().validate(eMailAddress);
 		if (!validEmail) {
 			return Response
@@ -174,7 +195,7 @@ public class SignInResource extends ResourceHelper {
 							"Invalid email address specified", "500")).build();
 		}
 
-		if(!addDevice(eMailAddress, deviceId, type)){
+		if (!addDevice(eMailAddress, deviceId, type)) {
 			return Response
 					.status(500)
 					.entity(new Status("Failure",
@@ -191,21 +212,24 @@ public class SignInResource extends ResourceHelper {
 							"The username & token specified is not found in the DB",
 							"404")).build();
 		}
-	
+
 		ou.seteMailAddress(eMailAddress);
 		ou.setoAuthToken(token);
 		super.mapper().save(ou);
-		
 
 		return Response
 				.ok()
 				.entity(new Status("Success", "Registered email address in DB",
 						"200")).build();
 	}
-	
-	public boolean addDevice(String eMailAddress, String deviceId, String type){
+
+	public boolean addDevice(String eMailAddress, String deviceId, String type) {
 		Device d = new Device();
 		d.seteMailAddress(eMailAddress);
+
+		if (deviceId == null) {
+			return false;
+		}
 		if (type.toLowerCase().equals("ios")) {
 			d.setDeviceType("iOS");
 		} else if (type.toLowerCase().equals("android")) {
@@ -217,6 +241,7 @@ public class SignInResource extends ResourceHelper {
 		d.setDeviceId(deviceId);
 
 		super.mapper().save(d);
+		super.deleteFromCache("DEV" + eMailAddress);
 		return true;
 	}
 

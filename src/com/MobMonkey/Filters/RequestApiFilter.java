@@ -100,7 +100,7 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 			// See if we have a valid partner ID, and that it is enabled (User
 			// verified email)
 			//TODO Cache this
-			Partner p = mapper.load(Partner.class, partnerId.trim().toString());
+			Partner p = (Partner) super.load(Partner.class, partnerId.trim().toString());
 			if (p.equals(null) || !p.isEnabled()) {
 				return false; // Quickly deny the request
 			} else {
@@ -128,7 +128,7 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 			// have an oauth header
 			if (null != oauthToken) {
 				//TODO Cache this
-				Oauth ou = mapper.load(Oauth.class, eMailAddress, oauthToken);
+				Oauth ou = (Oauth) super.load(Oauth.class, eMailAddress, oauthToken);
 
 				if (ou != null) {
 					InBoundHeaders in = new InBoundHeaders();
@@ -153,7 +153,7 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 			// No Oauth token.. lets see if we have a user & pass
 			// Pull the user information
 			//TODO Cache this
-			User user = mapper.load(User.class, eMailAddress.trim(),
+			User user = (User) super.load(User.class, eMailAddress.trim(),
 					partnerId.trim());
 
 			// User doesnt exist, reject the request.
