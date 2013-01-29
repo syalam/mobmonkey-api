@@ -11,13 +11,14 @@ import com.amazonaws.services.dynamodb.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
-@DynamoDBTable( tableName = "AssignedRequest")
+@DynamoDBTable(tableName = "AssignedRequest")
 public class AssignedRequest implements Serializable, Cloneable {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 933763842407476406L;
-	@JsonIgnore private String eMailAddress;
+	@JsonIgnore
+	private String eMailAddress;
 	private String requestId;
 	private String message;
 	private int mediaType;
@@ -25,16 +26,16 @@ public class AssignedRequest implements Serializable, Cloneable {
 	private Date expiryDate;
 	private Date assignedDate;
 	private Date fulFilledDate;
+	private Date requestDate;
 	private String nameOfLocation;
 	private String locationId;
 	private String providerId;
 	private String longitude;
 	private String latitude;
 	private boolean markAsRead;
-	
-	
 
-	@JsonIgnore private String requestorEmail;
+	@JsonIgnore
+	private String requestorEmail;
 
 	public AssignedRequest() {
 
@@ -156,6 +157,7 @@ public class AssignedRequest implements Serializable, Cloneable {
 	public void setLongitude(String longitude) {
 		this.longitude = longitude;
 	}
+
 	@DynamoDBAttribute
 	public String getLatitude() {
 		return latitude;
@@ -173,8 +175,17 @@ public class AssignedRequest implements Serializable, Cloneable {
 	public void setMarkAsRead(boolean markAsRead) {
 		this.markAsRead = markAsRead;
 	}
-	
-	 public Object clone() throws CloneNotSupportedException {
-	        return super.clone();
-	  }
+
+	public Object clone() throws CloneNotSupportedException {
+		return super.clone();
+	}
+
+	@DynamoDBAttribute
+	public Date getRequestDate() {
+		return requestDate;
+	}
+
+	public void setRequestDate(Date requestDate) {
+		this.requestDate = requestDate;
+	}
 }

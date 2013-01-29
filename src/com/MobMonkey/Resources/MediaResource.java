@@ -60,9 +60,9 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			@QueryParam("mediaId") String mediaId) {
 
 		try {
-		
-			Media m = (Media)super.load(Media.class, requestId, mediaId);
-			
+
+			Media m = (Media) super.load(Media.class, requestId, mediaId);
+
 			MediaLite ml = this.convertMediaToMediaLite(m);
 
 			return Response.ok().entity(ml).build();
@@ -285,16 +285,16 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		super.save(media, media.getRequestId(), media.getMediaId());
 
-		
 		// Send notification to apple device
 		NotificationHelper noteHelper = new NotificationHelper();
 		String[] deviceIds = noteHelper.getUserDevices(media
 				.getOriginalRequestor());
 
-		ApplePNSHelper.send(deviceIds,
-				"Your " + getMediaType(media.getMediaType()) + " request at "
-						+ reqDetails.get("nameOfLocation")
-						+ " has been fulfilled.");
+		String message = "Your " + getMediaType(media.getMediaType())
+				+ " request at " + reqDetails.get("nameOfLocation")
+				+ " has been fulfilled.";
+
+		super.sendAPNS(deviceIds, message);
 
 		super.storeInCache(media.getRequestId() + ":" + media.getMediaId(),
 				259200, media);
@@ -307,8 +307,9 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			lm.setRequestId(media.getRequestId());
 			lm.setMediaId(media.getMediaId());
 
-			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate().toString());
-			
+			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate()
+					.toString());
+
 			// Trending
 			Trending t = new Trending();
 			t.setType("Media");
@@ -316,9 +317,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			t.setLocationId(locationId);
 			t.setProviderId(providerId);
 			super.mapper().save(t);
-			
+
 		}
-	
 
 		String resp = "";
 		if (media.getMediaType() == 4) {
@@ -340,8 +340,16 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	public Response testAPNSInJSON(@QueryParam("deviceId") String deviceId) {
 		String[] deviceIds = new String[1];
 		deviceIds[0] = deviceId;
-		String result = ApplePNSHelper.testSend(deviceIds,
-				"This is a test. Sent on: " + (new Date()).toString());
+		String message = "This is a test. Sent on: " + (new Date()).toString();
+
+		String result;
+		try {
+			result = super.sendAPNS(deviceIds, message);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			result = "Failure.";
+		}
+
 		return Response.ok().entity("Result: " + result).build();
 	}
 
@@ -353,8 +361,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		// Query location media table for date range today - 3 days.
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
-		long threeHoursAgo = (new Date()).getTime()
-				- (3L * 60L * 60L * 1000L); // three hours in milliseconds
+		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L); // three
+																				// hours
+																				// in
+																				// milliseconds
 
 		String threeHoursAgoDate = dateFormatter.format(threeHoursAgo);
 
@@ -587,7 +597,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		return ml;
 	}
-	
+
 	@POST
 	@Path("/flaginappropriate")
 	@Consumes(MediaType.APPLICATION_JSON)
@@ -648,6 +658,5 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 	}
-
 
 }

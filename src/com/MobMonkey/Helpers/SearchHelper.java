@@ -80,15 +80,26 @@ public final class SearchHelper extends ResourceHelper {
 		return results;
 	}
 
+	@SuppressWarnings("unchecked")
 	public List<Location> getMobMonkeyLocationsByGeo(Location loc) {
 
 		List<Location> results = new ArrayList<Location>();
+		List<Location> locs = new ArrayList<Location>();
+		Object o = super.getFromCache("MobMonkeyLocationData");
+		if (o != null) {
+			locs = (List<Location>) o;
+		} else {
+			DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
 
-		DynamoDBScanExpression scanExpression = new DynamoDBScanExpression();
+			PaginatedScanList<Location> tmp = super.mapper().scan(
+					Location.class, scanExpression);
+			locs = tmp.subList(0, tmp.size());
 
-		PaginatedScanList<Location> locs = super.mapper().scan(Location.class,
-				scanExpression);
+			super.storeInCache("MobMonkeyLocationData", 259200, locs);
+
+		}
 		for (Location location : locs) {
+
 			if (Locator.isInVicinity(location.getLatitude(),
 					location.getLongitude(), loc.getLatitude(),
 					loc.getLongitude(),
@@ -169,7 +180,7 @@ public final class SearchHelper extends ResourceHelper {
 
 			PaginatedScanList<CheckIn> results = super.mapper().scan(
 					CheckIn.class, scanExpression);
-			for(CheckIn c : results){
+			for (CheckIn c : results) {
 				checkIn.put(c.geteMailAddress(), c);
 			}
 
@@ -216,8 +227,9 @@ public final class SearchHelper extends ResourceHelper {
 				LocationMedia.class, queryExpression);
 
 		for (LocationMedia l : requests) {
-			Media r = (Media) super.load(Media.class, l.getRequestId(), l.getMediaId());
-			
+			Media r = (Media) super.load(Media.class, l.getRequestId(),
+					l.getMediaId());
+
 			if (r != null) {
 				if (r.getMediaType() == 1) {
 					images++;
@@ -227,14 +239,13 @@ public final class SearchHelper extends ResourceHelper {
 					livestreaming++;
 				}
 			}
-			
-			
+
 		}
-		
+
 		results.put("images", images);
 		results.put("videos", videos);
 		results.put("livestreaming", livestreaming);
-		
+
 		return results;
 	}
 

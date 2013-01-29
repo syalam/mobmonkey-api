@@ -1,16 +1,31 @@
 package com.MobMonkey.Resources;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.naming.InitialContext;
 import javax.ws.rs.core.HttpHeaders;
 
+import org.bouncycastle.util.encoders.Base64;
+import org.quartz.JobDetail;
+
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.impl.StdSchedulerFactory;
+import static org.quartz.JobBuilder.*;
+import static org.quartz.TriggerBuilder.*;
+import static org.quartz.SimpleScheduleBuilder.*;
+
 import com.MobMonkey.Helpers.MobMonkeyCache;
+import com.MobMonkey.Helpers.Jobs.ApplePushNoteJob;
 import com.MobMonkey.Models.User;
-import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
@@ -24,6 +39,7 @@ public class ResourceHelper {
 	private AmazonDynamoDBClient ddb;
 	private DynamoDBMapper mapper;
 	private AmazonElastiCacheClient ecCli;
+	private Scheduler scheduler;
 
 	public ResourceHelper() {
 		try {
@@ -39,6 +55,15 @@ public class ResourceHelper {
 		ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
 				"us-west-1");
 		mapper = new DynamoDBMapper(ddb);
+
+		
+		StdSchedulerFactory factory = new StdSchedulerFactory();
+		try {
+			scheduler = factory.getScheduler();
+		} catch (SchedulerException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 
 	}
 
@@ -56,6 +81,38 @@ public class ResourceHelper {
 
 	public AmazonElastiCacheClient ecCli() {
 		return ecCli;
+	}
+
+	public Scheduler scheduler() {
+		return scheduler;
+	}
+
+	public String sendAPNS(String[] deviceIds, String message)
+			throws IOException {
+		JobDetail job = newJob(ApplePushNoteJob.class)
+				.withIdentity("myJob", "group1")
+				.usingJobData("deviceIds", toBase64String(deviceIds))
+				.usingJobData("message", message).build();
+
+		Trigger trigger = newTrigger().withIdentity("trigger1", "group1")
+				.startNow().build();
+
+		try {
+			scheduler().scheduleJob(job, trigger);
+			return "Success";
+		} catch (SchedulerException e) {
+			// TODO Auto-generated catch block
+			return "Failed to send push notification";
+		}
+
+	}
+
+	private static String toBase64String(Serializable o) throws IOException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(baos);
+		oos.writeObject(o);
+		oos.close();
+		return new String(Base64.encode(baos.toByteArray()));
 	}
 
 	public User getUser(HttpHeaders headers) {
@@ -162,24 +219,24 @@ public class ResourceHelper {
 		this.storeInCache(hashKey, 259200, o);
 		return o;
 	}
-	
-	public void delete(Object o, String hashKey){
+
+	public void delete(Object o, String hashKey) {
 		this.mapper().delete(o);
 		this.deleteFromCache(hashKey);
 	}
-	
-	public void delete(Object o, String hashKey, String rangeKey){
+
+	public void delete(Object o, String hashKey, String rangeKey) {
 		this.mapper().delete(o);
 		this.deleteFromCache(hashKey + ":" + rangeKey);
 	}
-	
-	public void save(Object o, String hashKey){
+
+	public void save(Object o, String hashKey) {
 		this.mapper().save(o);
 		this.storeInCache(hashKey, 259200, o);
 	}
-	
-	public void save(Object o, String hashKey, String rangeKey){
+
+	public void save(Object o, String hashKey, String rangeKey) {
 		this.mapper().save(o);
-		this.storeInCache(hashKey +":"+ rangeKey, 259200, o);
+		this.storeInCache(hashKey + ":" + rangeKey, 259200, o);
 	}
 }

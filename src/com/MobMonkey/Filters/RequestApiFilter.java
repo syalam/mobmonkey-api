@@ -19,25 +19,8 @@ import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
 public class RequestApiFilter extends ResourceHelper implements ContainerRequestFilter{
-	private AWSCredentials credentials;
-	private AmazonDynamoDBClient ddb;
-	private DynamoDBMapper mapper;
-
 	public RequestApiFilter() {
 		super();
-		try {
-			credentials = new PropertiesCredentials(getClass().getClassLoader()
-					.getResourceAsStream("AwsCredentials.properties"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		ddb = new AmazonDynamoDBClient(credentials);
-		ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
-				"us-west-1");
-
-		mapper = new DynamoDBMapper(ddb);
 	}
 
 	@Override

@@ -17,8 +17,6 @@ public class CheckIn implements Serializable {
 	private static final long serialVersionUID = -4994070369001457318L;
 	private String partnerId;
 	private String eMailAddress;
-	private String locationId;
-	private String providerId;
 	private String latitude;
 	private String longitude;
 	private Date dateCheckedIn;
@@ -46,24 +44,6 @@ public class CheckIn implements Serializable {
 	public void seteMailAddress(String eMailAddress) {
 
 		this.eMailAddress = eMailAddress;
-	}
-
-	@DynamoDBAttribute
-	public String getLocationId() {
-		return locationId;
-	}
-
-	public void setLocationId(String locationId) {
-		this.locationId = locationId;
-	}
-
-	@DynamoDBAttribute
-	public String getProviderId() {
-		return providerId;
-	}
-
-	public void setProviderId(String providerId) {
-		this.providerId = providerId;
 	}
 
 	@DynamoDBAttribute

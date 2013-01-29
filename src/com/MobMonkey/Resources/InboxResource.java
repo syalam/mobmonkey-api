@@ -130,6 +130,7 @@ public class InboxResource extends ResourceHelper {
 								+ duration * 60000);
 						if (now.getTime() > expiryDate.getTime()) {
 							rm.setExpired(true);
+							super.delete(rm, rm.geteMailAddress(), rm.getRequestId());
 							// results.add(rm);
 						} else {
 							rm.setExpired(false);

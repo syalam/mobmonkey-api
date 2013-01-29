@@ -79,9 +79,9 @@ public class SearchResource extends ResourceHelper {
 			List<Location> locations = new SearchHelper()
 					.getLocationsByGeo(loc);
 
-			// Populate the counts!
-			locations = new SearchHelper().PopulateCounts(locations,
-					user.geteMailAddress());
+			// Populate the counts!  NOT NEEDED ACCORDING TO REYAAD
+			//locations = new SearchHelper().PopulateCounts(locations,
+			//		user.geteMailAddress());
 
 			List<Integer> itemsToRemove = new ArrayList<Integer>();
 			if (filter) {
@@ -116,10 +116,11 @@ public class SearchResource extends ResourceHelper {
 				
 			}
 			
-			List<Location> bookmarkedLocations = this.AssignBookmarks(
-					locations, user.geteMailAddress());
+			//NOT NEEDED by Reyaads
+//			List<Location> bookmarkedLocations = this.AssignBookmarks(
+//					locations, user.geteMailAddress());
 
-			return Response.ok().entity(bookmarkedLocations).build();
+			return Response.ok().entity(locations).build();
 		}
 		if (loc.getLocality() != null && loc.getRegion() != null
 				&& loc.getPostcode() != null && loc.getName() != null) {

@@ -56,7 +56,13 @@ public class LocationResource extends ResourceHelper {
 
 		try {
 			loc.setLocationId(UUID.randomUUID().toString());
+			
 			super.mapper().save(loc);
+			@SuppressWarnings("unchecked")
+			List<Location> o = (List<Location>) super.getFromCache("MobMonkeyLocationData");
+			o.add(loc);
+			super.storeInCache("MobMonkeyLocationData", 259200, o);
+			
 
 		} catch (Exception exc) {
 			return Response

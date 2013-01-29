@@ -21,6 +21,7 @@ public class RequestMediaLite implements Serializable{
 	private String locationId;
 	private String longitude;
 	private String latitude;
+	private Date requestDate;
 	@JsonIgnore private String requestorEmail;
 	
 	public RequestMediaLite()
@@ -114,5 +115,13 @@ public class RequestMediaLite implements Serializable{
 
 	public void setLatitude(String latitude) {
 		this.latitude = latitude;
+	}
+
+	public Date getRequestDate() {
+		return requestDate;
+	}
+
+	public void setRequestDate(Date requestDate) {
+		this.requestDate = requestDate;
 	}
 }

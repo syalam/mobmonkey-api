@@ -63,7 +63,7 @@ public class FactualHelper extends ResourceHelper {
 		if (o != null) {
 			return (Location) o;
 		}
-		
+
 		Query query = new Query();
 		query.field("factual_id").equal(locationId);
 
@@ -73,8 +73,9 @@ public class FactualHelper extends ResourceHelper {
 		for (Map<String, Object> map : data) {
 			// Add to the catch when I create mobmonkey location
 			result = this.createMobMonkeyLocation(map);
-			super.storeInCache(locationId + ":" + factual_providerId, 259200, result);
-			
+			super.storeInCache(locationId + ":" + factual_providerId, 259200,
+					result);
+
 		}
 		return result;
 	}
@@ -84,15 +85,21 @@ public class FactualHelper extends ResourceHelper {
 																						// yards
 																						// to
 																						// meters
+		Query query = new Query();
+		if (loc.getLongitude() != "" && loc.getLatitude() != ""
+				&& radiusInMeters != 0) {
+			query = new Query().within(new Circle(Double.parseDouble(loc
+					.getLatitude()), Double.parseDouble(loc.getLongitude()),
+					radiusInMeters));
 
-		Query query = new Query().within(new Circle(Double.parseDouble(loc
-				.getLatitude()), Double.parseDouble(loc.getLongitude()),
-				radiusInMeters));
-		if (loc.getName() != "") {
-			query.field("name").search(loc.getName());
-		}
-		if (loc.getCategoryIds() != "") {
-			query.field("category_ids").search(loc.getCategoryIds());
+			if (loc.getName() != "") {
+				query.field("name").search(loc.getName());
+			}
+			if (loc.getCategoryIds() != "") {
+				query.field("category_ids").search(loc.getCategoryIds());
+			}
+		}else{
+			query.search(loc.getName());
 		}
 		query.limit(25);
 		ReadResponse resp = factual.fetch("places-v3", query);
@@ -188,7 +195,7 @@ public class FactualHelper extends ResourceHelper {
 		returnedLoc.setCategoryLabels(this.FixCategoryLabel(category_labels));
 		returnedLoc.setNeighborhood(neighborhood);
 		returnedLoc.setDistance(distance);
-		
+
 		return returnedLoc;
 	}
 
