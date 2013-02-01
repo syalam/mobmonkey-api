@@ -9,6 +9,7 @@ import java.util.UUID;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -31,21 +32,20 @@ import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
 
-@Path("/locations")
+@Path("/location")
 public class LocationResource extends ResourceHelper {
 
 	public LocationResource() {
 		super();
 	}
 
-	@Path("/create")
-	@POST
+	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response createLocationInJSON(Location loc) {
 
-		LocationProvider locprov = super.mapper().load(LocationProvider.class,
-				loc.getProviderId());
+		LocationProvider locprov = (LocationProvider) super.load(
+				LocationProvider.class, loc.getProviderId());
 
 		// Right now we are only accepting new locations for MobMonkey
 		if (!locprov.getName().toLowerCase().equals("mobmonkey"))
@@ -56,12 +56,15 @@ public class LocationResource extends ResourceHelper {
 
 		try {
 			loc.setLocationId(UUID.randomUUID().toString());
-			
-			super.mapper().save(loc);
+
+			super.save(loc, loc.getLocationId(), loc.getProviderId());
 			@SuppressWarnings("unchecked")
-			List<Location> o = (List<Location>) super.getFromCache("MobMonkeyLocationData");
-			o.add(loc);
-			super.storeInCache("MobMonkeyLocationData", 259200, o);
+			List<Location> o = (List<Location>) super
+					.getFromCache("MobMonkeyLocationData");
+			if (o != null) {
+				o.add(loc);
+				super.storeInCache("MobMonkeyLocationData", 259200, o);
+			}
 			
 
 		} catch (Exception exc) {
@@ -171,7 +174,7 @@ public class LocationResource extends ResourceHelper {
 		locMsg.setModifiedDate(new Date());
 		locMsg.setLocprovId(locationId + ":" + providerId);
 
-		super.mapper().save(locMsg);
+		super.save(locMsg, locMsg.getLocprovId(), locMsg.getMessageId());
 
 		// caching
 		String key = "LOCMSG" + locMsg.getLocprovId();

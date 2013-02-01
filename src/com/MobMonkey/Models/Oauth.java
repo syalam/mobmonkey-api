@@ -32,7 +32,7 @@ public class Oauth implements Serializable {
 		this.eMailAddress = eMailAddress;
 	}
 
-	@DynamoDBHashKey
+	@DynamoDBRangeKey
 	public String getProviderUserName() {
 		return providerUserName;
 	}
@@ -41,7 +41,7 @@ public class Oauth implements Serializable {
 		this.providerUserName = providerUserName;
 	}
 
-	@DynamoDBRangeKey
+	@DynamoDBAttribute
 	public String getoAuthToken() {
 		return oAuthToken;
 	}
@@ -50,7 +50,8 @@ public class Oauth implements Serializable {
 		oAuthToken = oauthToken;
 	}
 
-	@DynamoDBAttribute
+	
+	@DynamoDBHashKey
 	public String getoAuthProvider() {
 		return oAuthProvider;
 	}

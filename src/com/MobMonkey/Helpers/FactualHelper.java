@@ -86,19 +86,19 @@ public class FactualHelper extends ResourceHelper {
 																						// to
 																						// meters
 		Query query = new Query();
-		if (loc.getLongitude() != "" && loc.getLatitude() != ""
-				&& radiusInMeters != 0) {
+		if (loc.getLongitude() != null && loc.getLatitude() != null
+				&& radiusInMeters > 0) {
 			query = new Query().within(new Circle(Double.parseDouble(loc
 					.getLatitude()), Double.parseDouble(loc.getLongitude()),
 					radiusInMeters));
-
-			if (loc.getName() != "") {
-				query.field("name").search(loc.getName());
-			}
-			if (loc.getCategoryIds() != "") {
-				query.field("category_ids").search(loc.getCategoryIds());
-			}
-		}else{
+		}
+		if (loc.getName() != null) {
+			query.field("name").search(loc.getName());
+		}
+		if (loc.getCategoryIds() != null) {
+			query.field("category_ids").search(loc.getCategoryIds());
+		}
+		if (radiusInMeters == 0) {
 			query.search(loc.getName());
 		}
 		query.limit(25);

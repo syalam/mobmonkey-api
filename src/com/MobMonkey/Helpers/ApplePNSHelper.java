@@ -3,11 +3,12 @@ package com.MobMonkey.Helpers;
 import java.io.InputStream;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import javapns.*;
 import javapns.communication.exceptions.CommunicationException;
 import javapns.communication.exceptions.KeystoreException;
 import javapns.notification.PushedNotification;
-import javapns.notification.PushedNotifications;
 import javapns.notification.ResponsePacket;
 
 public final class ApplePNSHelper {
@@ -15,23 +16,28 @@ public final class ApplePNSHelper {
 	private static String keyStoreFile = "DevCertificates.p12";
 	private static String keyStorePass = "mm";
 
-	public static void send(String[] devices, String msg) {
+	private static Logger logger = Logger.getRootLogger();
 
-		//TODO sanitize the Id's before sending them
-		
+	public static void send(String[] devices, String msg, int badge) {
+
+		// TODO sanitize the Id's before sending them
+
 		InputStream keyStore = ApplePNSHelper.class
 				.getResourceAsStream(keyStoreFile);
 		try {
 
-			List<PushedNotification> notifications = Push.alert(msg, keyStore,
-					keyStorePass, false, devices);
+			// List<PushedNotification> notifications = Push.alert(msg,
+			// keyStore,
+			// keyStorePass, false, devices);
+
+			List<PushedNotification> notifications = Push.combined(msg, badge,
+					"", keyStore, keyStorePass, false, devices);
 
 			for (PushedNotification notification : notifications) {
 				if (notification.isSuccessful()) {
 					/* Apple accepted the notification and should deliver it */
-					System.out
-							.println("Push notification sent successfully to: "
-									+ notification.getDevice().getToken());
+					logger.info("Push notification sent successfully to: "
+							+ notification.getDevice().getToken());
 					/* Still need to query the Feedback Service regularly */
 				} else {
 					String invalidToken = notification.getDevice().getToken();
@@ -39,7 +45,8 @@ public final class ApplePNSHelper {
 
 					/* Find out more about what the problem was */
 					Exception theProblem = notification.getException();
-					theProblem.printStackTrace();
+					logger.warn("Exception from Apple: "
+							+ theProblem.getMessage());
 
 					/*
 					 * If the problem was an error-response packet returned by
@@ -48,7 +55,8 @@ public final class ApplePNSHelper {
 					ResponsePacket theErrorResponse = notification
 							.getResponse();
 					if (theErrorResponse != null) {
-						System.out.println(theErrorResponse.getMessage());
+						logger.warn("Unable to send apple push notification: "
+								+ theErrorResponse.getMessage());
 					}
 				}
 			}
@@ -65,6 +73,7 @@ public final class ApplePNSHelper {
 			e.printStackTrace();
 		}
 	}
+
 	public static String testSend(String[] devices, String msg) {
 		String result = "";
 		InputStream keyStore = ApplePNSHelper.class
@@ -78,7 +87,7 @@ public final class ApplePNSHelper {
 				if (notification.isSuccessful()) {
 					/* Apple accepted the notification and should deliver it */
 					result = "Push notification sent successfully to: "
-									+ notification.getDevice().getToken();
+							+ notification.getDevice().getToken();
 					/* Still need to query the Feedback Service regularly */
 				} else {
 					String invalidToken = notification.getDevice().getToken();
@@ -86,7 +95,8 @@ public final class ApplePNSHelper {
 
 					/* Find out more about what the problem was */
 					Exception theProblem = notification.getException();
-					theProblem.printStackTrace();
+					logger.warn("Exception from Apple: "
+							+ theProblem.getMessage());
 
 					/*
 					 * If the problem was an error-response packet returned by
@@ -95,7 +105,8 @@ public final class ApplePNSHelper {
 					ResponsePacket theErrorResponse = notification
 							.getResponse();
 					if (theErrorResponse != null) {
-						result = theErrorResponse.getMessage();
+						logger.warn("Unable to send apple push notification: "
+								+ theErrorResponse.getMessage());
 					}
 				}
 			}
@@ -109,9 +120,9 @@ public final class ApplePNSHelper {
 			 * A critical communication error occurred while trying to contact
 			 * Apple servers
 			 */
-			result = e .getMessage();
+			result = e.getMessage();
 		}
 		return result;
 	}
-	
+
 }

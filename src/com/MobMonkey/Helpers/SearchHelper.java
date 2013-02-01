@@ -98,14 +98,41 @@ public final class SearchHelper extends ResourceHelper {
 			super.storeInCache("MobMonkeyLocationData", 259200, locs);
 
 		}
-		for (Location location : locs) {
+		if (loc.getCategoryIds() != null) {
+			String[] filterBycatIds = loc.getCategoryIds().split(",");
 
-			if (Locator.isInVicinity(location.getLatitude(),
-					location.getLongitude(), loc.getLatitude(),
-					loc.getLongitude(),
-					Integer.parseInt(loc.getRadiusInYards()))) {
+			for (Location location : locs) {
+				if (location.getCategoryIds() != null) {
+					String[] locationCatIds = location.getCategoryIds().split(
+							",");
+					for (String filterCatId : filterBycatIds) {
+						for (String locationCatId : locationCatIds) {
+							if (filterCatId.trim().equals(locationCatId.trim())) {
+								if (Locator.isInVicinity(
+										location.getLatitude(), location
+												.getLongitude(), loc
+												.getLatitude(), loc
+												.getLongitude(), Integer
+												.parseInt(loc
+														.getRadiusInYards()))) {
 
-				results.add(location);
+									results.add(location);
+								}
+							}
+						}
+					}
+				}
+			}
+		} else {
+			for (Location location : locs) {
+
+				if (Locator.isInVicinity(location.getLatitude(),
+						location.getLongitude(), loc.getLatitude(),
+						loc.getLongitude(),
+						Integer.parseInt(loc.getRadiusInYards()))) {
+
+					results.add(location);
+				}
 			}
 		}
 		return results;

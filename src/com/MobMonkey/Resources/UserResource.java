@@ -36,7 +36,7 @@ public class UserResource extends ResourceHelper {
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
 				.toLowerCase();
 
-		User result = super.mapper().load(User.class, eMailAddress, partnerId);
+		User result = (User) super.load(User.class, eMailAddress, partnerId);
 		result.setPassword(null);
 		return Response.ok().entity(result).build();
 	}
@@ -67,22 +67,19 @@ public class UserResource extends ResourceHelper {
 		User.setPartnerId(partnerId);
 		User.setVerified(false);
 		User.setDateRegistered(new Date());
-		super.mapper().save(User);
+		super.save(User, User.geteMailAddress(), User.getPartnerId());
 		// Let's save the user's device Id as well
 		// TODO in signin API send the users deviceId so we will keep adding to
 		// their list of devices..
-
-		Device d = new Device();
-		d.seteMailAddress(User.geteMailAddress());
-		d.setDeviceId(User.getDeviceId());
-		d.setDeviceType(User.getDeviceType());
-		super.mapper().save(d);
+	
+		
+        new SignInResource().addDevice(User.geteMailAddress(), User.getDeviceId(), User.getDeviceType());
 
 		Verify v = new Verify(UUID.randomUUID().toString(),
 				User.getPartnerId(), User.geteMailAddress(),
 				User.getDateRegistered());
 
-		super.mapper().save(v);
+		super.save(v, v.getVerifyID(), v.getPartnerId());
 
 		Mailer mail = new Mailer();
 		mail.sendMail(
@@ -102,110 +99,4 @@ public class UserResource extends ResourceHelper {
 		return Response.status(201).entity(s).build();
 
 	}
-
-	/*@POST
-	@Path("/user/oauth/{oauthprovider}")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response createUserWithOauthInJSON(Oauth ou,
-			@PathParam("oauthprovider") String oauthprov,
-			@Context HttpHeaders headers) {
-		// TODO need to create list of valid oauthproviders: facebook, twitter,
-		// etc.
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId")
-				.get(0).toLowerCase();
-
-		// We should check to see if we have a user with that email address
-		// already assigned
-		if (super.mapper().count(
-				User.class,
-				new DynamoDBQueryExpression(new AttributeValue().withS(ou
-						.geteMailAddress()))) > 0) {
-			// we have a user with this email address.
-			// lets just add the Oauth token to the db
-			try {
-				ou.seteMailVerified(false);
-				super.mapper().save(ou);
-
-				Verify v = new Verify(UUID.randomUUID().toString(), partnerId,
-						ou.geteMailAddress(), new Date());
-
-				super.mapper().save(v);
-
-				Mailer mail = new Mailer();
-				mail.sendMail(
-						ou.geteMailAddress(),
-						"registration e-mail.",
-						"Thank you for signing into MobMonkey using your "
-								+ oauthprov
-								+ " account.  Please validate that this is your email by <a href=\"http://api.mobmonkey.com/rest/verify/user/"
-								+ v.getPartnerId() + "/" + v.getVerifyID()
-								+ "\">clicking here.</a>");
-
-				return Response
-						.ok()
-						.entity(new Status("Success", "Your " + oauthprov
-								+ " account is linked to "
-								+ ou.geteMailAddress()
-								+ ". Check your email to verify your address.",
-								"")).build();
-			} catch (Exception exc) {
-				return Response
-						.ok()
-						.entity(new Status("Failure",
-								"Unable to create your MobMonkey account", ""))
-						.build();
-			}
-		} else {
-			try {
-				User u = new User();
-				u.setPartnerId(partnerId);
-				u.seteMailAddress(ou.geteMailAddress());
-				u.setVerified(false);
-
-				super.mapper().save(u);
-			} catch (Exception exc) {
-				return Response
-						.ok()
-						.entity(new Status("Failure",
-								"Unable to create your MobMonkey account", ""))
-						.build();
-			}
-			try {
-				ou.seteMailVerified(false);
-				super.mapper().save(ou);
-			} catch (Exception exc) {
-				return Response
-						.ok()
-						.entity(new Status("Failure",
-								"Unable to create your MobMonkey account", ""))
-						.build();
-			}
-
-			Verify v = new Verify(UUID.randomUUID().toString(), partnerId,
-					ou.geteMailAddress(), new Date());
-			v.setOauthToken(ou.getoAuthToken());
-
-			super.mapper().save(v);
-
-			Mailer mail = new Mailer();
-			mail.sendMail(
-					ou.geteMailAddress(),
-					"registration e-mail.",
-					"Thank you for signing into MobMonkey using your "
-							+ oauthprov
-							+ " account.  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/user/"
-							+ v.getPartnerId() + "/" + v.getVerifyID() + "/"
-							+ ou.getoAuthToken() + "\">clicking here.</a>");
-
-			return Response
-					.ok()
-					.entity(new Status("Success", "Your " + oauthprov
-							+ " account is linked to " + ou.geteMailAddress()
-							+ ". Check your email to verify your address.", ""))
-					.build();
-
-		}
-
-	}*/
 }

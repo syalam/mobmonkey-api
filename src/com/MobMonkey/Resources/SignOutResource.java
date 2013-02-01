@@ -49,5 +49,8 @@ public class SignOutResource extends ResourceHelper {
 		return Response.ok().entity(new Status("Success", "Successfully signed out", "")).build();
 
 	}
+	
+	
+	
 }
  

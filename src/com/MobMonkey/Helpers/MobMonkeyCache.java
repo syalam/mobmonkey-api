@@ -18,14 +18,14 @@ public class MobMonkeyCache {
 
 			for (int i = 0; i <= 20; i++) {
 
-				try{
-				MemcachedClient c = new MemcachedClient(
-						new BinaryConnectionFactory(),
-						AddrUtil.getAddresses("mobmonkey.otbiua.0001.usw1.cache.amazonaws.com:11211"));
-				
-				m[i] = c;
-				}catch(Exception exc){
-					
+				try {
+					MemcachedClient c = new MemcachedClient(
+							new BinaryConnectionFactory(),
+							AddrUtil.getAddresses("mobmonkey.otbiua.0001.usw1.cache.amazonaws.com:11211"));
+
+					m[i] = c;
+				} catch (Exception exc) {
+
 				}
 			}
 
@@ -35,26 +35,34 @@ public class MobMonkeyCache {
 	}
 
 	public static MobMonkeyCache getInstance() {
+		
 		if (instance == null) {
 			instance = new MobMonkeyCache();
 		}
 		return instance;
 	}
-	
-	public Object getAsync(String key){
-		java.util.concurrent.Future<Object> f = getCache().asyncGet(key);
+
+	public Object getAsync(String key) {
+		java.util.concurrent.Future<Object> f = null;
+		try {
+			f = getCache().asyncGet(key);
+		} catch (Exception exc) {
+
+		}
 		Object o = null;
 		try {
 			o = f.get(100, TimeUnit.MILLISECONDS);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (ExecutionException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
 		} catch (TimeoutException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//e.printStackTrace();
+		} catch(Exception e){
+			
 		}
 		return o;
 	}

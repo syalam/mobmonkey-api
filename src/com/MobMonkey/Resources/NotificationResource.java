@@ -38,7 +38,7 @@ public class NotificationResource extends ResourceHelper {
 		n.setFrequency(frequencyInMS.toString());
 		n.seteMailAddress(eMailAddress);
 		
-        super.mapper().save(n);
+        super.save(n, n.geteMailAddress(), n.getLocationId());
 		
 		return Response.ok().entity(new Status("Success", "Added notification.", "")).build();
 		

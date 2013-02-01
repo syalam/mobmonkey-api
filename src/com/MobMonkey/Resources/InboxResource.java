@@ -51,6 +51,7 @@ public class InboxResource extends ResourceHelper {
 		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
 				.toLowerCase();
 
+		super.clearCountCache(eMailAddress);
 		if (type.toLowerCase().equals("assignedrequests")) {
 			List<AssignedRequest> results = new ArrayList<AssignedRequest>();
 			results = getAssignedRequests(eMailAddress);
@@ -95,6 +96,7 @@ public class InboxResource extends ResourceHelper {
 			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
 					.query(RequestMedia.class, queryExpression);
 
+			
 			DynamoDBQueryExpression queryExpression2 = new DynamoDBQueryExpression(
 					new AttributeValue().withS(eMailAddress));
 
@@ -130,7 +132,8 @@ public class InboxResource extends ResourceHelper {
 								+ duration * 60000);
 						if (now.getTime() > expiryDate.getTime()) {
 							rm.setExpired(true);
-							super.delete(rm, rm.geteMailAddress(), rm.getRequestId());
+							super.delete(rm, rm.geteMailAddress(),
+									rm.getRequestId());
 							// results.add(rm);
 						} else {
 							rm.setExpired(false);
@@ -158,7 +161,7 @@ public class InboxResource extends ResourceHelper {
 				AssignedRequest assReq = entry.getKey();
 				switch (assReq.getRequestType()) {
 				case 0:
-					RequestMedia rm = super.mapper().load(RequestMedia.class,
+					RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					if (rm.getRequestDate().getTime() > threeHoursAgo) {
 						if (assReq.isMarkAsRead())
@@ -181,7 +184,7 @@ public class InboxResource extends ResourceHelper {
 					break;
 				case 1:
 					RequestMediaResource rmr = new RequestMediaResource();
-					RecurringRequestMedia rrm = super.mapper().load(
+					RecurringRequestMedia rrm = (RecurringRequestMedia) super.load(
 							RecurringRequestMedia.class,
 							assReq.getRequestorEmail());
 					RequestMedia tmp = rmr.convertToRM(rrm);
@@ -311,165 +314,192 @@ public class InboxResource extends ResourceHelper {
 		return results;
 	}
 
+	
 	public HashMap<String, Integer> getCounts(String eMailAddress) {
+
 		HashMap<String, Integer> results = new HashMap<String, Integer>();
-		// long threeDaysAgo = (new Date()).getTime()
-		// - (3L * 24L * 60L * 60L * 1000L);
-		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L);
-
-		DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(eMailAddress));
-
-		PaginatedQueryList<RequestMedia> openRequests = super.mapper().query(
-				RequestMedia.class, queryExpression);
-
-		// Recurring requests
-		DynamoDBQueryExpression queryExpression2 = new DynamoDBQueryExpression(
-				new AttributeValue().withS(eMailAddress));
-
-		PaginatedQueryList<RecurringRequestMedia> openRecRequests = super
-				.mapper().query(RecurringRequestMedia.class, queryExpression2);
-
 		HashMap<RequestMedia, Long> unsorted = new HashMap<RequestMedia, Long>();
-		for (RequestMedia rm : openRequests) {
-			unsorted.put(rm, rm.getScheduleDate().getTime());
-
-		}
-
-		RequestMediaResource rmr = new RequestMediaResource();
-		for (RecurringRequestMedia rrm : openRecRequests) {
-			RequestMedia rm = rmr.convertToRM(rrm);
-			unsorted.put(rm, rm.getScheduleDate().getTime());
-
-		}
-
+		long threeHoursAgo = (new Date()).getTime() - (3L * 60L * 60L * 1000L);
 		int openCount = 0;
-
-		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
-			// check to see if request is fulfilled
-			RequestMedia rm = entry.getKey();
-			if (rm.isRecurring()) {
-				openCount++;
-			} else {
-				if (!rm.isRequestFulfilled()) {
-					Date now = new Date();
-					Date expiryDate = new Date();
-					int duration = rm.getDuration(); // in minutes
-					expiryDate.setTime(rm.getRequestDate().getTime() + duration
-							* 60000);
-					if (now.getTime() > expiryDate.getTime()) {
-						super.mapper().delete(rm);
-						// results.add(rm);
-					} else {
-
-						openCount++;
-					}
-
-				} else {
-
-					if (rm.getFulfilledDate().getTime() < threeHoursAgo) {
-						super.mapper().delete(rm);
-					}
-
-				}
-
-			}
-		}
-		results.put("openrequests", openCount);
-
 		int fulfilledReadCount = 0;
 		int fulfilledUnreadCount = 0;
-		// TODO add recurring requests to this list
-		// ALSO ADD FILTERING!!!!!!!!!!!!
-
-		HashMap<RequestMedia, Long> unsortedMedia = new HashMap<RequestMedia, Long>();
-
-		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
-			RequestMedia rm = entry.getKey();
-
-			if (rm.isRequestFulfilled()
-					&& rm.getFulfilledDate().getTime() > threeHoursAgo) {
-				unsortedMedia.put(rm, rm.getScheduleDate().getTime());
-			}
-
-		}
-		for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsortedMedia)) {
-			// check to see if request is fulfilled
-			RequestMedia rm = entry.getKey();
-
-			/*
-			 * if (rm.getProviderId() != null && rm.getLocationId() != null) {
-			 * rm.setNameOfLocation(new Locator().reverseLookUp(
-			 * rm.getProviderId(), rm.getLocationId()).getName()); }
-			 */
-
-			if (rm.isRequestFulfilled()) {
-				if (rm.isMarkAsRead()) {
-					fulfilledReadCount++;
-				}else{
-					fulfilledUnreadCount++;
-				}
-
-			}
-		}
-		results.put("fulfilledReadCount", fulfilledReadCount);
-		results.put("fulfilledUnreadCount", fulfilledUnreadCount);
-
 		int assignedReadCount = 0;
 		int assignedUnreadCount = 0;
 
-		queryExpression = new DynamoDBQueryExpression(
-				new AttributeValue().withS(eMailAddress));
-		PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
-				.query(AssignedRequest.class, queryExpression);
+		Object oCount = super.getFromCache("OPENCOUNT:" + eMailAddress);
+		Object fUCount = super.getFromCache("FULFILLEDUNREADCOUNT:"
+				+ eMailAddress);
+		Object fRCount = super.getFromCache("FULFILLEDREADCOUNT:"
+				+ eMailAddress);
+		Object aRCount = super
+				.getFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
+		Object aUCount = super
+				.getFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
+		if (oCount == null || fUCount == null || fRCount == null) {
 
-		HashMap<AssignedRequest, Long> unsortedAssigned = new HashMap<AssignedRequest, Long>();
-		for (AssignedRequest rm : assignedToMe) {
-			unsortedAssigned.put(rm, rm.getAssignedDate().getTime());
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
 
+			PaginatedQueryList<RequestMedia> openRequests = super.mapper()
+					.query(RequestMedia.class, queryExpression);
+
+			// Recurring requests
+			DynamoDBQueryExpression queryExpression2 = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+
+			PaginatedQueryList<RecurringRequestMedia> openRecRequests = super
+					.mapper().query(RecurringRequestMedia.class,
+							queryExpression2);
+
+			for (RequestMedia rm : openRequests) {
+				unsorted.put(rm, rm.getScheduleDate().getTime());
+
+			}
+
+			RequestMediaResource rmr = new RequestMediaResource();
+			for (RecurringRequestMedia rrm : openRecRequests) {
+				RequestMedia rm = rmr.convertToRM(rrm);
+				unsorted.put(rm, rm.getScheduleDate().getTime());
+
+			}
+
+			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
+				// check to see if request is fulfilled
+				RequestMedia rm = entry.getKey();
+				if (rm.isRecurring()) {
+					openCount++;
+				} else {
+					if (!rm.isRequestFulfilled()) {
+						Date now = new Date();
+						Date expiryDate = new Date();
+						int duration = rm.getDuration(); // in minutes
+						expiryDate.setTime(rm.getRequestDate().getTime()
+								+ duration * 60000);
+						if (now.getTime() > expiryDate.getTime()) {
+							super.delete(rm, rm.geteMailAddress(), rm.getRequestId());
+							// results.add(rm);
+						} else {
+
+							openCount++;
+						}
+
+					} else {
+
+						if (rm.getFulfilledDate().getTime() < threeHoursAgo) {
+							super.delete(rm, rm.geteMailAddress(), rm.getRequestId());
+						}
+
+					}
+
+				}
+			}
+			super.storeInCache("OPENCOUNT:" + eMailAddress, 3600, openCount);
+
+			HashMap<RequestMedia, Long> unsortedMedia = new HashMap<RequestMedia, Long>();
+
+			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsorted)) {
+				RequestMedia rm = entry.getKey();
+
+				if (rm.isRequestFulfilled()
+						&& rm.getFulfilledDate().getTime() > threeHoursAgo) {
+					unsortedMedia.put(rm, rm.getScheduleDate().getTime());
+				}
+
+			}
+			for (Entry<RequestMedia, Long> entry : entriesSortedByValues(unsortedMedia)) {
+				// check to see if request is fulfilled
+				RequestMedia rm = entry.getKey();
+
+				if (rm.isRequestFulfilled()) {
+					if (rm.isMarkAsRead()) {
+						fulfilledReadCount++;
+					} else {
+						fulfilledUnreadCount++;
+					}
+
+				}
+			}
+
+			super.storeInCache("FULFILLEDUNREADCOUNT:" + eMailAddress, 3600,
+					fulfilledUnreadCount);
+			super.storeInCache("FULFILLEDREADCOUNT:" + eMailAddress, 3600,
+					fulfilledReadCount);
+
+		} else {
+			openCount = (Integer) oCount;
+			fulfilledReadCount = (Integer) fRCount;
+			fulfilledUnreadCount = (Integer) fUCount;
 		}
 
-		for (Entry<AssignedRequest, Long> entry : entriesSortedByValues(unsortedAssigned)) {
-			AssignedRequest assReq = entry.getKey();
-			switch (assReq.getRequestType()) {
-			case 0:
-				RequestMedia rm = super.mapper().load(RequestMedia.class,
-						assReq.getRequestorEmail(), assReq.getRequestId());
-				if (rm == null) {
-					super.mapper().delete(assReq);
-				} else {
-					Date now = new Date();
-					if (now.getTime() > assReq.getExpiryDate().getTime()) {
-						super.mapper().delete(assReq);
+		results.put("openrequests", openCount);
+		results.put("fulfilledReadCount", fulfilledReadCount);
+		results.put("fulfilledUnreadCount", fulfilledUnreadCount);
+
+		// TODO add recurring requests to this list
+		// ALSO ADD FILTERING!!!!!!!!!!!!
+
+		if (aRCount == null || aUCount == null) {
+			DynamoDBQueryExpression queryExpression = new DynamoDBQueryExpression(
+					new AttributeValue().withS(eMailAddress));
+			PaginatedQueryList<AssignedRequest> assignedToMe = super.mapper()
+					.query(AssignedRequest.class, queryExpression);
+
+			HashMap<AssignedRequest, Long> unsortedAssigned = new HashMap<AssignedRequest, Long>();
+			for (AssignedRequest rm : assignedToMe) {
+				unsortedAssigned.put(rm, rm.getAssignedDate().getTime());
+
+			}
+
+			for (Entry<AssignedRequest, Long> entry : entriesSortedByValues(unsortedAssigned)) {
+				AssignedRequest assReq = entry.getKey();
+				switch (assReq.getRequestType()) {
+				case 0:
+					RequestMedia rm = (RequestMedia) super.load(
+							RequestMedia.class, assReq.getRequestorEmail(),
+							assReq.getRequestId());
+					if (rm == null) {
+						super.delete(assReq, assReq.geteMailAddress(),
+								assReq.getRequestId());
 					} else {
+						Date now = new Date();
+						if (now.getTime() > assReq.getExpiryDate().getTime()) {
+							super.delete(assReq, assReq.geteMailAddress(),
+									assReq.getRequestId());
+						} else {
+							if (assReq.isMarkAsRead())
+								assignedReadCount++;
+							else
+								assignedUnreadCount++;
+						}
+					}
+
+					break;
+				case 1:
+
+					RecurringRequestMedia rrm = (RecurringRequestMedia) super
+							.load(RecurringRequestMedia.class,
+									assReq.getRequestorEmail(),
+									assReq.getRequestId());
+					if (rrm == null) {
+						super.delete(assReq, assReq.geteMailAddress(),
+								assReq.getRequestId());
+					} else {
+						// TODO if the window for this request has expired,
+						// remove
+						// it from the users assigned queue
 						if (assReq.isMarkAsRead())
 							assignedReadCount++;
 						else
 							assignedUnreadCount++;
 					}
+					break;
 				}
 
-				break;
-			case 1:
-
-				RecurringRequestMedia rrm = super.mapper().load(
-						RecurringRequestMedia.class,
-						assReq.getRequestorEmail(), assReq.getRequestId());
-				if (rrm == null) {
-					super.mapper().delete(assReq);
-				} else {
-					// TODO if the window for this request has expired, remove
-					// it from the users assigned queue
-					if (assReq.isMarkAsRead())
-						assignedReadCount++;
-					else
-						assignedUnreadCount++;
-				}
-				break;
 			}
-
+		} else {
+			assignedReadCount = (Integer) aRCount;
+			assignedUnreadCount = (Integer) aUCount;
 		}
-
 		results.put("assignedReadRequests", assignedReadCount);
 		results.put("assignedUnreadRequests", assignedUnreadCount);
 		return results;
@@ -505,18 +535,18 @@ public class InboxResource extends ResourceHelper {
 		List<AssignedRequest> requestsToSave = new ArrayList<AssignedRequest>();
 		for (AssignedRequest assReq : assignedToMe) {
 			if (assReq.getExpiryDate().getTime() < new Date().getTime()) {
-				super.mapper().delete(assReq);
+				super.delete(assReq, assReq.geteMailAddress(), assReq.getRequestId());
 			} else {
 				switch (assReq.getRequestType()) {
 				case 0:
-					RequestMedia rm = super.mapper().load(RequestMedia.class,
+					RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					assReq.setNameOfLocation(rm.getNameOfLocation());
 					results.add(assReq);
 
 					break;
 				case 1:
-					RecurringRequestMedia rrm = super.mapper().load(
+					RecurringRequestMedia rrm = (RecurringRequestMedia) super.load(
 							RecurringRequestMedia.class,
 							assReq.getRequestorEmail(), assReq.getRequestId());
 					assReq.setNameOfLocation(rrm.getNameOfLocation());

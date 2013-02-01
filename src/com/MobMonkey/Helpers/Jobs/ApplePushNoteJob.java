@@ -22,7 +22,8 @@ public class ApplePushNoteJob implements Job {
 		JobDataMap dataMap = arg0.getJobDetail().getJobDataMap();
 		String base64deviceIds = dataMap.getString("deviceIds");
 		String message = dataMap.getString("message");
-
+		int badge = dataMap.getInt("badge");
+		
 		String[] devIds = null;
 		try {
 			devIds = (String[]) fromString(base64deviceIds);
@@ -33,7 +34,7 @@ public class ApplePushNoteJob implements Job {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		ApplePNSHelper.send(devIds, message);
+		ApplePNSHelper.send(devIds, message, badge);
 
 	}
 

@@ -12,6 +12,7 @@ import java.util.TreeSet;
 import javax.naming.InitialContext;
 import javax.ws.rs.core.HttpHeaders;
 
+import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 import org.quartz.JobDetail;
 
@@ -40,6 +41,7 @@ public class ResourceHelper {
 	private DynamoDBMapper mapper;
 	private AmazonElastiCacheClient ecCli;
 	private Scheduler scheduler;
+	private static Logger logger = Logger.getRootLogger();
 
 	public ResourceHelper() {
 		try {
@@ -47,7 +49,7 @@ public class ResourceHelper {
 					.getResourceAsStream("AwsCredentials.properties"));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			this.logger().error("Unable to read AwsCredentials.proprties");
 		}
 
 		s3cli = new AmazonS3Client();
@@ -62,9 +64,14 @@ public class ResourceHelper {
 			scheduler = factory.getScheduler();
 		} catch (SchedulerException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			this.logger().error("Unable to access the scheduler factory: " + e.getMessage());
 		}
 
+		
+	}
+	
+	public Logger logger() {
+		return logger;
 	}
 
 	public DynamoDBMapper mapper() {
@@ -87,11 +94,12 @@ public class ResourceHelper {
 		return scheduler;
 	}
 
-	public String sendAPNS(String[] deviceIds, String message)
+	public String sendAPNS(String[] deviceIds, String message, int badge)
 			throws IOException {
 		JobDetail job = newJob(ApplePushNoteJob.class)
 				.withIdentity("myJob", "group1")
 				.usingJobData("deviceIds", toBase64String(deviceIds))
+				.usingJobData("badge", badge)
 				.usingJobData("message", message).build();
 
 		Trigger trigger = newTrigger().withIdentity("trigger1", "group1")
@@ -239,4 +247,13 @@ public class ResourceHelper {
 		this.mapper().save(o);
 		this.storeInCache(hashKey + ":" + rangeKey, 259200, o);
 	}
+	
+	public void clearCountCache(String eMailAddress) {
+		this.deleteFromCache("OPENCOUNT:" + eMailAddress);
+		this.deleteFromCache("FULFILLEDUNREADCOUNT:" + eMailAddress);
+		this.deleteFromCache("FULFILLEDREADCOUNT:" + eMailAddress);
+		this.deleteFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
+		this.deleteFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
+	}
+
 }

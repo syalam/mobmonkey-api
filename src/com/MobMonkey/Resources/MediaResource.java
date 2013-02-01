@@ -88,7 +88,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		Media m = new Media();
 
 		try {
-			m = super.mapper().load(Media.class, requestId, mediaId);
+			m = (Media) super.load(Media.class, requestId, mediaId);
 			if (!m.getOriginalRequestor().toLowerCase()
 					.equals(username.toLowerCase())) {
 				return Response
@@ -108,20 +108,20 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 		if (m.getRequestType().equals("0")) {
 			try {
-				RequestMedia rm = super.mapper().load(RequestMedia.class,
+				RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 						username, requestId);
 				if (rm != null) {
-					super.mapper().delete(m);
-					super.deleteFromCache(m.getRequestId() + ":"
-							+ m.getMediaId());
-					LocationMedia lm = super.mapper().load(LocationMedia.class,
+					super.delete(m, m.getRequestId(), m.getMediaId());
+					LocationMedia lm = (LocationMedia) super.load(LocationMedia.class,
 							rm.getLocationId() + ":" + rm.getProviderId(),
-							m.getUploadedDate());
-					super.mapper().delete(lm);
+							m.getUploadedDate().toString());
+					super.delete(lm,
+							rm.getLocationId() + ":" + rm.getProviderId(),
+							m.getUploadedDate().toString());
 					rm.setFulfilledDate(null);
 					rm.setRequestFulfilled(false);
 					rm.setScheduleDate(new Date());
-					super.mapper().save(rm);
+					super.save(rm, rm.geteMailAddress(), rm.getRequestId());
 					return Response
 							.ok()
 							.entity(new Status("Success",
@@ -159,7 +159,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		Media m = new Media();
 
 		try {
-			m = super.mapper().load(Media.class, requestId, mediaId);
+			m = (Media) super.load(Media.class, requestId, mediaId);
 			if (!m.getOriginalRequestor().toLowerCase()
 					.equals(username.toLowerCase())) {
 				return Response
@@ -181,9 +181,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			try {
 
 				m.setAccepted(true);
-				super.mapper().save(m);
-				super.storeInCache(requestId + ":" + mediaId, 259200, m);
-
+				super.save(m, requestId, mediaId);
+				
 				return Response
 						.ok()
 						.entity(new Status("Success",
@@ -285,6 +284,14 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		super.save(media, media.getRequestId(), media.getMediaId());
 
+		
+		super.clearCountCache(media
+				.getOriginalRequestor());
+		HashMap<String, Integer> counts = new InboxResource().getCounts(media
+				.getOriginalRequestor());
+		
+		int badgeCount = counts.get("fulfilledUnreadCount") + counts.get("assignedUnreadRequests");
+		
 		// Send notification to apple device
 		NotificationHelper noteHelper = new NotificationHelper();
 		String[] deviceIds = noteHelper.getUserDevices(media
@@ -294,7 +301,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				+ " request at " + reqDetails.get("nameOfLocation")
 				+ " has been fulfilled.";
 
-		super.sendAPNS(deviceIds, message);
+		super.sendAPNS(deviceIds, message, badgeCount);
 
 		super.storeInCache(media.getRequestId() + ":" + media.getMediaId(),
 				259200, media);
@@ -316,7 +323,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			t.setTimeStamp(now);
 			t.setLocationId(locationId);
 			t.setProviderId(providerId);
-			super.mapper().save(t);
+			super.save(t, t.getType(), t.getTimeStamp().toString());
 
 		}
 
@@ -344,7 +351,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		String result;
 		try {
-			result = super.sendAPNS(deviceIds, message);
+			result = super.sendAPNS(deviceIds, message, 31337);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			result = "Failure.";
@@ -389,11 +396,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		List<MediaLite> media = new ArrayList<MediaLite>();
 		for (Entry<LocationMedia, Long> entry : entriesSortedByValues(unsorted)) {
 			LocationMedia locMedia = entry.getKey();
-			Media m = super.mapper().load(Media.class, locMedia.getRequestId(),
+			Media m = (Media) super.load(Media.class, locMedia.getRequestId(),
 					locMedia.getMediaId());
 			if (m == null) {
 				// Media was removed, remove from LocMedia
-				super.mapper().delete(locMedia);
+				super.delete(locMedia, locMedia.getLocationProviderId(), locMedia.getUploadedDate().toString());
 			} else {
 				MediaLite ml = this.convertMediaToMediaLite(m);
 				media.add(ml);
@@ -496,7 +503,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		AssignedRequest assReq = new AssignedRequest();
 		if (m.getMediaType() != 3) {
-			assReq = super.mapper().load(AssignedRequest.class,
+			assReq = (AssignedRequest) super.load(AssignedRequest.class,
 					m.geteMailAddress(), m.getRequestId());
 			if (assReq == null) {
 				results.put("Error", "Request is no longer assigned to user");
@@ -506,13 +513,14 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 		if (m.getRequestType().equals("1")) {
-			RecurringRequestMedia rrm = super.mapper().load(
+			RecurringRequestMedia rrm = (RecurringRequestMedia) super.load(
 					RecurringRequestMedia.class, origRequestor,
 					m.getRequestId());
 			if (rrm.equals(null)) {
 				results.put("Error",
 						"Request does not exist, removing assignment");
-				super.mapper().delete(assReq);
+				super.delete(assReq,
+						m.geteMailAddress(), m.getRequestId());
 				return results;
 			}
 			rrm.setRequestId(m.getRequestId());
@@ -522,27 +530,19 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			providerId = rrm.getProviderId();
 			nameOfLocation = rrm.getNameOfLocation();
 
-			super.mapper().save(rrm);
+			super.save(rrm, rrm.geteMailAddress(), rrm.getRequestId());
 
 			// Update the cache
-			Object o = super.getFromCache("RecurringRequestTable");
-
-			if (o != null) {
-				@SuppressWarnings("unchecked")
-				List<RecurringRequestMedia> tmp = (List<RecurringRequestMedia>) o;
-
-				tmp.add(rrm);
-				super.storeInCache("RecurringRequestTable", 259200, tmp);
-			}
 
 		} else if (m.getRequestType().equals("0")) {
-			RequestMedia rm = super.mapper().load(RequestMedia.class,
+			RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 					origRequestor, m.getRequestId());
 			if (rm == null) {
 				if (m.getMediaType() != 3) {
 					results.put("Error",
 							"Request is no longer assigned to user");
-					super.mapper().delete(assReq);
+					super.delete(assReq,
+							m.geteMailAddress(), m.getRequestId());
 					return results;
 				}
 			}
@@ -553,21 +553,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			providerId = rm.getProviderId();
 			nameOfLocation = rm.getNameOfLocation();
 			rm.setRequestId(m.getRequestId());
-			super.mapper().save(rm);
-			// Update the cache
-			Object o = super.getFromCache("RequestTable");
-
-			if (o != null) {
-				@SuppressWarnings("unchecked")
-				List<RequestMedia> tmp = (List<RequestMedia>) o;
-
-				tmp.add(rm);
-				super.storeInCache("RequestTable", 259200, tmp);
-			}
+			super.save(rm, rm.geteMailAddress(), rm.getRequestId());
 		}
 
 		try {
-			super.mapper().delete(assReq);
+			super.delete(assReq, assReq.geteMailAddress(), assReq.getRequestId());
 		} catch (Exception exc) {
 
 		}
@@ -609,7 +599,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		Media m = new Media();
 
 		try {
-			m = super.mapper().load(Media.class, requestId, mediaId);
+			m = (Media) super.load(Media.class, requestId, mediaId);
 			if (!m.getOriginalRequestor().toLowerCase()
 					.equals(username.toLowerCase())) {
 				return Response
@@ -631,9 +621,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			try {
 
 				m.setAccepted(true);
-				super.mapper().save(m);
-				super.storeInCache(requestId + ":" + mediaId, 259200, m);
-
+				super.save(m, m.getRequestId(), m.getMediaId());
+				
 				return Response
 						.ok()
 						.entity(new Status("Success",

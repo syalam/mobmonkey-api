@@ -71,71 +71,53 @@ public class SearchResource extends ResourceHelper {
 		} catch (Exception exc) {
 
 		}
-		if (loc.getLatitude() != null && loc.getLongitude() != null
-				&& loc.getName() != null && loc.getRadiusInYards() != null
-				&& loc.getCategoryIds() != null) {
-			// TODO validate lat/long with regex
-			loc.setCategoryIds(loc.getCategoryIds());
-			List<Location> locations = new SearchHelper()
-					.getLocationsByGeo(loc);
 
-			// Populate the counts!  NOT NEEDED ACCORDING TO REYAAD
-			//locations = new SearchHelper().PopulateCounts(locations,
-			//		user.geteMailAddress());
+		// TODO validate lat/long with regex
+		List<Location> locations = new SearchHelper().getLocationsByGeo(loc);
 
-			List<Integer> itemsToRemove = new ArrayList<Integer>();
-			if (filter) {
-				int count = 0;
-				for (Location location : locations) {
+		// Populate the counts! NOT NEEDED ACCORDING TO REYAAD
+		// locations = new SearchHelper().PopulateCounts(locations,
+		// user.geteMailAddress());
 
-					if (mediaTypeInt == 1) { // image
-						if (location.getImages() == 0) {
-							itemsToRemove.add(count);
-						}
+		List<Integer> itemsToRemove = new ArrayList<Integer>();
+		if (filter) {
+			int count = 0;
+			for (Location location : locations) {
+
+				if (mediaTypeInt == 1) { // image
+					if (location.getImages() == 0) {
+						itemsToRemove.add(count);
 					}
-
-					if (mediaTypeInt == 2) { // video
-						if (location.getVideos() == 0) {
-							itemsToRemove.add(count);
-						}
-					}
-					if (mediaTypeInt == 3) { // livestreaming
-						if (location.getLivestreaming() == 0) {
-							itemsToRemove.add(count);
-						}
-					}
-					count++;
 				}
 
+				if (mediaTypeInt == 2) { // video
+					if (location.getVideos() == 0) {
+						itemsToRemove.add(count);
+					}
+				}
+				if (mediaTypeInt == 3) { // livestreaming
+					if (location.getLivestreaming() == 0) {
+						itemsToRemove.add(count);
+					}
+				}
+				count++;
 			}
-			int xcount = 0;
-			for(int i : itemsToRemove){
-				
-				locations.remove(i - xcount);
-				xcount++;
-				
-			}
-			
-			//NOT NEEDED by Reyaads
-//			List<Location> bookmarkedLocations = this.AssignBookmarks(
-//					locations, user.geteMailAddress());
-
-			return Response.ok().entity(locations).build();
-		}
-		if (loc.getLocality() != null && loc.getRegion() != null
-				&& loc.getPostcode() != null && loc.getName() != null) {
-			// TODO validate postcode with regex, make sure locality and region
-			// are sane
-			List<Location> locations = SearchHelper.getLocationsByAddress(loc);
-			return Response.ok().entity(locations).build();
 
 		}
-		return Response
-				.status(500)
-				.entity(new Status(
-						"Failure",
-						"You need to specify either (lat & long & name & radiusInYards) OR (name, address, locality, region & zip)",
-						"")).build();
+		int xcount = 0;
+		for (int i : itemsToRemove) {
+
+			locations.remove(i - xcount);
+			xcount++;
+
+		}
+
+		// NOT NEEDED by Reyaads
+		// List<Location> bookmarkedLocations = this.AssignBookmarks(
+		// locations, user.geteMailAddress());
+
+		return Response.ok().entity(locations).build();
+
 	}
 
 	@POST
@@ -225,8 +207,8 @@ public class SearchResource extends ResourceHelper {
 				if (m.getRequestType().equals("1")) {
 					// we have a recurring request type that could be our
 					// location!
-					RecurringRequestMedia origReq = super.mapper().load(
-							RecurringRequestMedia.class, m.getRequestId());
+					RecurringRequestMedia origReq = (RecurringRequestMedia) super
+							.load(RecurringRequestMedia.class, m.getRequestId());
 
 					if (origReq.getProviderId().equals(loc.getProviderId())
 							&& origReq.getLocationId().equals(
@@ -241,7 +223,7 @@ public class SearchResource extends ResourceHelper {
 					}
 
 				} else {
-					RequestMedia origReq = super.mapper().load(
+					RequestMedia origReq = (RequestMedia) super.load(
 							RequestMedia.class, m.getOriginalRequestor(),
 							m.getRequestId());
 

@@ -57,7 +57,9 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 		String partnerId = req.getHeaderValue("MobMonkey-partnerId");
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
-		String oauthToken = req.getHeaderValue("OauthToken");
+		String oauthProviderUserName = req.getHeaderValue("OauthProviderUserName");
+		//mString oauthToken = req.getHeaderValue("OauthToken");
+		String oauthProvider = req.getHeaderValue("OauthProvider");
 
 		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
@@ -109,11 +111,15 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 		try {
 			// Before with auth the user using email and pass, lets see if we
 			// have an oauth header
-			if (null != oauthToken) {
+			if (null != oauthProvider) {
 				//TODO Cache this
-				Oauth ou = (Oauth) super.load(Oauth.class, eMailAddress, oauthToken);
+				Oauth ou = (Oauth) super.load(Oauth.class, oauthProvider, oauthProviderUserName);
 
 				if (ou != null) {
+					if(ou.iseMailVerified() == false){
+						return false;
+					}
+					
 					InBoundHeaders in = new InBoundHeaders();
 					in.putAll(req.getRequestHeaders());
 
