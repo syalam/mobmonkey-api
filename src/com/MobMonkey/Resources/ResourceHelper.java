@@ -1,7 +1,11 @@
 package com.MobMonkey.Resources;
 
+import static org.quartz.JobBuilder.newJob;
+import static org.quartz.TriggerBuilder.newTrigger;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Comparator;
@@ -9,20 +13,15 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import javax.naming.InitialContext;
 import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.log4j.Logger;
 import org.bouncycastle.util.encoders.Base64;
 import org.quartz.JobDetail;
-
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
-import static org.quartz.JobBuilder.*;
-import static org.quartz.TriggerBuilder.*;
-import static org.quartz.SimpleScheduleBuilder.*;
 
 import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.MobMonkey.Helpers.Jobs.ApplePushNoteJob;
@@ -31,8 +30,8 @@ import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.elasticache.AmazonElastiCacheClient;
+import com.amazonaws.services.s3.AmazonS3Client;
 
 public class ResourceHelper {
 	private AmazonS3Client s3cli;
@@ -42,36 +41,42 @@ public class ResourceHelper {
 	private AmazonElastiCacheClient ecCli;
 	private Scheduler scheduler;
 	private static Logger logger = Logger.getRootLogger();
+	static final String AWS_CREDENTIALS_FILE = "AwsCredentials.properties";
+	static final String AWS_CRED_ERROR_NOT_FOUND = String.format("\n\nCould not find %s\n\n\r", AWS_CREDENTIALS_FILE);
+	static final String AWS_CRED_ERROR_READING = String.format("\n\nUnable to read %s\n\n\r", AWS_CREDENTIALS_FILE);
 
 	public ResourceHelper() {
-		try {
-			credentials = new PropertiesCredentials(getClass().getClassLoader()
-					.getResourceAsStream("AwsCredentials.properties"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			this.logger().error("Unable to read AwsCredentials.proprties");
+		InputStream credentialsStream = getClass().getClassLoader().getResourceAsStream(AWS_CREDENTIALS_FILE);
+		if (credentialsStream != null) {
+			try {
+				credentials = new PropertiesCredentials(credentialsStream);
+			} catch (IOException e) {
+				logger.error(AWS_CRED_ERROR_READING);
+			}
+
+			s3cli = new AmazonS3Client();
+			ddb = new AmazonDynamoDBClient(credentials);
+			ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
+					"us-west-1");
+			mapper = new DynamoDBMapper(ddb);
+
+			StdSchedulerFactory factory = new StdSchedulerFactory();
+			try {
+				scheduler = factory.getScheduler();
+			} catch (SchedulerException e) {
+				logger.error("Unable to access the scheduler factory: " + e.getMessage());
+			}
+		} else {
+			logger.error(AWS_CRED_ERROR_NOT_FOUND);
 		}
-
-		s3cli = new AmazonS3Client();
-		ddb = new AmazonDynamoDBClient(credentials);
-		ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
-				"us-west-1");
-		mapper = new DynamoDBMapper(ddb);
-
-		
-		StdSchedulerFactory factory = new StdSchedulerFactory();
-		try {
-			scheduler = factory.getScheduler();
-		} catch (SchedulerException e) {
-			// TODO Auto-generated catch block
-			this.logger().error("Unable to access the scheduler factory: " + e.getMessage());
-		}
-
-		
 	}
 	
-	public Logger logger() {
-		return logger;
+	public ResourceHelper(PropertiesCredentials credentials, AmazonS3Client awsClient, AmazonDynamoDBClient dbClient, DynamoDBMapper dynamoMapper, Scheduler scheduler) {
+		this.credentials = credentials;
+		this.s3cli = awsClient;
+		this.ddb = dbClient;
+		this.mapper = dynamoMapper;
+		this.scheduler = scheduler;
 	}
 
 	public DynamoDBMapper mapper() {

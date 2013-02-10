@@ -1,5 +1,8 @@
 package com.MobMonkey.Resources;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.POST;
@@ -20,8 +23,13 @@ import com.MobMonkey.Models.User;
 @Path("/signin")
 public class SignInResource extends ResourceHelper {
 
+	static final String FACEBOOK = "facebook", TWITTER = "twitter";
+	Map<String, String> deviceTypeNames;
+
 	public SignInResource() {
-		super();
+		deviceTypeNames = new HashMap<String, String>();
+		deviceTypeNames.put("ios", "iOS");
+		deviceTypeNames.put("android", "Android");
 	}
 
 	@POST
@@ -35,12 +43,14 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("oauthToken") String token,
 			@QueryParam("providerUserName") String providerUserName) {
 
+
+
 		if (useOAuth) {
 
 			Oauth ou = (Oauth) super.load(Oauth.class, provider,
 					providerUserName);
 
-			if (provider.toLowerCase().equals("twitter")) {
+			if (TWITTER.equalsIgnoreCase(providerUserName)) {
 				if (ou == null) {
 					// we do not have a user, so we should create one
 
@@ -82,7 +92,7 @@ public class SignInResource extends ResourceHelper {
 								.build();
 					}
 				}
-			} else if (provider.toLowerCase().equals("facebook")) {
+			} else if (FACEBOOK.equalsIgnoreCase(provider)) {
 				if (ou == null) {
 					// we do not have a user, so we should create one
 
@@ -143,9 +153,9 @@ public class SignInResource extends ResourceHelper {
 					.get(0);
 			String password = headers.getRequestHeader("MobMonkey-auth").get(0);
 
-			User u = (User) super.load(User.class, eMailAddress, partnerId);
+			User user = (User) super.load(User.class, eMailAddress, partnerId);
 
-			if (u == null || !u.getPassword().equals(password)) {
+			if (user == null || !user.getPassword().equals(password)) {
 				return Response
 						.status(401)
 						.entity(new Status(
@@ -153,7 +163,7 @@ public class SignInResource extends ResourceHelper {
 								"Unauthorized.  Please provide valid credentials.",
 								"500")).build();
 			}
-			if (!addDevice(u.geteMailAddress(), deviceId, type)) {
+			if (!addDevice(user.geteMailAddress(), deviceId, type)) {
 				return Response
 						.status(500)
 						.entity(new Status(
@@ -167,7 +177,6 @@ public class SignInResource extends ResourceHelper {
 							"User successfully signed in", "200")).build();
 
 		}
-
 	}
 
 	@POST
@@ -182,8 +191,7 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("deviceId") String deviceId,
 			@QueryParam("eMailAddress") String eMailAddress) {
 
-		boolean validEmail = new EmailValidator().validate(eMailAddress);
-		if (!validEmail) {
+		if (!EmailValidator.validate(eMailAddress)) {
 			return Response
 					.status(500)
 					.entity(new Status("Failure",
@@ -223,25 +231,18 @@ public class SignInResource extends ResourceHelper {
 	}
 
 	public boolean addDevice(String eMailAddress, String deviceId, String type) {
-		Device d = new Device();
-		d.seteMailAddress(eMailAddress);
+		boolean ableToAddDevice = deviceId != null;
+		if (ableToAddDevice) {
+			String deviceType = type == null ? "" : type.toLowerCase();
+			String deviceTypeName = deviceTypeNames.get(deviceType);
+			ableToAddDevice = deviceTypeName != null;
 
-		if (deviceId == null) {
-			return false;
+			if (ableToAddDevice) {
+				save(new Device(eMailAddress, deviceId, deviceTypeName), eMailAddress, deviceId);
+				deleteFromCache("DEV" + eMailAddress);
+			}
 		}
-		if (type.toLowerCase().equals("ios")) {
-			d.setDeviceType("iOS");
-		} else if (type.toLowerCase().equals("android")) {
-			d.setDeviceType("Android");
-		} else {
-			return false;
-		}
-
-		d.setDeviceId(deviceId);
-
-		super.save(d, d.geteMailAddress(), d.getDeviceId());
-		super.deleteFromCache("DEV" + eMailAddress);
-		return true;
+		return ableToAddDevice;
 	}
 
 }

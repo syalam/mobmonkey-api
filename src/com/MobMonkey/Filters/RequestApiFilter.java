@@ -1,30 +1,29 @@
 package com.MobMonkey.Filters;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
+import com.MobMonkey.Models.Oauth;
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
-import com.MobMonkey.Models.Oauth;
 import com.MobMonkey.Resources.ResourceHelper;
-import com.amazonaws.auth.PropertiesCredentials;
-import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
-import com.amazonaws.auth.AWSCredentials;
 import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
 public class RequestApiFilter extends ResourceHelper implements ContainerRequestFilter{
-	public RequestApiFilter() {
-		super();
-	}
+
+	static Logger logger = Logger.getRootLogger();
 
 	@Override
 	public ContainerRequest filter(ContainerRequest req) {
+
+		logger.debug(">>>>>>>>>>>>>>>>>>   	RequestApiFilter.filter(...)");
+
 		// Check to see if the request has the correct authorization info.
 		boolean authorized = Authorize(req);
 		if (!authorized) {
@@ -47,6 +46,9 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 				e.printStackTrace();
 			}
 
+		}
+		else {
+			logger.debug("Unauthorized");
 		}
 		return req;
 	}
