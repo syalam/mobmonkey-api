@@ -19,25 +19,8 @@ import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
 public class RequestApiFilter extends ResourceHelper implements ContainerRequestFilter{
-	private AWSCredentials credentials;
-	private AmazonDynamoDBClient ddb;
-	private DynamoDBMapper mapper;
-
 	public RequestApiFilter() {
 		super();
-		try {
-			credentials = new PropertiesCredentials(getClass().getClassLoader()
-					.getResourceAsStream("AwsCredentials.properties"));
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		ddb = new AmazonDynamoDBClient(credentials);
-		ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
-				"us-west-1");
-
-		mapper = new DynamoDBMapper(ddb);
 	}
 
 	@Override
@@ -74,7 +57,9 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 		String partnerId = req.getHeaderValue("MobMonkey-partnerId");
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
-		String oauthToken = req.getHeaderValue("OauthToken");
+		String oauthProviderUserName = req.getHeaderValue("OauthProviderUserName");
+		//mString oauthToken = req.getHeaderValue("OauthToken");
+		String oauthProvider = req.getHeaderValue("OauthProvider");
 
 		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
@@ -126,11 +111,15 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 		try {
 			// Before with auth the user using email and pass, lets see if we
 			// have an oauth header
-			if (null != oauthToken) {
+			if (null != oauthProvider) {
 				//TODO Cache this
-				Oauth ou = (Oauth) super.load(Oauth.class, eMailAddress, oauthToken);
+				Oauth ou = (Oauth) super.load(Oauth.class, oauthProvider, oauthProviderUserName);
 
 				if (ou != null) {
+					if(ou.iseMailVerified() == false){
+						return false;
+					}
+					
 					InBoundHeaders in = new InBoundHeaders();
 					in.putAll(req.getRequestHeaders());
 

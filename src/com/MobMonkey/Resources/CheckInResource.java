@@ -1,10 +1,10 @@
 package com.MobMonkey.Resources;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.Consumes;
@@ -16,21 +16,15 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import android.location.Location;
-
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.Locator;
-import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.MobMonkey.Helpers.NotificationHelper;
 import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.CheckIn;
-import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.RequestMediaLite;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodb.model.AttributeValue;
 
 @Path("/checkin")
-public class CheckInResource  extends ResourceHelper implements Serializable {
+public class CheckInResource extends ResourceHelper implements Serializable {
 
 	/**
 	 * 
@@ -53,24 +47,11 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 		c.setPartnerId(partnerId);
 		c.setDateCheckedIn(new Date());
 
-		String locationId = "";
-		String providerId = "";
 		String latitude = "";
 		String longitude = "";
 
-		// TODO if locationid & providerid is present, then we need to check
-		// that!
-
 		// so i have checked in the user at a specific x,y
 		// i should check to see if there are any requests in the area
-		try {
-			locationId = (!c.getLocationId().equals(null)) ? c.getLocationId()
-					: "";
-			providerId = (!c.getProviderId().equals(null)) ? c.getProviderId()
-					: "";
-		} catch (Exception exc) {
-
-		}
 		try {
 			latitude = (!c.getLatitude().equals(null)) ? c.getLatitude() : "";
 			longitude = (!c.getLongitude().equals(null)) ? c.getLongitude()
@@ -78,20 +59,8 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 		} catch (Exception exc) {
 
 		}
-		if (locationId != "" && providerId != "") {
-			com.MobMonkey.Models.Location loc = new Locator().reverseLookUp(
-					providerId, locationId);
-			if (loc.getLatitude() != null && loc.getLongitude() != null) {
-				reqsNearBy = new Locator().findRequestsNearBy(
-						loc.getLatitude(), loc.getLongitude());
-				c.setLatitude(loc.getLatitude());
-				c.setLongitude(loc.getLongitude());
-			} else if (latitude != "" && longitude != "") {
-				reqsNearBy = new Locator().findRequestsNearBy(c.getLatitude(),
-						c.getLongitude());
 
-			}
-		} else if (latitude != "" && longitude != "") {
+		if (latitude != "" && longitude != "") {
 			reqsNearBy = new Locator().findRequestsNearBy(c.getLatitude(),
 					c.getLongitude());
 		}
@@ -111,9 +80,9 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 				try {
 					@SuppressWarnings("unchecked")
 					Map<String, CheckIn> checkIn = (HashMap<String, CheckIn>) o;
-					
+
 					checkIn.put(eMailAddress, c);
-					
+
 					super.storeInCache("CheckInData", 259200, checkIn);
 
 				} catch (IllegalArgumentException e) {
@@ -121,7 +90,7 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 				}
 			}
 
-			super.mapper().save(c);
+			super.save(c, c.geteMailAddress());
 		} catch (Exception exc) {
 			return Response.status(500).entity("An error has occured").build();
 		}
@@ -130,9 +99,9 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 	}
 
 	public void AssignRequest(String eMailAddress, RequestMediaLite req) {
-
-		AssignedRequest assReq = super.mapper().load(AssignedRequest.class,
-				eMailAddress, req.getRequestId());
+		String[] deviceIds = null;
+		AssignedRequest assReq = (AssignedRequest) super.load(
+				AssignedRequest.class, eMailAddress, req.getRequestId());
 		if (assReq == null) {
 			assReq = new AssignedRequest();
 			assReq.seteMailAddress(eMailAddress);
@@ -149,17 +118,37 @@ public class CheckInResource  extends ResourceHelper implements Serializable {
 			assReq.setLatitude(req.getLatitude());
 			assReq.setLongitude(req.getLongitude());
 			assReq.setMarkAsRead(false);
+			assReq.setRequestDate(req.getRequestDate());
 
-			super.mapper().save(assReq);
+			try {
+				super.save(assReq, eMailAddress, req.getRequestId());
+			} catch (Exception exc) {
 
-			NotificationHelper noteHelper = new NotificationHelper();
-			String[] deviceIds = noteHelper.getUserDevices(eMailAddress);
-			ApplePNSHelper.send(
-					deviceIds,
-					"You've been assigned a request for a(n) "
-							+ super.MediaType(req.getMediaType()) + " at "
-							+ req.getLocationName() + ".");
+			}
+			try {
+				NotificationHelper noteHelper = new NotificationHelper();
+				deviceIds = noteHelper.getUserDevices(eMailAddress);
+			} catch (Exception exc) {
+
+			}
+			super.clearCountCache(eMailAddress);
+			HashMap<String, Integer> counts = new InboxResource()
+					.getCounts(eMailAddress);
+
+			int badgeCount = counts.get("fulfilledUnreadCount")
+					+ counts.get("assignedUnreadRequests");
+
+			try {
+				super.sendAPNS(
+						deviceIds,
+						"You've been assigned a request for a(n) "
+								+ super.MediaType(req.getMediaType()) + " at "
+								+ req.getLocationName(), badgeCount);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+
 		}
 	}
-
 }

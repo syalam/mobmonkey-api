@@ -137,6 +137,7 @@ public final class Locator extends ResourceHelper {
 					newReq.setLatitude(req.getLatitude());
 					newReq.setLongitude(req.getLongitude());
 					newReq.setLocationName(req.getNameOfLocation());
+					newReq.setRequestDate(req.getRequestDate());
 					if (req.isRecurring())
 						newReq.setRequestType(1);
 					else
@@ -185,7 +186,7 @@ public final class Locator extends ResourceHelper {
 						newSReq.setProviderId(rm.getProviderId());
 						newSReq.setLocationName(rm.getNameOfLocation());
 						newSReq.setRequestorEmail(rm.geteMailAddress());
-						
+						newSReq.setRequestDate(rm.getRequestDate());
 						results.add(newSReq);
 					}
 				}
@@ -204,7 +205,7 @@ public final class Locator extends ResourceHelper {
 		if (o != null) {
 			try {
 				@SuppressWarnings("unchecked")
-				Map<String, CheckIn> checkIn = (HashMap<String,CheckIn>) o;
+				Map<String, CheckIn> checkIn = (HashMap<String, CheckIn>) o;
 
 				for (CheckIn c : checkIn.values()) {
 					if (Locator.isInVicinity(latitude, longitude,
@@ -239,7 +240,8 @@ public final class Locator extends ResourceHelper {
 		long rightNow = now.getTime() / 1000;
 		long scheduleDate = rm.getScheduleDate().getTime() / 1000;
 		long frequencyInMS = rm.getFrequencyInMS();
-		long duration = rm.getDuration() * 60000; // convert duration to milliseconds
+		long duration = rm.getDuration() * 60000; // convert duration to
+													// milliseconds
 
 		double x = Math.abs((scheduleDate - rightNow) % frequencyInMS);
 		double y = ((x * 1000) / frequencyInMS);
@@ -282,22 +284,25 @@ public final class Locator extends ResourceHelper {
 
 	public static boolean isInVicinity(String requestLat, String requestLong,
 			String userLat, String userLong, int radiusInYards) {
+		try {
+			int R = 6371; // Earth's radius in km
+			double radiusInkm = radiusInYards * .0009144; // convert yards to KM
+			Double rLat = Math.toRadians(Double.parseDouble(requestLat));
+			Double rLong = Math.toRadians(Double.parseDouble(requestLong));
+			Double uLat = Math.toRadians(Double.parseDouble(userLat));
+			Double uLong = Math.toRadians(Double.parseDouble(userLong));
 
-		int R = 6371; // Earth's radius in km
-		double radiusInkm = radiusInYards * .0009144; // convert yards to KM
-		Double rLat = Math.toRadians(Double.parseDouble(requestLat));
-		Double rLong = Math.toRadians(Double.parseDouble(requestLong));
-		Double uLat = Math.toRadians(Double.parseDouble(userLat));
-		Double uLong = Math.toRadians(Double.parseDouble(userLong));
-
-		Double x = (uLong - rLong) * Math.cos((rLat + uLat) / 2);
-		Double y = (uLat - rLat);
-		Double d = Math.sqrt(x * x + y * y) * R;
-
-		if (d <= radiusInkm)
-			return true;
-		else
+			Double x = (uLong - rLong) * Math.cos((rLat + uLat) / 2);
+			Double y = (uLat - rLat);
+			Double d = Math.sqrt(x * x + y * y) * R;
+			if (d <= radiusInkm)
+				return true;
+			else
+				return false;
+		} catch (Exception exc) {
 			return false;
+		}
+		
 	}
 
 }

@@ -57,7 +57,12 @@ public class BookmarkResource extends ResourceHelper {
 		b.seteMailAddress(user.geteMailAddress());
 		try {
 			super.save(b, user.geteMailAddress(), b.getLocprovId());
-			super.deleteFromCache("BM" + user.geteMailAddress()); // we need to clear the cache so this new bookmark is seen
+			super.deleteFromCache("BM" + user.geteMailAddress()); // we need to
+																	// clear the
+																	// cache so
+																	// this new
+																	// bookmark
+																	// is seen
 		} catch (ConditionalCheckFailedException exc) {
 			return Response
 					.status(500)
@@ -123,7 +128,9 @@ public class BookmarkResource extends ResourceHelper {
 
 			Location loc = new Locator().reverseLookUp(b.getProviderId(),
 					b.getLocationId());
-			results.add(loc);
+			if (loc != null) {
+				results.add(loc);
+			}
 		}
 		return results;
 	}

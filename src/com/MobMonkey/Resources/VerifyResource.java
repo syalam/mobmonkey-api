@@ -23,17 +23,17 @@ public class VerifyResource extends ResourceHelper {
 	public Response verifyUserID(@PathParam("partnerId") String partnerId,
 			@PathParam("verifyId") String verifyId) {
 		try {
-			Verify v = super.mapper().load(Verify.class, verifyId, partnerId);
+			Verify v = (Verify) super.load(Verify.class, verifyId, partnerId);
 
-			User u = super.mapper().load(User.class, v.geteMailAddress(),
+			User u = (User) super.load(User.class, v.geteMailAddress(),
 					v.getPartnerId());
 
 			u.setVerified(true);
-			super.mapper().save(u);
+			super.save(u, u.geteMailAddress(), u.getPartnerId());
 
 			v.setVerifyID(verifyId);
 			v.setRecvDate(new Date());
-			super.mapper().save(v);
+			super.save(v, v.getVerifyID(), v.getPartnerId());
 		} catch (Exception e) {
 			return Response.status(500).entity("TODO - HTML ERROR RESPONSE").build();
 		}
@@ -42,33 +42,33 @@ public class VerifyResource extends ResourceHelper {
 
 	}
 	
-	@GET
-	@Path("/user/{partnerId}/{verifyId}/{oauthtoken}")
-	public Response verifyUserIDWithAuthToken(@PathParam("partnerId") String partnerId, @PathParam("oauthtoken") String oauthtoken,
-			@PathParam("verifyId") String verifyId) {
-		try {
-			Verify v = super.mapper().load(Verify.class, verifyId, partnerId);
-
-			User u = super.mapper().load(User.class, v.geteMailAddress(),
-					v.getPartnerId());
-
-			u.setVerified(true);
-			super.mapper().save(u);
-			
-			Oauth ou = super.mapper().load(Oauth.class, v.geteMailAddress(), oauthtoken);
-			ou.seteMailVerified(true);
-			super.mapper().save(ou);
-
-			v.setVerifyID(verifyId);
-			v.setRecvDate(new Date());
-			super.mapper().save(v);
-		} catch (Exception e) {
-			return Response.status(500).entity("TODO - HTML ERROR RESPONSE").build();
-		}
-		
-		return Response.status(200).entity("<html><head><title>Verification success.</title></head><body><center><h1>Thank you for registering! You may now use the full functionality of MobMonkey.</h1></center></body></html>").build();
-
-	}
+//	@GET
+//	@Path("/user/{partnerId}/{verifyId}/{oauthtoken}")
+//	public Response verifyUserIDWithAuthToken(@PathParam("partnerId") String partnerId, @PathParam("oauthtoken") String oauthtoken,
+//			@PathParam("verifyId") String verifyId) {
+//		try {
+//			Verify v = (Verify) super.load(Verify.class, verifyId, partnerId);
+//
+//			User u = (User) super.load(User.class, v.geteMailAddress(),
+//					v.getPartnerId());
+//
+//			u.setVerified(true);
+//			super.save(u, u.geteMailAddress(), u.getPartnerId());
+//			
+//			Oauth ou = (Oauth) super.load(Oauth.class, u.geteMailAddress(), oauthtoken);
+//			ou.seteMailVerified(true);
+//			super.mapper().save(ou);
+//
+//			v.setVerifyID(verifyId);
+//			v.setRecvDate(new Date());
+//			super.mapper().save(v);
+//		} catch (Exception e) {
+//			return Response.status(500).entity("TODO - HTML ERROR RESPONSE").build();
+//		}
+//		
+//		return Response.status(200).entity("<html><head><title>Verification success.</title></head><body><center><h1>Thank you for registering! You may now use the full functionality of MobMonkey.</h1></center></body></html>").build();
+//
+//	}
 	
 	
 	@GET
@@ -78,16 +78,16 @@ public class VerifyResource extends ResourceHelper {
 		Partner p = null;
 		
 		try {
-			Verify v = super.mapper().load(Verify.class, verifyId, partnerId);
+			Verify v = (Verify) super.load(Verify.class, verifyId, partnerId);
 
-			p = super.mapper().load(Partner.class, v.getPartnerId());
+			p = (Partner) super.load(Partner.class, v.getPartnerId());
 
 			p.setEnabled(true);
-			super.mapper().save(p);
+			super.save(p, p.getPartnerId());
 			
 			v.setVerifyID(verifyId);
 			v.setRecvDate(new Date());
-			super.mapper().save(v);
+			super.save(v, v.getVerifyID(), v.getPartnerId());
 		} catch (Exception e) {
 			return Response.status(500).entity("TODO - HTML ERROR RESPONSE").build();
 		}

@@ -26,7 +26,7 @@ public class LocationProviderResource extends ResourceHelper {
 		locprov.setProviderId(UUID.randomUUID().toString());
 		try {
 			
-			super.mapper().save(locprov);
+			super.save(locprov, locprov.getProviderId());
 		} catch (Exception exc) {
 			return Response
 					.status(500)

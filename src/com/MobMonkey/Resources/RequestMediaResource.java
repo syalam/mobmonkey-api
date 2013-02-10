@@ -50,7 +50,7 @@ public class RequestMediaResource extends ResourceHelper {
 
 		if (isRecurring) {
 			try {
-				RecurringRequestMedia rm = super.mapper().load(
+				RecurringRequestMedia rm = (RecurringRequestMedia) super.load(
 						RecurringRequestMedia.class, username, requestId);
 				super.mapper().delete(rm);
 				return Response
@@ -66,9 +66,9 @@ public class RequestMediaResource extends ResourceHelper {
 			}
 		} else if (!isRecurring) {
 			try {
-				RequestMedia rm = super.mapper().load(RequestMedia.class,
+				RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 						username, requestId);
-				super.mapper().delete(rm);
+				super.delete(rm, rm.geteMailAddress(), rm.getRequestId());
 				return Response
 						.ok()
 						.entity(new Status("Success", "Successfully deleted",
@@ -126,21 +126,6 @@ public class RequestMediaResource extends ResourceHelper {
 		if (headers.getRequestHeader("OauthToken") != null) {
 			user.seteMailAddress(username);
 			user.setPartnerId(partnerId);
-		} else {
-			user = super.mapper().load(User.class, username, partnerId);
-			try {
-				if (!user.isVerified()) {
-					return Response
-							.status(401)
-							.entity("User has not verified their email address")
-							.build();
-				}
-			} catch (Exception e) {
-				return Response
-						.status(500)
-						.entity("User was not found in the MobMonkey database.")
-						.build();
-			}
 		}
 		Location coords = new Location();
 		// so lets reverse lookup some coords if they havent proivded them
@@ -198,58 +183,47 @@ public class RequestMediaResource extends ResourceHelper {
 			r.setRequestDate(now);
 			RecurringRequestMedia rm = convertToRRM(r);
 
-			super.mapper().save(rm);
+			super.save(rm, r.geteMailAddress(), r.getRequestId());
 
-			// Update the cache
-			Object o = super.getFromCache("ReccuringRequestTable");
-
-			if (o != null) {
-				@SuppressWarnings("unchecked")
-				List<RecurringRequestMedia> tmp = (List<RecurringRequestMedia>) o;
-
-				tmp.add(rm);
-				super.storeInCache("ReccuringRequestTable", 259200, tmp);
-			}
+				
 
 		} else {
 			r.setRequestType(0);
-			super.mapper().save(r);
-
-			// Update the cache
-			Object o = super.getFromCache("RequestTable");
-
-			if (o != null) {
-				@SuppressWarnings("unchecked")
-				List<RequestMedia> tmp = (List<RequestMedia>) o;
-
-				tmp.add(r);
-				super.storeInCache("RequestTable", 259200, tmp);
+			if(!(r.getDuration() > 0)){
+				return Response
+						.status(500)
+						.entity(new Status("Failure",
+								"Duration needs to be greater than 0", "500"))
+						.build();
 			}
+			super.save(r, r.geteMailAddress(), r.getRequestId());
 		}
 
 		// user officially makes a request.. lets increment his request value
 		// TODO move the number of requests to caching
 		// also make all requests JSON
-		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
-		super.mapper().save(user);
+//		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
+//		super.mapper().save(user);
 
 		// Check to see if there are users by and assign them the request
 		List<String> eMailAddresses = new Locator().findMonkeysNearBy(
 				r.getLatitude(), r.getLongitude(), r.getRadiusInYards());
 		CheckInResource cir = new CheckInResource();
 		for (String eMail : eMailAddresses) {
-			if (!eMail.toLowerCase().equals(r.geteMailAddress())) {
+			if (!eMail.toLowerCase().equals(r.geteMailAddress().toLowerCase())) {
 				cir.AssignRequest(eMail, convertToRML(r));
 			}
 		}
 
+		this.clearCountCache(r.geteMailAddress());
+		
 		// Trending metric!
 		Trending t = new Trending();
 		t.setLocationId(r.getLocationId());
 		t.setProviderId(r.getProviderId());
 		t.setTimeStamp(new Date());
 		t.setType("Request");
-		super.mapper().save(t);
+		super.save(t, t.getType(), t.getType().toString());
 
 		Status status = new Status();
 		status.setStatus("Success");
@@ -260,6 +234,7 @@ public class RequestMediaResource extends ResourceHelper {
 		else
 			status.setDescription("DisplayAd=false");
 
+	
 		return Response.ok().entity(status).build();
 
 	}

@@ -1,12 +1,9 @@
 package com.MobMonkey.Resources;
 
-import java.util.Date;
-
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
@@ -14,10 +11,7 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import android.os.Build;
-
 import com.MobMonkey.Helpers.EmailValidator;
-import com.MobMonkey.Models.Bookmark;
 import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.Oauth;
 import com.MobMonkey.Models.Status;
@@ -43,8 +37,8 @@ public class SignInResource extends ResourceHelper {
 
 		if (useOAuth) {
 
-			Oauth ou = super.mapper()
-					.load(Oauth.class, providerUserName, token);
+			Oauth ou = (Oauth) super.load(Oauth.class, provider,
+					providerUserName);
 
 			if (provider.toLowerCase().equals("twitter")) {
 				if (ou == null) {
@@ -55,7 +49,7 @@ public class SignInResource extends ResourceHelper {
 					ou.seteMailVerified(false);
 					ou.setoAuthProvider(provider);
 					ou.setProviderUserName(providerUserName);
-					super.mapper().save(ou);
+					super.save(ou, provider, providerUserName);
 					return Response
 							.status(404)
 							.entity(new Status(
@@ -69,7 +63,7 @@ public class SignInResource extends ResourceHelper {
 								.status(404)
 								.entity(new Status(
 										"Failure",
-										"This user needs to register their email address",
+										"This user needs to register their email address at /rest/signin/registeremail",
 										"404")).build();
 
 					} else {
@@ -99,7 +93,7 @@ public class SignInResource extends ResourceHelper {
 					ou.setProviderUserName(providerUserName);
 					ou.seteMailAddress(providerUserName);
 
-					super.mapper().save(ou);
+					super.save(ou, provider, providerUserName);
 					if (!addDevice(providerUserName, deviceId, type)) {
 						return Response
 								.status(500)
@@ -116,21 +110,21 @@ public class SignInResource extends ResourceHelper {
 									"200")).build();
 
 				} else {
-					if (ou.geteMailAddress() == null) {
+
+					if (!addDevice(providerUserName, deviceId, type)) {
 						return Response
-								.status(404)
+								.status(500)
 								.entity(new Status(
 										"Failure",
-										"This user needs to register their email address",
-										"404")).build();
-
-					} else {
-						return Response
-								.ok()
-								.entity(new Status("Success",
-										"User successfully signed in", "200"))
-								.build();
+										"You must specify a device type (Android or iOS)",
+										"500")).build();
 					}
+					return Response
+							.ok()
+							.entity(new Status("Success",
+									"User successfully signed in", "200"))
+							.build();
+
 				}
 			} else {
 				// Not supported
@@ -143,15 +137,15 @@ public class SignInResource extends ResourceHelper {
 
 		} else {
 			// TODO we have a regular MobMonkey signin, need to authenticate
-			String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0);
-			String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
-					0);
-			String password = headers.getRequestHeader("MobMonkey-auth").get(
-					0);
-			
+			String eMailAddress = headers.getRequestHeader("MobMonkey-user")
+					.get(0);
+			String partnerId = headers.getRequestHeader("MobMonkey-partnerId")
+					.get(0);
+			String password = headers.getRequestHeader("MobMonkey-auth").get(0);
+
 			User u = (User) super.load(User.class, eMailAddress, partnerId);
-			
-			if(u == null || !u.getPassword().equals(password)){
+
+			if (u == null || !u.getPassword().equals(password)) {
 				return Response
 						.status(401)
 						.entity(new Status(
@@ -182,6 +176,7 @@ public class SignInResource extends ResourceHelper {
 	@Path("/registeremail")
 	public Response registerEmailInJSON(@Context HttpHeaders headers,
 			@QueryParam("providerUserName") String providerUserName,
+			@QueryParam("provider") String provider,
 			@QueryParam("oauthToken") String token,
 			@QueryParam("deviceType") String type,
 			@QueryParam("deviceId") String deviceId,
@@ -195,15 +190,7 @@ public class SignInResource extends ResourceHelper {
 							"Invalid email address specified", "500")).build();
 		}
 
-		if (!addDevice(eMailAddress, deviceId, type)) {
-			return Response
-					.status(500)
-					.entity(new Status("Failure",
-							"You must specify a device type (Android or iOS)",
-							"500")).build();
-		}
-
-		Oauth ou = super.mapper().load(Oauth.class, providerUserName, token);
+		Oauth ou = (Oauth) super.load(Oauth.class, provider, providerUserName);
 		if (ou == null) {
 			return Response
 					.status(404)
@@ -211,16 +198,28 @@ public class SignInResource extends ResourceHelper {
 							"Failure",
 							"The username & token specified is not found in the DB",
 							"404")).build();
+		} else {
+
+			ou.seteMailAddress(eMailAddress);
+			ou.seteMailVerified(true);
+			ou.setoAuthToken(token);
+			ou.setoAuthProvider(provider);
+			super.save(ou, provider, providerUserName);
+
+			if (!addDevice(eMailAddress, deviceId, type)) {
+				return Response
+						.status(500)
+						.entity(new Status(
+								"Failure",
+								"You must specify a device type (Android or iOS)",
+								"500")).build();
+			}
+			return Response
+					.ok()
+					.entity(new Status("Success",
+							"Registered email address in DB", "200")).build();
+
 		}
-
-		ou.seteMailAddress(eMailAddress);
-		ou.setoAuthToken(token);
-		super.mapper().save(ou);
-
-		return Response
-				.ok()
-				.entity(new Status("Success", "Registered email address in DB",
-						"200")).build();
 	}
 
 	public boolean addDevice(String eMailAddress, String deviceId, String type) {
@@ -240,7 +239,7 @@ public class SignInResource extends ResourceHelper {
 
 		d.setDeviceId(deviceId);
 
-		super.mapper().save(d);
+		super.save(d, d.geteMailAddress(), d.getDeviceId());
 		super.deleteFromCache("DEV" + eMailAddress);
 		return true;
 	}

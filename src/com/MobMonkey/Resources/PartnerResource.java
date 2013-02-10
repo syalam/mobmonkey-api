@@ -39,7 +39,7 @@ public class PartnerResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Partner getPartnerInJSON(@PathParam("partnerid") String partnerId) {
 
-		Partner p = super.mapper().load(Partner.class, partnerId.trim());
+		Partner p = (Partner) super.load(Partner.class, partnerId.trim());
 
 		return p;
 	}
@@ -54,14 +54,14 @@ public class PartnerResource extends ResourceHelper {
 			p.setPartnerId(UUID.randomUUID().toString());
 			p.setEnabled(false);
 			p.setLastActivity(new Date());
-			super.mapper().save(p);
+			super.save(p, p.getPartnerId());
 		} catch (Exception e) {
 			return Response.status(500).entity(e.toString()).build();
 		}
 		
 		Verify v = new Verify(UUID.randomUUID().toString(), p.getPartnerId(), p.getEmailAddress(), p.getDateRegistered());
 	
-		super.mapper().save(v);
+		super.save(v, v.getVerifyID(), v.getPartnerId());
 
 		Mailer mail = new Mailer();
 		mail.sendMail(p.getEmailAddress(), "registration e-mail.", "Thank you for registering as a partner!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/partner/" + v.getPartnerId() + "/" + v.getVerifyID() + "\">clicking here.</a>");
