@@ -50,7 +50,7 @@ public class SignInResource extends ResourceHelper {
 			Oauth ou = (Oauth) super.load(Oauth.class, provider,
 					providerUserName);
 
-			if (TWITTER.equalsIgnoreCase(providerUserName)) {
+			if (TWITTER.equalsIgnoreCase(provider)) {
 				if (ou == null) {
 					// we do not have a user, so we should create one
 
