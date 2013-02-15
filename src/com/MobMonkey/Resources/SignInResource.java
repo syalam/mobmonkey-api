@@ -43,10 +43,7 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("oauthToken") String token,
 			@QueryParam("providerUserName") String providerUserName) {
 
-
-
 		if (useOAuth) {
-
 			Oauth ou = (Oauth) super.load(Oauth.class, provider,
 					providerUserName);
 
@@ -59,6 +56,7 @@ public class SignInResource extends ResourceHelper {
 					ou.seteMailVerified(false);
 					ou.setoAuthProvider(provider);
 					ou.setProviderUserName(providerUserName);
+					
 					super.save(ou, provider, providerUserName);
 					return Response
 							.status(404)
@@ -238,7 +236,8 @@ public class SignInResource extends ResourceHelper {
 			ableToAddDevice = deviceTypeName != null;
 
 			if (ableToAddDevice) {
-				save(new Device(eMailAddress, deviceId, deviceTypeName), eMailAddress, deviceId);
+				save(new Device(eMailAddress, deviceId, deviceTypeName),
+						eMailAddress, deviceId);
 				deleteFromCache("DEV" + eMailAddress);
 			}
 		}
