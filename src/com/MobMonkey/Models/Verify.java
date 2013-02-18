@@ -22,8 +22,9 @@ public class Verify {
 	private Date recvDate;
 	
 	public Verify(){
-		
+		this(null, null, null, null);
 	}
+	
 	public Verify(String id, String partnerId, String eMailAddress, Date sentDate){
 		this.VerifyID = id;
 		this.partnerId = partnerId;
