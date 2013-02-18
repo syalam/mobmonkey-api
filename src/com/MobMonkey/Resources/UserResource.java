@@ -104,7 +104,7 @@ public class UserResource extends ResourceHelper {
 					response.status(Response.Status.CREATED).entity(new Status(SUCCESS, statusDescription, email));
 				} else {
 					//user exists
-					String statusDescription = String.format("User [%s] already exists.", email);
+					String statusDescription = String.format("User [%s] already exists. Try update?", email);
 					response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
 				}
 			} else {
@@ -132,7 +132,7 @@ public class UserResource extends ResourceHelper {
 			}
 		} else {
 			User user = (User) load(User.class, partnerId, email);
-			if (user != null) {
+			if (user != null && user.getPassword().equals(password)) {
 				response.status(Response.Status.OK).entity(user);
 			} else {
 				response.status(Response.Status.BAD_REQUEST).entity(new Status(FAIL_STAT, String.format("Unable to get user for %s", email), ""));
@@ -167,7 +167,7 @@ public class UserResource extends ResourceHelper {
 				
 				User user = (User) load(User.class, partnerId, email);
 
-				if (user != null) {
+				if (user != null && user.getPassword().equals(password)) {
 					user.setPartnerId(partnerId);
 					user.setDateRegistered(new Date());
 					user.setVerified(false);
@@ -193,7 +193,7 @@ public class UserResource extends ResourceHelper {
 
 					response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
 				} else {
-					String statusDescription = String.format("User [%s] exists, nothing updated.", email);
+					String statusDescription = String.format("Nothing updated for [%s]. Check password and/or arguments", email);
 					response.status(Response.Status.BAD_REQUEST).entity(new Status(FAIL_STAT, statusDescription, email));
 				}
 			} else {
@@ -228,7 +228,7 @@ public class UserResource extends ResourceHelper {
 	}
 	
 	public static void requiredParamsMissing(ResponseBuilder response, String email) {
-		String statusDescription = String.format("One or more params invalid [%s]", String.format("First(String), Last(String), Date of birth(%s) or Gender(1 or 0)", DOB_FORMAT));
+		String statusDescription = String.format("One or more params invalid [%s]", String.format("First(String), Last(String), Date of birth(%s), Gender(1 or 0), Password(String)", DOB_FORMAT));
 		response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
 	}
 	
