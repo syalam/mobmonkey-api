@@ -32,7 +32,7 @@ public class User implements Serializable {
 	private String deviceType;
 	private Date lastSignIn;
 	private boolean admin;
-	
+
 	@DynamoDBHashKey
 	public String geteMailAddress() {
 		return eMailAddress;
@@ -211,7 +211,5 @@ public class User implements Serializable {
 	public void setAdmin(boolean admin) {
 		this.admin = admin;
 	}
-
-	
 	
 }

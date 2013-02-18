@@ -1,6 +1,9 @@
 package com.MobMonkey.Resources;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -34,6 +37,10 @@ public class UserResource extends ResourceHelper {
 	static final String CREATING_USER_SUBJECT = "registration e-mail.", UPDATE_USER_SUBJECT = "Updated user account";
 	static final Logger LOG = Logger.getLogger(UserResource.class);
 
+	private static final String DOB_FORMAT = "MMMM d, yyyy";
+	static final SimpleDateFormat DOB_FORMATTER = new SimpleDateFormat(DOB_FORMAT, Locale.ENGLISH); //August 1 1960
+	static final int[] MALE_FEMALE_RANGE = { 0, 1 };
+	
 	final Mailer mailer;
 	
 	public UserResource() {
@@ -46,7 +53,7 @@ public class UserResource extends ResourceHelper {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response create(@QueryParam("fname") String fName,
 			@QueryParam("lname") String lName, @QueryParam("dob") String dob,
-			@QueryParam("gender") String gender, @Context HttpHeaders headers) {
+			@QueryParam("gender") int gender, @Context HttpHeaders headers) {
 		
 		ResponseBuilder response = Response.noContent();
 
@@ -61,34 +68,47 @@ public class UserResource extends ResourceHelper {
 				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new Status(FAIL_STAT, String.format(INVALID_PARAM, "partnerid or password"), ""));
 			}
 		} else {
-			User user = (User) load(User.class, partnerId, email);
+			Date dobDate = extractDob(dob);
+			if (dobDate != null && isValidString(fName, lName) && isInRange(MALE_FEMALE_RANGE, gender)) {
+				User user = (User) load(User.class, partnerId, email);
+				if (user == null) {
+					//creating new user
+					user = new User();
+					user.setPartnerId(partnerId);
+					user.setDateRegistered(new Date());
+					user.setVerified(false);
+					
+					//required params
+					user.setFirstName(fName);
+					user.setLastName(lName);
+					user.setGender(gender);
+					user.setBirthday(dobDate);
+					
+					super.save(user, email, partnerId);
 
-			if (user == null) {
-				user = new User();
-				user.setPartnerId(partnerId);
-				user.setDateRegistered(new Date());
-				user.setVerified(false);
-				super.save(user, email, partnerId);
+					//TODO ? is the below needed for creation of new user?
+					new SignInResource().addDevice(email, user.getDeviceId(), user.getDeviceType());
+					Verify verify = new Verify(UUID.randomUUID().toString(),
+							partnerId, email,
+							user.getDateRegistered());
+					super.save(verify, verify.getVerifyID(), verify.getPartnerId());
+					//TODO
 
-				//TODO ? is the below needed for creation of new user?
-				new SignInResource().addDevice(email, user.getDeviceId(), user.getDeviceType());
-				Verify verify = new Verify(UUID.randomUUID().toString(),
-						partnerId, email,
-						user.getDateRegistered());
-				super.save(verify, verify.getVerifyID(), verify.getPartnerId());
-				//TODO
+					mailer.sendMail(
+							email,
+							CREATING_USER_SUBJECT,
+							String.format(THANK_YOU_FOR_REGISTERING,
+									verify.getPartnerId(), verify.getVerifyID()));
 
-				mailer.sendMail(
-						email,
-						CREATING_USER_SUBJECT,
-						String.format(THANK_YOU_FOR_REGISTERING,
-								verify.getPartnerId(), verify.getVerifyID()));
-
-				String statusDescription = String.format("User [%s] successfully signed up", email);
-				response.status(Response.Status.CREATED).entity(new Status(SUCCESS, statusDescription, email));
+					String statusDescription = String.format("User [%s] successfully signed up", email);
+					response.status(Response.Status.CREATED).entity(new Status(SUCCESS, statusDescription, email));
+				} else {
+					//user exists
+					String statusDescription = String.format("User [%s] already exists.", email);
+					response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
+				}
 			} else {
-				String statusDescription = String.format("User [%s] already exists.", email);
-				response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
+				requiredParamsMissing(response, email);
 			}
 		}
 		return response.build();
@@ -125,7 +145,9 @@ public class UserResource extends ResourceHelper {
 	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response update(@Context HttpHeaders headers) {
+	public Response update(@QueryParam("fname") String fName,
+			@QueryParam("lname") String lName, @QueryParam("dob") String dob,
+			@QueryParam("gender") int gender, @Context HttpHeaders headers) {
 		ResponseBuilder response = Response.noContent();
 
 		String partnerId = getHeaderParam(MobMonkeyApiConstants.PARTNER_ID, headers);
@@ -139,32 +161,56 @@ public class UserResource extends ResourceHelper {
 				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new Status(FAIL_STAT, String.format(INVALID_PARAM, "partnerid or password"), ""));
 			}
 		} else {
-			User user = (User) load(User.class, partnerId, email);
+			//check required params
+			Date dobDate = extractDob(dob);
+			if (dobDate != null && isValidString(fName, lName) && isInRange(MALE_FEMALE_RANGE, gender)) {
+				
+				User user = (User) load(User.class, partnerId, email);
 
-			if (user != null) {
-				user.setPartnerId(partnerId);
-				user.setDateRegistered(new Date());
-				user.setVerified(false);
-				super.save(user, email, partnerId);
+				if (user != null) {
+					user.setPartnerId(partnerId);
+					user.setDateRegistered(new Date());
+					user.setVerified(false);
+					
+					//fname, lname, dob, gender
+					user.setFirstName(fName);
+					user.setLastName(lName);
+					user.setBirthday(dobDate);
+					user.setGender(gender);
+					
+					super.save(user, email, partnerId);
 
-				//TODO ? is the below needed for creation of new user?
-				new SignInResource().addDevice(email, user.getDeviceId(), user.getDeviceType());
-				Verify verify = new Verify(UUID.randomUUID().toString(),
-						partnerId, email,
-						user.getDateRegistered());
-				super.save(verify, verify.getVerifyID(), verify.getPartnerId());
-				//TODO
+					//TODO ? is the below needed for update of user?
+//					new SignInResource().addDevice(email, user.getDeviceId(), user.getDeviceType());
+//					Verify verify = new Verify(UUID.randomUUID().toString(),
+//							partnerId, email,
+//							user.getDateRegistered());
+//					super.save(verify, verify.getVerifyID(), verify.getPartnerId());
+					//TODO
 
-				String statusDescription = String.format("User [%s] details updated", email);
-				mailer.sendMail(email, UPDATE_USER_SUBJECT, statusDescription);
+					String statusDescription = String.format("User [%s] details updated", email);
+					mailer.sendMail(email, UPDATE_USER_SUBJECT, statusDescription);
 
-				response.status(Response.Status.ACCEPTED).entity(new Status(SUCCESS, statusDescription, email));
+					response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
+				} else {
+					String statusDescription = String.format("User [%s] exists, nothing updated.", email);
+					response.status(Response.Status.BAD_REQUEST).entity(new Status(FAIL_STAT, statusDescription, email));
+				}
 			} else {
-				String statusDescription = String.format("User [%s] exists, nothing updated.", email);
-				response.status(Response.Status.BAD_REQUEST).entity(new Status(FAIL_STAT, statusDescription, email));
+				requiredParamsMissing(response, email);
 			}
 		}
 		return response.build();
+	}
+
+	protected Date extractDob(String dob) {
+		Date dobDate = null;
+		try {
+			dobDate = DOB_FORMATTER.parse(dob);
+		} catch (ParseException e) {
+			LOG.error("Unable to extract dob", e);
+		}
+		return dobDate;
 	}
 
 	protected User getUserWithHeaders(HttpHeaders headers) {
@@ -177,6 +223,15 @@ public class UserResource extends ResourceHelper {
 		return headers.getRequestHeader(key).get(0); //?
 	}
 
+	protected boolean isInRange(int[] range, int param) {
+		return param >= range[0] && param <= range[1];
+	}
+	
+	protected void requiredParamsMissing(ResponseBuilder response, String email) {
+		String statusDescription = String.format("One or more params invalid [%s]", String.format("First(String), Last(String), Date of birth(%s) or Gender(1 or 0)", DOB_FORMAT));
+		response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
+	}
+	
 	/**
 	 * @return	string is not null or equals to ""
 	 */
