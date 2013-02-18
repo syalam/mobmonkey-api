@@ -1,5 +1,6 @@
 package com.MobMonkey.Resources;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,9 +14,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
 import com.MobMonkey.Helpers.EmailValidator;
 import com.MobMonkey.Models.Device;
+import com.MobMonkey.Models.MobMonkeyApiConstants;
 import com.MobMonkey.Models.Oauth;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.User;
@@ -38,11 +41,26 @@ public class SignInResource extends ResourceHelper {
 	public Response SignInInJSON(@Context HttpHeaders headers,
 			@QueryParam("deviceId") String deviceId,
 			@QueryParam("deviceType") String type,
+			//
 			@DefaultValue("false") @QueryParam("useOAuth") boolean useOAuth,
 			@QueryParam("provider") String provider,
-			@QueryParam("oauthToken") String token,
-			@QueryParam("providerUserName") String providerUserName) {
+			@QueryParam("oauthToken") String token, 
+			@QueryParam("providerUserName") String providerUserName,
+			//
+			@QueryParam("fname") String fName,
+			@QueryParam("lname") String lName, @QueryParam("dob") String dob,
+			@QueryParam("gender") int gender
+			) {
 
+		Date dobDate = UserResource.extractDob(dob);
+		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER, headers);
+		if (dobDate == null || !UserResource.isValidString(fName, lName) || !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE, gender)) {
+			//fail if params missing or invalid
+			ResponseBuilder responseBuilder = Response.noContent();
+			UserResource.requiredParamsMissing(responseBuilder, email);
+			return responseBuilder.build();
+		}
+		
 		if (useOAuth) {
 			Oauth ou = (Oauth) super.load(Oauth.class, provider,
 					providerUserName);
@@ -187,8 +205,23 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("oauthToken") String token,
 			@QueryParam("deviceType") String type,
 			@QueryParam("deviceId") String deviceId,
-			@QueryParam("eMailAddress") String eMailAddress) {
+			@QueryParam("eMailAddress") String eMailAddress,
+			//
+			//
+			@QueryParam("fname") String fName,
+			@QueryParam("lname") String lName, @QueryParam("dob") String dob,
+			@QueryParam("gender") int gender
+			) {
 
+		Date dobDate = UserResource.extractDob(dob);
+		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER, headers);
+		if (dobDate == null || !UserResource.isValidString(fName, lName) || !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE, gender)) {
+			//fail if params missing or invalid
+			ResponseBuilder responseBuilder = Response.noContent();
+			UserResource.requiredParamsMissing(responseBuilder, email);
+			return responseBuilder.build();
+		}
+		
 		if (!EmailValidator.validate(eMailAddress)) {
 			return Response
 					.status(500)

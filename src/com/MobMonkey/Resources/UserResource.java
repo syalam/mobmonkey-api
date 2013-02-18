@@ -37,9 +37,9 @@ public class UserResource extends ResourceHelper {
 	static final String CREATING_USER_SUBJECT = "registration e-mail.", UPDATE_USER_SUBJECT = "Updated user account";
 	static final Logger LOG = Logger.getLogger(UserResource.class);
 
-	private static final String DOB_FORMAT = "MMMM d, yyyy";
-	static final SimpleDateFormat DOB_FORMATTER = new SimpleDateFormat(DOB_FORMAT, Locale.ENGLISH); //August 1 1960
-	static final int[] MALE_FEMALE_RANGE = { 0, 1 };
+	public static final String DOB_FORMAT = "MMMM d, yyyy";
+	public static final SimpleDateFormat DOB_FORMATTER = new SimpleDateFormat(DOB_FORMAT, Locale.ENGLISH); //August 1 1960
+	public static final int[] MALE_FEMALE_RANGE = { 0, 1 };
 	
 	final Mailer mailer;
 	
@@ -203,7 +203,7 @@ public class UserResource extends ResourceHelper {
 		return response.build();
 	}
 
-	protected Date extractDob(String dob) {
+	public static Date extractDob(String dob) {
 		Date dobDate = null;
 		try {
 			dobDate = DOB_FORMATTER.parse(dob);
@@ -219,15 +219,15 @@ public class UserResource extends ResourceHelper {
 				getHeaderParam(MobMonkeyApiConstants.USER, headers));
 	}
 
-	protected String getHeaderParam(String key, HttpHeaders headers) {
+	public static String getHeaderParam(String key, HttpHeaders headers) {
 		return headers.getRequestHeader(key).get(0); //?
 	}
 
-	protected boolean isInRange(int[] range, int param) {
+	public static boolean isInRange(int[] range, int param) {
 		return param >= range[0] && param <= range[1];
 	}
 	
-	protected void requiredParamsMissing(ResponseBuilder response, String email) {
+	public static void requiredParamsMissing(ResponseBuilder response, String email) {
 		String statusDescription = String.format("One or more params invalid [%s]", String.format("First(String), Last(String), Date of birth(%s) or Gender(1 or 0)", DOB_FORMAT));
 		response.status(Response.Status.OK).entity(new Status(SUCCESS, statusDescription, email));
 	}
@@ -235,7 +235,7 @@ public class UserResource extends ResourceHelper {
 	/**
 	 * @return	string is not null or equals to ""
 	 */
-	private boolean isValidString(String... params) {
+	public static boolean isValidString(String... params) {
 		for (int i = 0; i < params.length; i++) {
 			if (params[i] == null || "".equals(params[i])) {
 				return false;
