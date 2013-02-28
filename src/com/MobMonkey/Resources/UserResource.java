@@ -48,7 +48,6 @@ public class UserResource extends ResourceHelper {
 	}
 	
 	@PUT
-	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response create(@QueryParam("fname") String fName,
@@ -115,7 +114,6 @@ public class UserResource extends ResourceHelper {
 	}
 
 	@GET
-	@Path("/")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response get(@Context HttpHeaders headers) {
 		ResponseBuilder response = Response.noContent();
@@ -142,7 +140,6 @@ public class UserResource extends ResourceHelper {
 	}
 
 	@POST
-	@Path("/")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response update(@QueryParam("fname") String fName,

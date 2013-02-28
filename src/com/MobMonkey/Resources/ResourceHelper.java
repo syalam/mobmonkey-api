@@ -205,9 +205,9 @@ public class ResourceHelper {
 		}
 	}
 
-	public Object load(Class<?> c, String hashKey) {
+	public Object load(Class<?> c, Object hashKey) {
 		Object o = null;
-		o = this.getFromCache(hashKey);
+		o = this.getFromCache(c.getName() + hashKey);
 		if (o == null) {
 			try {
 				o = this.mapper().load(c, hashKey);
@@ -215,13 +215,13 @@ public class ResourceHelper {
 				return null;
 			}
 		}
-		this.storeInCache(hashKey, 259200, o);
+		this.storeInCache(c.getName() + hashKey, 259200, o);
 		return o;
 	}
 
-	public Object load(Class<?> c, String hashKey, String rangeKey) {
+	public Object load(Class<?> c, Object hashKey, Object rangeKey) {
 		Object o = null;
-		o = this.getFromCache(hashKey + ":" + rangeKey);
+		o = this.getFromCache(c.getName() + hashKey + ":" + rangeKey);
 		if (o == null) {
 			try {
 				o = this.mapper().load(c, hashKey, rangeKey);
@@ -229,31 +229,31 @@ public class ResourceHelper {
 				return null;
 			}
 		}
-		this.storeInCache(hashKey, 259200, o);
+		this.storeInCache(c.getName() + hashKey, 259200, o);
 		return o;
 	}
 
-	public void delete(Object o, String hashKey) {
+	public void delete(Object o, Object hashKey) {
 		this.mapper().delete(o);
-		this.deleteFromCache(hashKey);
+		this.deleteFromCache(o.getClass().getName() + hashKey);
 	}
 
-	public void delete(Object o, String hashKey, String rangeKey) {
+	public void delete(Object o, Object hashKey, Object rangeKey) {
 		this.mapper().delete(o);
-		this.deleteFromCache(hashKey + ":" + rangeKey);
+		this.deleteFromCache(o.getClass().getName() + hashKey + ":" + rangeKey);
 	}
 
-	public void save(Object o, String hashKey) {
+	public void save(Object o, Object hashKey) {
 		this.mapper().save(o);
-		this.storeInCache(hashKey, 259200, o);
+		this.storeInCache(o.getClass().getName() + hashKey, 259200, o);
 	}
 
-	public void save(Object o, String hashKey, String rangeKey) {
+	public void save(Object o, Object hashKey, Object rangeKey) {
 		this.mapper().save(o);
-		this.storeInCache(hashKey + ":" + rangeKey, 259200, o);
+		this.storeInCache(o.getClass().getName() + hashKey + ":" + rangeKey, 259200, o);
 	}
 	
-	public void clearCountCache(String eMailAddress) {
+	public void clearCountCache(Object eMailAddress) {
 		this.deleteFromCache("OPENCOUNT:" + eMailAddress);
 		this.deleteFromCache("FULFILLEDUNREADCOUNT:" + eMailAddress);
 		this.deleteFromCache("FULFILLEDREADCOUNT:" + eMailAddress);
