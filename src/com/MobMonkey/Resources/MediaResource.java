@@ -114,10 +114,14 @@ public class MediaResource extends ResourceHelper implements Serializable {
 					super.delete(m, m.getRequestId(), m.getMediaId());
 					LocationMedia lm = (LocationMedia) super.load(LocationMedia.class,
 							rm.getLocationId() + ":" + rm.getProviderId(),
-							m.getUploadedDate().toString());
+							m.getUploadedDate());
+					try{
 					super.delete(lm,
 							rm.getLocationId() + ":" + rm.getProviderId(),
 							m.getUploadedDate().toString());
+					}catch(Exception exc){
+						//TODO: well we could find the locationMedia in the database.. need to log this
+					}
 					rm.setFulfilledDate(null);
 					rm.setRequestFulfilled(false);
 					rm.setScheduleDate(new Date());
@@ -314,8 +318,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			lm.setRequestId(media.getRequestId());
 			lm.setMediaId(media.getMediaId());
 
-			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate()
-					.toString());
+			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate());
 
 			// Trending
 			Trending t = new Trending();
