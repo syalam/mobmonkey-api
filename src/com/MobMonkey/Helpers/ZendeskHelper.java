@@ -17,7 +17,7 @@ public final class ZendeskHelper {
 
 	}
 
-	public bool createTicket() {
+	public boolean createTicket() {
 		Client client = Client.create();
 		WebResource webResource = client.resource(ZENDESK_RESOURCE_URI
 				+ "/api/v2/tickets.json");
@@ -30,6 +30,7 @@ public final class ZendeskHelper {
 		ClientResponse response = webResource.type(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON)
 				.post(ClientResponse.class, input);
+		return true;
 
 	}
 }

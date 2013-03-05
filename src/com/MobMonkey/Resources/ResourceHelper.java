@@ -1,30 +1,18 @@
 package com.MobMonkey.Resources;
 
-import static org.quartz.JobBuilder.newJob;
-import static org.quartz.TriggerBuilder.newTrigger;
-
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 
 import javax.ws.rs.core.HttpHeaders;
 
 import org.apache.log4j.Logger;
-import org.bouncycastle.util.encoders.Base64;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.Trigger;
-import org.quartz.impl.StdSchedulerFactory;
-
 import com.MobMonkey.Helpers.MobMonkeyCache;
-import com.MobMonkey.Helpers.Jobs.ApplePushNoteJob;
+import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.User;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
@@ -32,6 +20,13 @@ import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.elasticache.AmazonElastiCacheClient;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.simpleworkflow.AmazonSimpleWorkflow;
+import com.amazonaws.services.simpleworkflow.AmazonSimpleWorkflowClient;
+import com.amazonaws.services.simpleworkflow.flow.DataConverter;
+import com.amazonaws.services.simpleworkflow.flow.JsonDataConverter;
+import com.amazonaws.services.simpleworkflow.model.StartWorkflowExecutionRequest;
+import com.amazonaws.services.simpleworkflow.model.TaskList;
+import com.amazonaws.services.simpleworkflow.model.WorkflowType;
 
 public class ResourceHelper {
 	private AmazonS3Client s3cli;
@@ -39,14 +34,17 @@ public class ResourceHelper {
 	private AmazonDynamoDBClient ddb;
 	private DynamoDBMapper mapper;
 	private AmazonElastiCacheClient ecCli;
-	private Scheduler scheduler;
+	private AmazonSimpleWorkflow swfClient;
 	private static Logger logger = Logger.getRootLogger();
 	static final String AWS_CREDENTIALS_FILE = "AwsCredentials.properties";
-	static final String AWS_CRED_ERROR_NOT_FOUND = String.format("\n\nCould not find %s\n\n\r", AWS_CREDENTIALS_FILE);
-	static final String AWS_CRED_ERROR_READING = String.format("\n\nUnable to read %s\n\n\r", AWS_CREDENTIALS_FILE);
+	static final String AWS_CRED_ERROR_NOT_FOUND = String.format(
+			"\n\nCould not find %s\n\n\r", AWS_CREDENTIALS_FILE);
+	static final String AWS_CRED_ERROR_READING = String.format(
+			"\n\nUnable to read %s\n\n\r", AWS_CREDENTIALS_FILE);
 
 	public ResourceHelper() {
-		InputStream credentialsStream = getClass().getClassLoader().getResourceAsStream(AWS_CREDENTIALS_FILE);
+		InputStream credentialsStream = getClass().getClassLoader()
+				.getResourceAsStream(AWS_CREDENTIALS_FILE);
 		if (credentialsStream != null) {
 			try {
 				credentials = new PropertiesCredentials(credentialsStream);
@@ -56,27 +54,26 @@ public class ResourceHelper {
 
 			s3cli = new AmazonS3Client();
 			ddb = new AmazonDynamoDBClient(credentials);
-			ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com", "dynamodb",
-					"us-west-1");
+			ddb.setEndpoint("https://dynamodb.us-west-1.amazonaws.com",
+					"dynamodb", "us-west-1");
 			mapper = new DynamoDBMapper(ddb);
 
-			StdSchedulerFactory factory = new StdSchedulerFactory();
-			try {
-				scheduler = factory.getScheduler();
-			} catch (SchedulerException e) {
-				logger.error("Unable to access the scheduler factory: " + e.getMessage());
-			}
+			swfClient = new AmazonSimpleWorkflowClient(credentials);
+			swfClient.setEndpoint("http://swf.us-west-1.amazonaws.com");
+
 		} else {
 			logger.error(AWS_CRED_ERROR_NOT_FOUND);
 		}
 	}
-	
-	public ResourceHelper(PropertiesCredentials credentials, AmazonS3Client awsClient, AmazonDynamoDBClient dbClient, DynamoDBMapper dynamoMapper, Scheduler scheduler) {
+
+	public ResourceHelper(PropertiesCredentials credentials,
+			AmazonS3Client awsClient, AmazonDynamoDBClient dbClient,
+			DynamoDBMapper dynamoMapper) {
 		this.credentials = credentials;
 		this.s3cli = awsClient;
 		this.ddb = dbClient;
 		this.mapper = dynamoMapper;
-		this.scheduler = scheduler;
+
 	}
 
 	public DynamoDBMapper mapper() {
@@ -95,38 +92,84 @@ public class ResourceHelper {
 		return ecCli;
 	}
 
-	public Scheduler scheduler() {
-		return scheduler;
+	public AmazonSimpleWorkflow swfClient() {
+		return swfClient;
 	}
 
-	public String sendAPNS(String[] deviceIds, String message, int badge)
+	public void sendAPNS(String[] deviceIds, String message, int badge)
 			throws IOException {
-		JobDetail job = newJob(ApplePushNoteJob.class)
-				.withIdentity("myJob", "group1")
-				.usingJobData("deviceIds", toBase64String(deviceIds))
-				.usingJobData("badge", badge)
-				.usingJobData("message", message).build();
+		Object[] workflowInput = new Object[] { deviceIds, message, badge };
+		DataConverter converter = new JsonDataConverter();
+		StartWorkflowExecutionRequest startWorkflowExecutionRequest = new StartWorkflowExecutionRequest();
+		startWorkflowExecutionRequest.setInput(converter.toData(workflowInput));
+		startWorkflowExecutionRequest.setDomain("MobMonkey");
+		TaskList tasks = new TaskList();
+		tasks.setName("Apns");
+		startWorkflowExecutionRequest.setTaskList(tasks);
+		WorkflowType workflowType = new WorkflowType();
+		workflowType.setName("ApnsWorkflow.sendNotification");
+		workflowType.setVersion("1.7");
+		startWorkflowExecutionRequest.setWorkflowType(workflowType);
+		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
+				.toString());
+		this.swfClient().startWorkflowExecution(startWorkflowExecutionRequest);
 
-		Trigger trigger = newTrigger().withIdentity("trigger1", "group1")
-				.startNow().build();
+	}
 
-		try {
-			scheduler().scheduleJob(job, trigger);
-			return "Success";
-		} catch (SchedulerException e) {
-			// TODO Auto-generated catch block
-			return "Failed to send push notification";
+	public void sendGCM(String registration_id, String message, int badge)
+			throws IOException {
+
+		Object[] workflowInput = new Object[] { registration_id, message, badge };
+		DataConverter converter = new JsonDataConverter();
+		StartWorkflowExecutionRequest startWorkflowExecutionRequest = new StartWorkflowExecutionRequest();
+		startWorkflowExecutionRequest.setInput(converter.toData(workflowInput));
+		startWorkflowExecutionRequest.setDomain("MobMonkey");
+		TaskList tasks = new TaskList();
+		tasks.setName("Gcm");
+		startWorkflowExecutionRequest.setTaskList(tasks);
+		WorkflowType workflowType = new WorkflowType();
+		workflowType.setName("GcmWorkflow.sendNotification");
+		workflowType.setVersion("1.5");
+		startWorkflowExecutionRequest.setWorkflowType(workflowType);
+		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
+				.toString());
+		this.swfClient().startWorkflowExecution(startWorkflowExecutionRequest);
+
+	}
+
+	public void sendNotification(Device[] devices, String message,
+			int badgeCount) {
+		for (Device d : devices) {
+			if (d.getDeviceType().toLowerCase().equals("ios")) {
+				String[] deviceId = new String[1];
+				deviceId[0] = d.getDeviceId();
+
+				try {
+					this.sendAPNS(deviceId, message, badgeCount);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					logger.error(e.getMessage());
+				}
+
+			} else if (d.getDeviceType().toLowerCase().equals("android")) {
+
+				try {
+					this.sendGCM(d.getDeviceId(), message, badgeCount);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					logger.error(e.getMessage());
+				}
+			}
 		}
-
 	}
 
-	private static String toBase64String(Serializable o) throws IOException {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		ObjectOutputStream oos = new ObjectOutputStream(baos);
-		oos.writeObject(o);
-		oos.close();
-		return new String(Base64.encode(baos.toByteArray()));
-	}
+	// private static String toBase64String(Serializable o) throws IOException {
+	// ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	// ObjectOutputStream oos = new ObjectOutputStream(baos);
+	// oos.writeObject(o);
+	// oos.close();
+	// return new String(Base64.encode(baos.toByteArray()));
+	// }
 
 	public User getUser(HttpHeaders headers) {
 
@@ -250,9 +293,10 @@ public class ResourceHelper {
 
 	public void save(Object o, Object hashKey, Object rangeKey) {
 		this.mapper().save(o);
-		this.storeInCache(o.getClass().getName() + hashKey + ":" + rangeKey, 259200, o);
+		this.storeInCache(o.getClass().getName() + hashKey + ":" + rangeKey,
+				259200, o);
 	}
-	
+
 	public void clearCountCache(Object eMailAddress) {
 		this.deleteFromCache("OPENCOUNT:" + eMailAddress);
 		this.deleteFromCache("FULFILLEDUNREADCOUNT:" + eMailAddress);

@@ -34,23 +34,23 @@
     <exception-type>java.lang.Throwable</exception-type>
     <location>/error.jsp</location>
   </error-page>
-     <context-param>
-         <param-name>quartz:shutdown-on-unload</param-name>
-         <param-value>true</param-value>
-     </context-param>
-     <context-param>
-         <param-name>quartz:wait-on-shutdown</param-name>
-         <param-value>true</param-value>
-     </context-param>
-     <context-param>
-         <param-name>quartz:start-on-load</param-name>
-         <param-value>true</param-value>
-     </context-param>
-       <context-param>
-         <param-name>quartz:servlet-context-factory-key</param-name>
-         <param-value>8675309</param-value>
-     </context-param>
-  <listener>
-    <listener-class>com.MobMonkey.Helpers.MobMonkeyScheduler</listener-class>
+  <context-param>
+    <param-name>quartz:shutdown-on-unload</param-name>
+    <param-value>true</param-value>
+  </context-param>
+  <context-param>
+    <param-name>quartz:wait-on-shutdown</param-name>
+    <param-value>true</param-value>
+  </context-param>
+  <context-param>
+    <param-name>quartz:start-on-load</param-name>
+    <param-value>true</param-value>
+  </context-param>
+  <context-param>
+    <param-name>quartz:servlet-context-factory-key</param-name>
+    <param-value>8675309</param-value>
+  </context-param>
+    <listener>
+    <listener-class>com.MobMonkey.Helpers.StartupUtility</listener-class>
   </listener>
 </web-app>

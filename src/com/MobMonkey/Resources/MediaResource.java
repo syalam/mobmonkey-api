@@ -30,6 +30,7 @@ import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.Trending;
+import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.*;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
@@ -38,6 +39,13 @@ import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.simpleworkflow.flow.ActivityWorker;
+import com.amazonaws.services.simpleworkflow.flow.DataConverter;
+import com.amazonaws.services.simpleworkflow.flow.JsonDataConverter;
+import com.amazonaws.services.simpleworkflow.flow.WorkflowWorker;
+import com.amazonaws.services.simpleworkflow.model.StartWorkflowExecutionRequest;
+import com.amazonaws.services.simpleworkflow.model.TaskList;
+import com.amazonaws.services.simpleworkflow.model.WorkflowType;
 
 @Path("/media")
 public class MediaResource extends ResourceHelper implements Serializable {
@@ -112,15 +120,17 @@ public class MediaResource extends ResourceHelper implements Serializable {
 						username, requestId);
 				if (rm != null) {
 					super.delete(m, m.getRequestId(), m.getMediaId());
-					LocationMedia lm = (LocationMedia) super.load(LocationMedia.class,
+					LocationMedia lm = (LocationMedia) super.load(
+							LocationMedia.class,
 							rm.getLocationId() + ":" + rm.getProviderId(),
 							m.getUploadedDate());
-					try{
-					super.delete(lm,
-							rm.getLocationId() + ":" + rm.getProviderId(),
-							m.getUploadedDate().toString());
-					}catch(Exception exc){
-						//TODO: well we could find the locationMedia in the database.. need to log this
+					try {
+						super.delete(lm,
+								rm.getLocationId() + ":" + rm.getProviderId(),
+								m.getUploadedDate().toString());
+					} catch (Exception exc) {
+						// TODO: well we could find the locationMedia in the
+						// database.. need to log this
 					}
 					rm.setFulfilledDate(null);
 					rm.setRequestFulfilled(false);
@@ -186,7 +196,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 				m.setAccepted(true);
 				super.save(m, requestId, mediaId);
-				
+
 				return Response
 						.ok()
 						.entity(new Status("Success",
@@ -288,24 +298,24 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		super.save(media, media.getRequestId(), media.getMediaId());
 
-		
-		super.clearCountCache(media
-				.getOriginalRequestor());
+		super.clearCountCache(media.getOriginalRequestor());
 		HashMap<String, Integer> counts = new InboxResource().getCounts(media
 				.getOriginalRequestor());
-		
-		int badgeCount = counts.get("fulfilledUnreadCount") + counts.get("assignedUnreadRequests");
-		
+
+		int badgeCount = counts.get("fulfilledUnreadCount")
+				+ counts.get("assignedUnreadRequests");
+
 		// Send notification to apple device
 		NotificationHelper noteHelper = new NotificationHelper();
-		String[] deviceIds = noteHelper.getUserDevices(media
+		Device[] deviceIds = noteHelper.getUserDevices(media
 				.getOriginalRequestor());
 
+		
 		String message = "Your " + getMediaType(media.getMediaType())
 				+ " request at " + reqDetails.get("nameOfLocation")
 				+ " has been fulfilled.";
 
-		super.sendAPNS(deviceIds, message, badgeCount);
+		super.sendNotification(deviceIds, message, badgeCount);
 
 		super.storeInCache(media.getRequestId() + ":" + media.getMediaId(),
 				259200, media);
@@ -352,15 +362,29 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		deviceIds[0] = deviceId;
 		String message = "This is a test. Sent on: " + (new Date()).toString();
 
-		String result;
-		try {
-			result = super.sendAPNS(deviceIds, message, 31337);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			result = "Failure.";
-		}
+		String result = "success.";
+		
+			try {
+				super.sendAPNS(deviceIds, message, 69);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				result = e.getMessage();
+			}
+	
 
 		return Response.ok().entity("Result: " + result).build();
+	}
+
+	@POST
+	@Path("/testGCM")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response testGCMInJSON(@QueryParam("deviceId") String deviceId) throws SecurityException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+
+	
+	
+
+	
+		return Response.ok().entity("Result: ").build();
 	}
 
 	@GET
@@ -403,7 +427,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 					locMedia.getMediaId());
 			if (m == null) {
 				// Media was removed, remove from LocMedia
-				super.delete(locMedia, locMedia.getLocationProviderId(), locMedia.getUploadedDate().toString());
+				super.delete(locMedia, locMedia.getLocationProviderId(),
+						locMedia.getUploadedDate().toString());
 			} else {
 				MediaLite ml = this.convertMediaToMediaLite(m);
 				media.add(ml);
@@ -522,8 +547,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			if (rrm.equals(null)) {
 				results.put("Error",
 						"Request does not exist, removing assignment");
-				super.delete(assReq,
-						m.geteMailAddress(), m.getRequestId());
+				super.delete(assReq, m.geteMailAddress(), m.getRequestId());
 				return results;
 			}
 			rrm.setRequestId(m.getRequestId());
@@ -544,8 +568,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				if (m.getMediaType() != 3) {
 					results.put("Error",
 							"Request is no longer assigned to user");
-					super.delete(assReq,
-							m.geteMailAddress(), m.getRequestId());
+					super.delete(assReq, m.geteMailAddress(), m.getRequestId());
 					return results;
 				}
 			}
@@ -560,7 +583,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 		try {
-			super.delete(assReq, assReq.geteMailAddress(), assReq.getRequestId());
+			super.delete(assReq, assReq.geteMailAddress(),
+					assReq.getRequestId());
 		} catch (Exception exc) {
 
 		}
@@ -625,7 +649,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 				m.setAccepted(true);
 				super.save(m, m.getRequestId(), m.getMediaId());
-				
+
 				return Response
 						.ok()
 						.entity(new Status("Success",

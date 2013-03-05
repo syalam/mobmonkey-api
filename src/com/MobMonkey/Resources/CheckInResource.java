@@ -21,6 +21,7 @@ import com.MobMonkey.Helpers.Locator;
 import com.MobMonkey.Helpers.NotificationHelper;
 import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.CheckIn;
+import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.RequestMediaLite;
 
 @Path("/checkin")
@@ -99,7 +100,7 @@ public class CheckInResource extends ResourceHelper implements Serializable {
 	}
 
 	public void AssignRequest(String eMailAddress, RequestMediaLite req) {
-		String[] deviceIds = null;
+		Device[] deviceIds = null;
 		AssignedRequest assReq = (AssignedRequest) super.load(
 				AssignedRequest.class, eMailAddress, req.getRequestId());
 		if (assReq == null) {
@@ -138,16 +139,11 @@ public class CheckInResource extends ResourceHelper implements Serializable {
 			int badgeCount = counts.get("fulfilledUnreadCount")
 					+ counts.get("assignedUnreadRequests");
 
-			try {
-				super.sendAPNS(
-						deviceIds,
-						"You've been assigned a request for a(n) "
-								+ super.MediaType(req.getMediaType()) + " at "
-								+ req.getLocationName(), badgeCount);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			super.sendNotification(
+					deviceIds,
+					"You've been assigned a request for a(n) "
+							+ super.MediaType(req.getMediaType()) + " at "
+							+ req.getLocationName(), badgeCount);
 
 		}
 	}
