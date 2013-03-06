@@ -31,7 +31,7 @@ import com.MobMonkey.Models.Verify;
 @Path("/user")
 public class UserResource extends ResourceHelper {
 
-	static final String FAIL_STAT = "Failure", SUCCESS = "Success";
+	
 	static final String INVALID_PARAM = "Invalid value: [%s]";
 	static final String THANK_YOU_FOR_REGISTERING = "Thank you for registering!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/user/%s/%s\">clicking here.</a>";
 	static final String CREATING_USER_SUBJECT = "registration e-mail.", UPDATE_USER_SUBJECT = "Updated user account";
@@ -129,7 +129,7 @@ public class UserResource extends ResourceHelper {
 				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(new Status(FAIL_STAT, String.format(INVALID_PARAM, "partnerid or password"), ""));
 			}
 		} else {
-			User user = (User) load(User.class, partnerId, email);
+			User user = (User) load(User.class, email, partnerId);
 			if (user != null && user.getPassword().equals(password)) {
 				response.status(Response.Status.OK).entity(user);
 			} else {
@@ -216,9 +216,6 @@ public class UserResource extends ResourceHelper {
 				getHeaderParam(MobMonkeyApiConstants.USER, headers));
 	}
 
-	public static String getHeaderParam(String key, HttpHeaders headers) {
-		return headers.getRequestHeader(key).get(0); //?
-	}
 
 	public static boolean isInRange(int[] range, int param) {
 		return param >= range[0] && param <= range[1];

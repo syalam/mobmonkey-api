@@ -31,6 +31,11 @@ public class User implements Serializable {
 	private String deviceId;
 	private String deviceType;
 	private Date lastSignIn;
+	private int rank;
+	private Date lastRankUpdate;
+	private int inappropriateStrikes;
+	private Date firstInappropriateStrike;
+	private Date lastInappropriateStrike;
 	private boolean admin;
 
 	@DynamoDBHashKey
@@ -201,6 +206,51 @@ public class User implements Serializable {
 
 	public void setLastSignIn(Date lastSignIn) {
 		this.lastSignIn = lastSignIn;
+	}
+
+	@DynamoDBAttribute
+	public int getRank() {
+		return rank;
+	}
+
+	public void setRank(int rank) {
+		this.rank = rank;
+	}
+
+	@DynamoDBAttribute
+	public Date getLastRankUpdate() {
+		return lastRankUpdate;
+	}
+
+	public void setLastRankUpdate(Date lastRankUpdate) {
+		this.lastRankUpdate = lastRankUpdate;
+	}
+
+	@DynamoDBAttribute
+	public int getInappropriateStrikes() {
+		return inappropriateStrikes;
+	}
+
+	public void setInappropriateStrikes(int inappropriateStrikes) {
+		this.inappropriateStrikes = inappropriateStrikes;
+	}
+
+	@DynamoDBAttribute
+	public Date getFirstInappropriateStrike() {
+		return firstInappropriateStrike;
+	}
+
+	public void setFirstInappropriateStrike(Date firstInappropriateStrike) {
+		this.firstInappropriateStrike = firstInappropriateStrike;
+	}
+
+	@DynamoDBAttribute
+	public Date getLastInappropriateStrike() {
+		return lastInappropriateStrike;
+	}
+
+	public void setLastInappropriateStrike(Date lastInappropriateStrike) {
+		this.lastInappropriateStrike = lastInappropriateStrike;
 	}
 
 	@DynamoDBAttribute

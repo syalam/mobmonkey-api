@@ -35,13 +35,14 @@ public class ResourceHelper {
 	private DynamoDBMapper mapper;
 	private AmazonElastiCacheClient ecCli;
 	private AmazonSimpleWorkflow swfClient;
-	private static Logger logger = Logger.getRootLogger();
+	static final Logger logger = Logger.getRootLogger();
 	static final String AWS_CREDENTIALS_FILE = "AwsCredentials.properties";
 	static final String AWS_CRED_ERROR_NOT_FOUND = String.format(
 			"\n\nCould not find %s\n\n\r", AWS_CREDENTIALS_FILE);
 	static final String AWS_CRED_ERROR_READING = String.format(
 			"\n\nUnable to read %s\n\n\r", AWS_CREDENTIALS_FILE);
-
+	static final String FAIL_STAT = "Failure", SUCCESS = "Success";
+	
 	public ResourceHelper() {
 		InputStream credentialsStream = getClass().getClassLoader()
 				.getResourceAsStream(AWS_CREDENTIALS_FILE);
@@ -186,6 +187,10 @@ public class ResourceHelper {
 			user = mapper.load(User.class, eMailAddress, partnerId);
 		}
 		return user;
+	}
+
+	public static String getHeaderParam(String key, HttpHeaders headers) {
+		return headers.getRequestHeader(key).get(0); //?
 	}
 
 	public Object getFromCache(String key) {

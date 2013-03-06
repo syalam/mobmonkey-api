@@ -39,6 +39,8 @@ public class RequestMedia implements Serializable,Cloneable {
 	private int frequencyInMS;
 	private String nameOfLocation;
 	private boolean markAsRead;
+	private int countOfPeopleAssigned;
+	private int countOfMediaUploaded;
 	private List<MediaLite> media;
 	
 	public RequestMedia() {
@@ -235,6 +237,24 @@ public class RequestMedia implements Serializable,Cloneable {
 		this.markAsRead = markAsRead;
 	}
 	
+	@DynamoDBAttribute
+	public int getCountOfPeopleAssigned() {
+		return countOfPeopleAssigned;
+	}
+
+	public void setCountOfPeopleAssigned(int countOfPeopleAssigned) {
+		this.countOfPeopleAssigned = countOfPeopleAssigned;
+	}
+
+	@DynamoDBAttribute
+	public int getCountOfMediaUploaded() {
+		return countOfMediaUploaded;
+	}
+
+	public void setCountOfMediaUploaded(int countOfMediaUploaded) {
+		this.countOfMediaUploaded = countOfMediaUploaded;
+	}
+
 	@DynamoDBIgnore
 	public List<MediaLite> getMedia() {
 		return media;

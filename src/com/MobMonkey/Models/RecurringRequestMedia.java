@@ -37,6 +37,8 @@ public class RecurringRequestMedia implements Serializable,Cloneable  {
 	private int frequencyInMS;
 	private String nameOfLocation;
 	private boolean markAsRead;
+	private int countOfPeopleAssigned;
+	private int countOfMediaUploaded;
 	private List<MediaLite> media;
 	
 	public RecurringRequestMedia() {
@@ -242,6 +244,24 @@ public class RecurringRequestMedia implements Serializable,Cloneable  {
 
 	public void setMarkAsRead(boolean markAsRead) {
 		this.markAsRead = markAsRead;
+	}
+	
+	@DynamoDBAttribute
+	public int getCountOfPeopleAssigned() {
+		return countOfPeopleAssigned;
+	}
+
+	public void setCountOfPeopleAssigned(int countOfPeopleAssigned) {
+		this.countOfPeopleAssigned = countOfPeopleAssigned;
+	}
+
+	@DynamoDBAttribute
+	public int getCountOfMediaUploaded() {
+		return countOfMediaUploaded;
+	}
+
+	public void setCountOfMediaUploaded(int countOfMediaUploaded) {
+		this.countOfMediaUploaded = countOfMediaUploaded;
 	}
 
 	 public Object clone() throws CloneNotSupportedException {

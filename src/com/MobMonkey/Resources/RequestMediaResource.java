@@ -1,5 +1,6 @@
 package com.MobMonkey.Resources;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -133,12 +134,12 @@ public class RequestMediaResource extends ResourceHelper {
 			new Locator();
 			coords = new Locator().reverseLookUp(r.getProviderId(),
 					r.getLocationId());
-			if(coords == null){
+			if (coords == null) {
 				return Response
 						.status(500)
 						.entity("Location not found in factual or MobMonkey's location database.")
 						.build();
-				
+
 			}
 			if (coords.getLatitude() != null && coords.getLongitude() != null) {
 				r.setLatitude(coords.getLatitude());
@@ -185,11 +186,9 @@ public class RequestMediaResource extends ResourceHelper {
 
 			super.save(rm, r.geteMailAddress(), r.getRequestId());
 
-				
-
 		} else {
 			r.setRequestType(0);
-			if(!(r.getDuration() > 0)){
+			if (!(r.getDuration() > 0)) {
 				return Response
 						.status(500)
 						.entity(new Status("Failure",
@@ -202,21 +201,23 @@ public class RequestMediaResource extends ResourceHelper {
 		// user officially makes a request.. lets increment his request value
 		// TODO move the number of requests to caching
 		// also make all requests JSON
-//		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
-//		super.mapper().save(user);
+		// user.setNumberOfRequests(user.getNumberOfRequests() + 1);
+		// super.mapper().save(user);
 
 		// Check to see if there are users by and assign them the request
-		List<String> eMailAddresses = new Locator().findMonkeysNearBy(
-				r.getLatitude(), r.getLongitude(), r.getRadiusInYards());
+
 		CheckInResource cir = new CheckInResource();
-		for (String eMail : eMailAddresses) {
-			if (!eMail.toLowerCase().equals(r.geteMailAddress().toLowerCase())) {
-				cir.AssignRequest(eMail, convertToRML(r));
-			}
+
+		try {
+			cir.assignRequest(user.geteMailAddress(), r.getLatitude(),
+					r.getLongitude());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getMessage());
 		}
 
 		this.clearCountCache(r.geteMailAddress());
-		
+
 		// Trending metric!
 		Trending t = new Trending();
 		t.setLocationId(r.getLocationId());
@@ -234,7 +235,6 @@ public class RequestMediaResource extends ResourceHelper {
 		else
 			status.setDescription("DisplayAd=false");
 
-	
 		return Response.ok().entity(status).build();
 
 	}

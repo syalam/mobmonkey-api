@@ -30,7 +30,8 @@ public class NotificationHelper extends ResourceHelper {
 					results.subList(0, results.size()));
 		}
 
-		Device[] deviceIds = (Device[]) results.toArray();
+		
+		Device[] deviceIds = results.toArray(new Device[results.size()]);
 
 		return deviceIds;
 	}

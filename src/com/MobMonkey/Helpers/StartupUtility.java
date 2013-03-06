@@ -11,6 +11,9 @@ import org.apache.log4j.Logger;
 import com.MobMonkey.Helpers.SimpleWorkFlow.ApnsSWF.ApnsActivities;
 import com.MobMonkey.Helpers.SimpleWorkFlow.ApnsSWF.ApnsActivitiesImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.ApnsSWF.ApnsWorkflowImpl;
+import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestActivities;
+import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestActivitiesImpl;
+import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestWorkflowImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.GcmActivities;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.GcmActivitiesImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.GcmWorkflowImpl;
@@ -93,6 +96,31 @@ public class StartupUtility implements ServletContextListener {
 			logger.error(e.getStackTrace());
 		}
 		workflowWorker.start();
+		
+		
+		
+		
+		// Setup AssignRequest activities
+		worker = new ActivityWorker(swfClient, "MobMonkey", "AssignRequest");
+		AssignRequestActivities AssignRequestActivitiesActImpl = new AssignRequestActivitiesImpl();
+		try {
+			worker.addActivitiesImplementation(AssignRequestActivitiesActImpl);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getStackTrace());
+		}
+		worker.start();
+		// Setup AssignRequest workflow
+		workflowWorker = new WorkflowWorker(swfClient, "MobMonkey", "AssignRequest");
+		try {
+			workflowWorker
+					.addWorkflowImplementationType(AssignRequestWorkflowImpl.class);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getStackTrace());
+		}
+		workflowWorker.start();
+		
 
 	}
 

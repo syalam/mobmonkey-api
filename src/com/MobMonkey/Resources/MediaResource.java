@@ -28,8 +28,10 @@ import com.MobMonkey.Models.MediaLite;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
+import com.MobMonkey.Models.Statistics;
 import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.Trending;
+import com.MobMonkey.Models.User;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.*;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
@@ -53,6 +55,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 6763705967945152547L;
+	private static final int IMAGE = 1;
+	private static final int VIDEO = 2;
+	private static final int LIVESTREAMING = 3;
+	private static final int TEXT = 4;
 	static SimpleDateFormat dateFormatter = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
@@ -243,7 +249,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		media.setAccepted(false);
 
 		if (requestType.equals("image")) {
-			media.setMediaType(1);
+			media.setMediaType(IMAGE);
 			mediaURL = uploadToAmazonS3(media);
 			if (!mediaURL.startsWith("Error")) {
 				media.setMediaURL(mediaURL);
@@ -255,7 +261,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			}
 
 		} else if (requestType.equals("video")) {
-			media.setMediaType(2);
+			media.setMediaType(VIDEO);
 			mediaURL = uploadToAmazonS3(media);
 			if (!mediaURL.startsWith("Error")) {
 				media.setMediaURL(mediaURL);
@@ -266,10 +272,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 						.build();
 			}
 		} else if (requestType.equals("livestreaming")) {
-			media.setMediaType(3);
+			media.setMediaType(LIVESTREAMING);
 			media.setRequestType("0");
 		} else if (requestType.equals("text")) {
-			media.setMediaType(4);
+			media.setMediaType(TEXT);
 
 		}
 
@@ -310,7 +316,6 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		Device[] deviceIds = noteHelper.getUserDevices(media
 				.getOriginalRequestor());
 
-		
 		String message = "Your " + getMediaType(media.getMediaType())
 				+ " request at " + reqDetails.get("nameOfLocation")
 				+ " has been fulfilled.";
@@ -321,7 +326,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				259200, media);
 
 		// Add to the LocationMedia table for others to retrieve
-		if (media.getMediaType() != 4) {
+		if (media.getMediaType() != TEXT) {
 			LocationMedia lm = new LocationMedia();
 			lm.setLocationProviderId(locationId + ":" + providerId);
 			lm.setUploadedDate(media.getUploadedDate());
@@ -341,7 +346,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 		String resp = "";
-		if (media.getMediaType() == 4) {
+		if (media.getMediaType() == TEXT) {
 			resp = media.getText();
 		} else {
 			resp = media.getMediaURL();
@@ -363,14 +368,13 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String message = "This is a test. Sent on: " + (new Date()).toString();
 
 		String result = "success.";
-		
-			try {
-				super.sendAPNS(deviceIds, message, 69);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				result = e.getMessage();
-			}
-	
+
+		try {
+			super.sendAPNS(deviceIds, message, 69);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			result = e.getMessage();
+		}
 
 		return Response.ok().entity("Result: " + result).build();
 	}
@@ -378,12 +382,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	@POST
 	@Path("/testGCM")
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response testGCMInJSON(@QueryParam("deviceId") String deviceId) throws SecurityException, InstantiationException, IllegalAccessException, NoSuchMethodException {
+	public Response testGCMInJSON(@QueryParam("deviceId") String deviceId)
+			throws SecurityException, InstantiationException,
+			IllegalAccessException, NoSuchMethodException {
 
-	
-	
-
-	
 		return Response.ok().entity("Result: ").build();
 	}
 
@@ -442,13 +444,13 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	}
 
 	private String getMediaType(int typeId) {
-		if (typeId == 1)
+		if (typeId == IMAGE)
 			return "image";
-		if (typeId == 2)
+		if (typeId == VIDEO)
 			return "video";
-		if (typeId == 3)
+		if (typeId == LIVESTREAMING)
 			return "livestreaming";
-		if (typeId == 4)
+		if (typeId == TEXT)
 			return "text";
 		else
 			return "unknown";
@@ -465,11 +467,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String prefix = "";
 		String ext = "";
 		String bucket = "";
-		if (m.getMediaType() == 1) {
+		if (m.getMediaType() == IMAGE) {
 			prefix = "img-";
 			bucket = "mobmonkeyimages";
 		}
-		if (m.getMediaType() == 2) {
+		if (m.getMediaType() == VIDEO) {
 			prefix = "vod-";
 			bucket = "mobmonkeyvod";
 		}
@@ -509,11 +511,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		super.s3cli().putObject(putObjectRequest);
 		String url = "";
 
-		if (m.getMediaType() == 1) {
+		if (m.getMediaType() == IMAGE) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
 
-		} else if (m.getMediaType() == 2) {
+		} else if (m.getMediaType() == VIDEO) {
 			url = "https://s3.amazonaws.com/" + bucket + "/" + mediaFileName;
 
 		}
@@ -528,9 +530,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String locationId = "";
 		String providerId = "";
 		String nameOfLocation = "";
+		String partnerId = "";
+		int countOfMediaUploaded = 0;
 
 		AssignedRequest assReq = new AssignedRequest();
-		if (m.getMediaType() != 3) {
+		if (m.getMediaType() != LIVESTREAMING) {
 			assReq = (AssignedRequest) super.load(AssignedRequest.class,
 					m.geteMailAddress(), m.getRequestId());
 			if (assReq == null) {
@@ -553,10 +557,12 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			rrm.setRequestId(m.getRequestId());
 			rrm.setRequestFulfilled(true);
 			rrm.setFulfilledDate(m.getUploadedDate());
+			partnerId = rrm.getPartnerId();
 			locationId = rrm.getLocationId();
 			providerId = rrm.getProviderId();
 			nameOfLocation = rrm.getNameOfLocation();
-
+			countOfMediaUploaded = rrm.getCountOfMediaUploaded();
+			rrm.setCountOfMediaUploaded(countOfMediaUploaded + 1);
 			super.save(rrm, rrm.geteMailAddress(), rrm.getRequestId());
 
 			// Update the cache
@@ -565,7 +571,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 					origRequestor, m.getRequestId());
 			if (rm == null) {
-				if (m.getMediaType() != 3) {
+				if (m.getMediaType() != LIVESTREAMING) {
 					results.put("Error",
 							"Request is no longer assigned to user");
 					super.delete(assReq, m.geteMailAddress(), m.getRequestId());
@@ -575,9 +581,12 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 			rm.setRequestFulfilled(true);
 			rm.setFulfilledDate(m.getUploadedDate());
+			partnerId = rm.getPartnerId();
 			locationId = rm.getLocationId();
 			providerId = rm.getProviderId();
 			nameOfLocation = rm.getNameOfLocation();
+			countOfMediaUploaded = rm.getCountOfMediaUploaded();
+			rm.setCountOfMediaUploaded(countOfMediaUploaded + 1);
 			rm.setRequestId(m.getRequestId());
 			super.save(rm, rm.geteMailAddress(), rm.getRequestId());
 		}
@@ -587,6 +596,27 @@ public class MediaResource extends ResourceHelper implements Serializable {
 					assReq.getRequestId());
 		} catch (Exception exc) {
 
+		}
+
+		if (countOfMediaUploaded < 3) {
+			User user = (User) super.load(User.class, m.geteMailAddress(),
+					partnerId);
+			switch (countOfMediaUploaded) {
+			case 0:
+				user.setRank(user.getRank() + 3);
+				Statistics stats = new Statistics();
+				stats.setStatisticId("1ST2RESP:" + m.geteMailAddress() + ":" + partnerId);
+				stats.setDate(new Date());
+				super.save(stats, stats.getStatisticId(), stats.getDate());
+				break;
+			case 1:
+				user.setRank(user.getRank() + 2);
+				break;
+			case 2:
+				user.setRank(user.getRank() + 1);
+				break;
+			}
+			super.save(user, m.geteMailAddress(), partnerId);
 		}
 
 		results.put("origRequestor", origRequestor);
@@ -608,7 +638,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		ml.setContentType(m.getContentType());
 		ml.setText(m.getText());
 
-		if (m.getMediaType() == 3) {
+		if (m.getMediaType() == LIVESTREAMING) {
 			ml.setExpiryDate(null);
 		}
 
