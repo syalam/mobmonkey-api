@@ -35,8 +35,8 @@ public class User implements Serializable {
 	private Date lastRankUpdate;
 	private int inappropriateStrikes;
 	private Date firstInappropriateStrike;
-	private Date lastInappropriateStrike;
 	private boolean admin;
+	private boolean suspended;
 
 	@DynamoDBHashKey
 	public String geteMailAddress() {
@@ -245,21 +245,21 @@ public class User implements Serializable {
 	}
 
 	@DynamoDBAttribute
-	public Date getLastInappropriateStrike() {
-		return lastInappropriateStrike;
-	}
-
-	public void setLastInappropriateStrike(Date lastInappropriateStrike) {
-		this.lastInappropriateStrike = lastInappropriateStrike;
-	}
-
-	@DynamoDBAttribute
 	public boolean isAdmin() {
 		return admin;
 	}
 
 	public void setAdmin(boolean admin) {
 		this.admin = admin;
+	}
+
+	@DynamoDBAttribute
+	public boolean isSuspended() {
+		return suspended;
+	}
+
+	public void setSuspended(boolean suspended) {
+		this.suspended = suspended;
 	}
 	
 }

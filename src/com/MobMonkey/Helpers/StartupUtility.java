@@ -13,6 +13,7 @@ import com.MobMonkey.Helpers.SimpleWorkFlow.ApnsSWF.ApnsActivitiesImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.ApnsSWF.ApnsWorkflowImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestActivities;
 import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestActivitiesImpl;
+import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestMediaWorkflowImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.AssignRequestSWF.AssignRequestWorkflowImpl;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.GcmActivities;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.GcmActivitiesImpl;
@@ -97,9 +98,7 @@ public class StartupUtility implements ServletContextListener {
 		}
 		workflowWorker.start();
 		
-		
-		
-		
+				
 		// Setup AssignRequest activities
 		worker = new ActivityWorker(swfClient, "MobMonkey", "AssignRequest");
 		AssignRequestActivities AssignRequestActivitiesActImpl = new AssignRequestActivitiesImpl();
@@ -110,6 +109,16 @@ public class StartupUtility implements ServletContextListener {
 			logger.error(e.getStackTrace());
 		}
 		worker.start();
+		
+		worker = new ActivityWorker(swfClient, "MobMonkey", "AssignRequestMedia");
+		try {
+			worker.addActivitiesImplementation(AssignRequestActivitiesActImpl);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getStackTrace());
+		}
+		worker.start();
+		
 		// Setup AssignRequest workflow
 		workflowWorker = new WorkflowWorker(swfClient, "MobMonkey", "AssignRequest");
 		try {
@@ -120,7 +129,16 @@ public class StartupUtility implements ServletContextListener {
 			logger.error(e.getStackTrace());
 		}
 		workflowWorker.start();
-		
+				
+		workflowWorker = new WorkflowWorker(swfClient, "MobMonkey", "AssignRequestMedia");
+		try {
+			workflowWorker
+					.addWorkflowImplementationType(AssignRequestMediaWorkflowImpl.class);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getStackTrace());
+		}
+		workflowWorker.start();
 
 	}
 

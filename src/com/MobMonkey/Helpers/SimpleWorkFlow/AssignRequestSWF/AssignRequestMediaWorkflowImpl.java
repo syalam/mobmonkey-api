@@ -6,22 +6,19 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.Execute;
 /**
  * Implementation of the Gcm Workflow
  */
-public class AssignRequestWorkflowImpl implements AssignRequestWorkflow{
+public class AssignRequestMediaWorkflowImpl implements AssignRequestMediaWorkflow{
 
 	AssignRequestActivitiesImpl client = new AssignRequestActivitiesImpl();
 	
-
 	@Override
 	@Execute(version = "1.1")
-	public void assignRequest(String eMailAddress, String latitude, String longitude) {
-
+	public void assignRequestMedia(String origRequestor, RequestMediaLite rm) {
 		try {
-			client.assignRequest(eMailAddress, latitude, longitude);
+			client.assignRequestMedia(origRequestor, rm);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
 	}
     
 }

@@ -69,7 +69,7 @@ public class UserResource extends ResourceHelper {
 		} else {
 			Date dobDate = extractDob(dob);
 			if (dobDate != null && isValidString(fName, lName) && isInRange(MALE_FEMALE_RANGE, gender)) {
-				User user = (User) load(User.class, partnerId, email);
+				User user = (User) load(User.class, email, partnerId);
 				if (user == null) {
 					//creating new user
 					user = new User();
@@ -162,7 +162,7 @@ public class UserResource extends ResourceHelper {
 			Date dobDate = extractDob(dob);
 			if (dobDate != null && isValidString(fName, lName) && isInRange(MALE_FEMALE_RANGE, gender)) {
 				
-				User user = (User) load(User.class, partnerId, email);
+				User user = (User) load(User.class, email, partnerId);
 
 				if (user != null && user.getPassword().equals(password)) {
 					user.setPartnerId(partnerId);

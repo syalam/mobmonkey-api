@@ -21,6 +21,7 @@ public class RequestMediaLite implements Serializable{
 	private String locationId;
 	private String longitude;
 	private String latitude;
+	private int radiusInYards;
 	private Date requestDate;
 	@JsonIgnore private String requestorEmail;
 	
@@ -123,5 +124,13 @@ public class RequestMediaLite implements Serializable{
 
 	public void setRequestDate(Date requestDate) {
 		this.requestDate = requestDate;
+	}
+
+	public int getRadiusInYards() {
+		return radiusInYards;
+	}
+
+	public void setRadiusInYards(int radiusInYards) {
+		this.radiusInYards = radiusInYards;
 	}
 }

@@ -20,6 +20,11 @@ import com.MobMonkey.Models.User;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
+import com.amazonaws.services.simpleworkflow.flow.DataConverter;
+import com.amazonaws.services.simpleworkflow.flow.JsonDataConverter;
+import com.amazonaws.services.simpleworkflow.model.StartWorkflowExecutionRequest;
+import com.amazonaws.services.simpleworkflow.model.TaskList;
+import com.amazonaws.services.simpleworkflow.model.WorkflowType;
 
 @Path("/requestmedia")
 public class RequestMediaResource extends ResourceHelper {
@@ -123,11 +128,9 @@ public class RequestMediaResource extends ResourceHelper {
 
 		// TODO Has user verified their email? Need to move this to a helper
 		// class, we're going to use it a bunch
-		User user = new User();
-		if (headers.getRequestHeader("OauthToken") != null) {
-			user.seteMailAddress(username);
-			user.setPartnerId(partnerId);
-		}
+		
+		User user = (User) load(User.class, username, partnerId);
+		
 		Location coords = new Location();
 		// so lets reverse lookup some coords if they havent proivded them
 		if (r.getProviderId() != null && r.getLocationId() != null) {
@@ -206,11 +209,8 @@ public class RequestMediaResource extends ResourceHelper {
 
 		// Check to see if there are users by and assign them the request
 
-		CheckInResource cir = new CheckInResource();
-
 		try {
-			cir.assignRequest(user.geteMailAddress(), r.getLatitude(),
-					r.getLongitude());
+			assignRequestMedia(r.geteMailAddress(), convertToRML(r));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			logger.error(e.getMessage());
@@ -256,6 +256,7 @@ public class RequestMediaResource extends ResourceHelper {
 		newReq.setLatitude(r.getLatitude());
 		newReq.setLongitude(r.getLongitude());
 		newReq.setLocationName(r.getNameOfLocation());
+		newReq.setRadiusInYards(r.getRadiusInYards());
 
 		if (r.isRecurring())
 			newReq.setRequestType(1);
@@ -319,6 +320,26 @@ public class RequestMediaResource extends ResourceHelper {
 		rm.setMediaType(r.getMediaType());
 
 		return rm;
+
+	}
+	
+	public void assignRequestMedia(String origRequestor, RequestMediaLite rm)
+			throws IOException {
+		Object[] workflowInput = new Object[] { origRequestor, rm };
+		DataConverter converter = new JsonDataConverter();
+		StartWorkflowExecutionRequest startWorkflowExecutionRequest = new StartWorkflowExecutionRequest();
+		startWorkflowExecutionRequest.setInput(converter.toData(workflowInput));
+		startWorkflowExecutionRequest.setDomain("MobMonkey");
+		TaskList tasks = new TaskList();
+		tasks.setName("AssignRequestMedia");
+		startWorkflowExecutionRequest.setTaskList(tasks);
+		WorkflowType workflowType = new WorkflowType();
+		workflowType.setName("AssignRequestMediaWorkflow.assignRequestMedia");
+		workflowType.setVersion("1.1");
+		startWorkflowExecutionRequest.setWorkflowType(workflowType);
+		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
+				.toString());
+		this.swfClient().startWorkflowExecution(startWorkflowExecutionRequest);
 
 	}
 

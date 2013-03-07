@@ -9,12 +9,9 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.WorkflowRegistrati
  */
 @Workflow
 @WorkflowRegistrationOptions(defaultExecutionStartToCloseTimeoutSeconds = 60)
-public interface AssignRequestWorkflow {
-
-	
+public interface AssignRequestMediaWorkflow {
+    
     @Execute(version = "1.1")
-    void assignRequest(String eMailAddress, String latitude,
-			String longitude);
-
+    void assignRequestMedia(String origRequestor, RequestMediaLite rm);
 
 }
