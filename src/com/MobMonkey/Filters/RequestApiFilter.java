@@ -15,7 +15,8 @@ import com.sun.jersey.core.header.InBoundHeaders;
 import com.sun.jersey.spi.container.ContainerRequest;
 import com.sun.jersey.spi.container.ContainerRequestFilter;
 
-public class RequestApiFilter extends ResourceHelper implements ContainerRequestFilter{
+public class RequestApiFilter extends ResourceHelper implements
+		ContainerRequestFilter {
 
 	static Logger logger = Logger.getRootLogger();
 
@@ -46,8 +47,7 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 				e.printStackTrace();
 			}
 
-		}
-		else {
+		} else {
 			logger.debug("Unauthorized");
 		}
 		return req;
@@ -59,8 +59,9 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 		String partnerId = req.getHeaderValue("MobMonkey-partnerId");
 		String eMailAddress = req.getHeaderValue("MobMonkey-user");
 		String password = req.getHeaderValue("MobMonkey-auth");
-		String oauthProviderUserName = req.getHeaderValue("OauthProviderUserName");
-		//mString oauthToken = req.getHeaderValue("OauthToken");
+		String oauthProviderUserName = req
+				.getHeaderValue("OauthProviderUserName");
+		// mString oauthToken = req.getHeaderValue("OauthToken");
 		String oauthProvider = req.getHeaderValue("OauthProvider");
 
 		// If the request path is to verify an email, let them on through
@@ -86,8 +87,9 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 
 			// See if we have a valid partner ID, and that it is enabled (User
 			// verified email)
-			//TODO Cache this
-			Partner p = (Partner) super.load(Partner.class, partnerId.trim().toString());
+			// TODO Cache this
+			Partner p = (Partner) super.load(Partner.class, partnerId.trim()
+					.toString());
 			if (p.equals(null) || !p.isEnabled()) {
 				return false; // Quickly deny the request
 			} else {
@@ -96,8 +98,9 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 				// user
 				// If that's the case then we will let them through without
 				// user:pass creds.
-				if (req.getRequestUri().getPath().toLowerCase()
-						.matches(".*/rest/signup/user.*$")
+				if ((req.getRequestUri().getPath().toLowerCase()
+						.matches(".*/rest/user.*$") && req.getMethod()
+						.toLowerCase().equals("put"))
 						|| req.getRequestUri().getPath().toLowerCase()
 								.matches(".*/rest/signin.*$")) {
 					return true;
@@ -114,27 +117,31 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 			// Before with auth the user using email and pass, lets see if we
 			// have an oauth header
 			if (null != oauthProvider) {
-				//TODO Cache this
-				Oauth ou = (Oauth) super.load(Oauth.class, oauthProvider, oauthProviderUserName);
+				// TODO Cache this
+				Oauth ou = (Oauth) super.load(Oauth.class, oauthProvider,
+						oauthProviderUserName);
 
 				if (ou != null) {
-					if(ou.iseMailVerified() == false){
+					if (ou.iseMailVerified() == false) {
 						return false;
 					}
-					
+
 					InBoundHeaders in = new InBoundHeaders();
 					in.putAll(req.getRequestHeaders());
 
 					List<String> eMailAddressHeader = new ArrayList<String>();
 					List<String> providerUserName = new ArrayList<String>();
+					List<String> oAuthPass = new ArrayList<String>();
 					try {
 						eMailAddressHeader.add(ou.geteMailAddress());
 						providerUserName.add(eMailAddress);
 					} catch (Exception exc) {
 						return false;
 					}
+					oAuthPass.add("092C317848223D4810468E8EAAF280FA");
 					in.put("MobMonkey-user", eMailAddressHeader);
 					in.put("ProviderUserName", providerUserName);
+					in.put("MobMonkey-auth", oAuthPass);
 					req.setHeaders(in);
 					return true; // we have a valid oauthtoken !!
 				}
@@ -143,7 +150,7 @@ public class RequestApiFilter extends ResourceHelper implements ContainerRequest
 
 			// No Oauth token.. lets see if we have a user & pass
 			// Pull the user information
-			//TODO Cache this
+			// TODO Cache this
 			User user = (User) super.load(User.class, eMailAddress.trim(),
 					partnerId.trim());
 

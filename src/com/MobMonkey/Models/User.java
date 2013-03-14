@@ -2,6 +2,9 @@ package com.MobMonkey.Models;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import com.amazonaws.services.dynamodb.datamodeling.*;
 
 @DynamoDBTable(tableName = "User")
@@ -14,7 +17,6 @@ public class User implements Serializable {
 
 	private String partnerId;
 	private String eMailAddress;
-	private String notificationId;
 	private String password;
 	private String firstName;
 	private String lastName;
@@ -24,19 +26,17 @@ public class User implements Serializable {
 	private String city;
 	private String state;
 	private String zip;
-	private boolean verified;
+	@JsonIgnore private boolean verified;
 	private boolean acceptedtos;
-	private Date dateRegistered;
-	private int numberOfRequests;
-	private String deviceId;
-	private String deviceType;
+	@JsonIgnore private Date dateRegistered;
+	@JsonIgnore private int numberOfRequests;
 	private Date lastSignIn;
-	private int rank;
-	private Date lastRankUpdate;
-	private int inappropriateStrikes;
-	private Date firstInappropriateStrike;
-	private boolean admin;
-	private boolean suspended;
+	@JsonIgnore private int rank;
+	@JsonIgnore private Date lastRankUpdate;
+	@JsonIgnore private int inappropriateStrikes;
+	@JsonIgnore private Date firstInappropriateStrike;
+	@JsonIgnore private boolean admin;
+	@JsonIgnore private boolean suspended;
 
 	@DynamoDBHashKey
 	public String geteMailAddress() {
@@ -64,15 +64,6 @@ public class User implements Serializable {
 
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	@DynamoDBAttribute
-	public String getNotificationId() {
-		return notificationId;
-	}
-
-	public void setNotificationId(String notificationId) {
-		this.notificationId = notificationId;
 	}
 	
 	@DynamoDBAttribute
@@ -181,22 +172,6 @@ public class User implements Serializable {
 
 	public void setNumberOfRequests(int numberOfRequests) {
 		this.numberOfRequests = numberOfRequests;
-	}
-
-	public String getDeviceId() {
-		return deviceId;
-	}
-
-	public void setDeviceId(String deviceId) {
-		this.deviceId = deviceId;
-	}
-
-	public String getDeviceType() {
-		return deviceType;
-	}
-
-	public void setDeviceType(String deviceType) {
-		this.deviceType = deviceType;
 	}
 
 	@DynamoDBAttribute

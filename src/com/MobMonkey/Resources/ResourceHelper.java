@@ -2,7 +2,9 @@ package com.MobMonkey.Resources;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -13,6 +15,7 @@ import javax.ws.rs.core.HttpHeaders;
 import org.apache.log4j.Logger;
 import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.MobMonkey.Models.Device;
+import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.User;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
@@ -42,7 +45,17 @@ public class ResourceHelper {
 	static final String AWS_CRED_ERROR_READING = String.format(
 			"\n\nUnable to read %s\n\n\r", AWS_CREDENTIALS_FILE);
 	static final String FAIL_STAT = "Failure", SUCCESS = "Success";
-	
+	static final String INVALID_PARAM = "Invalid value: [%s]";
+	static final String THANK_YOU_FOR_REGISTERING = "Thank you for registering!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/user/%s/%s\">clicking here.</a>";
+	static final String CREATING_USER_SUBJECT = "registration e-mail.",
+			UPDATE_USER_SUBJECT = "Updated user account";
+	static final Logger LOG = Logger.getLogger(UserResource.class);
+
+	public static final String DOB_FORMAT = "MMMM d, yyyy";
+	public static final SimpleDateFormat DOB_FORMATTER = new SimpleDateFormat(
+			DOB_FORMAT, Locale.ENGLISH); // August 1 1960
+	public static final int[] MALE_FEMALE_RANGE = { 0, 1 };
+
 	public ResourceHelper() {
 		InputStream credentialsStream = getClass().getClassLoader()
 				.getResourceAsStream(AWS_CREDENTIALS_FILE);
@@ -130,7 +143,7 @@ public class ResourceHelper {
 		startWorkflowExecutionRequest.setTaskList(tasks);
 		WorkflowType workflowType = new WorkflowType();
 		workflowType.setName("GcmWorkflow.sendNotification");
-		workflowType.setVersion("1.5");
+		workflowType.setVersion("1.6");
 		startWorkflowExecutionRequest.setWorkflowType(workflowType);
 		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
 				.toString());
@@ -190,7 +203,11 @@ public class ResourceHelper {
 	}
 
 	public static String getHeaderParam(String key, HttpHeaders headers) {
-		return headers.getRequestHeader(key).get(0); //?
+		try {
+			return headers.getRequestHeader(key).get(0);
+		} catch (Exception exc) {
+			return null;
+		}
 	}
 
 	public Object getFromCache(String key) {
@@ -308,6 +325,18 @@ public class ResourceHelper {
 		this.deleteFromCache("FULFILLEDREADCOUNT:" + eMailAddress);
 		this.deleteFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
 		this.deleteFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
+	}
+	
+	public boolean validatePartnerId(String partnerId){
+		Partner p = (Partner) load(Partner.class, partnerId);
+		if(p != null){
+			if(p.isEnabled()){
+				return true;
+			}
+		}else{
+			return false;
+		}
+		return false;
 	}
 
 }

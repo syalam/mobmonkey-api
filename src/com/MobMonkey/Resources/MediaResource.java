@@ -241,7 +241,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String locationId = "";
 		String providerId = "";
 		String resp = "";
-				
+
 		if (requestType.toLowerCase().equals("image")) {
 			media.setMediaType(IMAGE);
 		} else if (requestType.toLowerCase().equals("video")) {
@@ -252,8 +252,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		} else if (requestType.toLowerCase().equals("text")) {
 			media.setMediaType(TEXT);
 			resp = media.getText();
-		}
-		else {
+		} else {
 			return Response
 					.status(500)
 					.entity(new Status("Error", requestType
@@ -263,7 +262,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		media.setMediaId(UUID.randomUUID().toString());
 		media.seteMailAddress(username);
 		media.setOriginalRequestor(originalRequestor); // for livestreaming
-		
+
 		Map<String, String> reqDetails = new HashMap<String, String>();
 
 		if (requestType.toLowerCase().equals("image")
@@ -278,15 +277,15 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			media.setMediaURL(reqDetails.get("url"));
 			media.setOriginalRequestor(reqDetails.get("origRequestor"));
 		}
-						
+
 		media.setUploadedDate(now);
 		media.setAccepted(false);
-	
+
 		if (reqDetails.containsKey("Error"))
 			return Response.status(500)
 					.entity(new Status("Error", reqDetails.get("Error"), ""))
 					.build();
-		
+
 		locationId = reqDetails.get("locationId");
 		providerId = reqDetails.get("providerId");
 
@@ -371,7 +370,12 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	public Response testGCMInJSON(@QueryParam("deviceId") String deviceId)
 			throws SecurityException, InstantiationException,
 			IllegalAccessException, NoSuchMethodException {
-
+		try {
+			super.sendGCM(deviceId, "testing", 20);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return Response.ok().entity("Result: ").build();
 	}
 

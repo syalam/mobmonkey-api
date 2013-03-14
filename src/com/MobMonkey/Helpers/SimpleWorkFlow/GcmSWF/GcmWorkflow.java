@@ -11,7 +11,7 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.WorkflowRegistrati
 public interface GcmWorkflow {
 
 	
-    @Execute(version = "1.5")
+    @Execute(version = "1.6")
     void sendNotification(String registration_id, String message, int badgeCount);
 
 }

@@ -7,11 +7,11 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.ActivityRegistrati
 /**
  * Contract for file processing activities
  */
-@Activities(version="1.5")
+@Activities(version="1.6")
 @ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 60, defaultTaskStartToCloseTimeoutSeconds = 60)
 public interface GcmActivities {
 	
-	@Activity(name = "GcmSendNotification", version = "1.5")
+	@Activity(name = "GcmSendNotification", version = "1.10")
 	@ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 30, defaultTaskStartToCloseTimeoutSeconds = 10)
     public void sendNotification(String registration_id, String message, int badgeCount) throws Exception;
     
