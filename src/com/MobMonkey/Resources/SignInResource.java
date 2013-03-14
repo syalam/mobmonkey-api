@@ -80,19 +80,19 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("oauthToken") String token,
 			@QueryParam("providerUserName") String providerUserName,
 			//
-			@QueryParam("fname") String fName,
-			@QueryParam("lname") String lName, @QueryParam("dob") String dob,
+			@QueryParam("firstName") String firstName,
+			@QueryParam("lastName") String lastName, @QueryParam("birthday") String birthday,
 			@QueryParam("gender") int gender) {
 
-		Date dobDate = UserResource.extractDob(dob);
+		Date dob = UserResource.extractDob(birthday);
 		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER,
 				headers);
 		String partnerId = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.PARTNER_ID, headers);
 		String password = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.AUTH, headers);
-		if (dobDate == null
-				|| !UserResource.isValidString(fName, lName)
+		if (birthday == null
+				|| !UserResource.isValidString(firstName, lastName)
 				|| !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE,
 						gender)) {
 			// fail if params missing or invalid
@@ -120,9 +120,9 @@ public class SignInResource extends ResourceHelper {
 					User user = new User();
 					user.seteMailAddress(provider + ":" + providerUserName);
 					user.setPartnerId(partnerId);
-					user.setBirthday(UserResource.extractDob(dob));
-					user.setFirstName(fName);
-					user.setLastName(lName);
+					user.setBirthday(dob);
+					user.setFirstName(firstName);
+					user.setLastName(lastName);
 					user.setGender(gender);
 					user.setVerified(false);
 					save(user, provider + ":" + providerUserName,
@@ -145,6 +145,24 @@ public class SignInResource extends ResourceHelper {
 										"404")).build();
 
 					} else {
+						// we have a user, update them
+						// if they pass the test
+
+						if (birthday != null
+								|| UserResource.isValidString(firstName, lastName)
+								|| UserResource.isInRange(
+										UserResource.MALE_FEMALE_RANGE, gender)) {
+
+							User user = (User) super.load(User.class,
+									ou.geteMailAddress(), partnerId);
+
+							user.setBirthday(dob);
+							user.setFirstName(firstName);
+							user.setLastName(lastName);
+							user.setGender(gender);
+							user.setVerified(false);
+							super.save(user, ou.geteMailAddress(), partnerId);
+						}
 						if (!addDevice(providerUserName, deviceId, type)) {
 							return Response
 									.status(500)
@@ -156,7 +174,7 @@ public class SignInResource extends ResourceHelper {
 						return Response
 								.ok()
 								.entity(new Status("Success",
-										"User successfully signed in", "200"))
+										"User successfully signed in & updated", "200"))
 								.build();
 					}
 				}
@@ -185,14 +203,14 @@ public class SignInResource extends ResourceHelper {
 						user = new User();
 						user.seteMailAddress(providerUserName);
 						user.setPartnerId(partnerId);
-						user.setBirthday(UserResource.extractDob(dob));
-						user.setFirstName(fName);
-						user.setLastName(lName);
+						user.setBirthday(dob);
+						user.setFirstName(firstName);
+						user.setLastName(lastName);
 						user.setGender(gender);
 						user.setVerified(true);
 						save(user, user.geteMailAddress(), user.getPartnerId());
 					}
-					
+
 					if (!addDevice(providerUserName, deviceId, type)) {
 						return Response
 								.status(500)
@@ -210,6 +228,22 @@ public class SignInResource extends ResourceHelper {
 
 				} else {
 
+					if (birthday != null
+							|| UserResource.isValidString(firstName, lastName)
+							|| UserResource.isInRange(
+									UserResource.MALE_FEMALE_RANGE, gender)) {
+
+						User user = (User) super.load(User.class,
+								ou.geteMailAddress(), partnerId);
+
+						user.setBirthday(dob);
+						user.setFirstName(firstName);
+						user.setLastName(lastName);
+						user.setGender(gender);
+						user.setVerified(false);
+						super.save(user, ou.geteMailAddress(), partnerId);
+					}
+					
 					if (!addDevice(providerUserName, deviceId, type)) {
 						return Response
 								.status(500)
@@ -303,23 +337,19 @@ public class SignInResource extends ResourceHelper {
 			ou.setoAuthProvider(provider);
 			super.save(ou, provider, providerUserName);
 
-			User user = (User) load(User.class, ou.geteMailAddress(),
-					partnerId);
-			
+			User user = (User) load(User.class, ou.geteMailAddress(), partnerId);
+
 			if (user == null) {
 				user = (User) load(User.class, provider + ":"
 						+ providerUserName, partnerId);
-				delete(user, provider + ":"
-						+ providerUserName, partnerId);
+				delete(user, provider + ":" + providerUserName, partnerId);
 				user.seteMailAddress(eMailAddress);
 				user.setVerified(false);
 				save(user, user.geteMailAddress(), user.getPartnerId());
-				
+
 				Verify verify = new Verify(UUID.randomUUID().toString(),
-						partnerId, eMailAddress,
-						user.getDateRegistered());
+						partnerId, eMailAddress, user.getDateRegistered());
 				super.save(verify, verify.getVerifyID(), verify.getPartnerId());
-			
 
 				new UserResource().mailer.sendMail(
 						eMailAddress,

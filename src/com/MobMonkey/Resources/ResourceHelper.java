@@ -326,17 +326,31 @@ public class ResourceHelper {
 		this.deleteFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
 		this.deleteFromCache("ASSIGNEDREADCOUNT:" + eMailAddress);
 	}
-	
-	public boolean validatePartnerId(String partnerId){
+
+	public boolean validatePartnerId(String partnerId) {
 		Partner p = (Partner) load(Partner.class, partnerId);
-		if(p != null){
-			if(p.isEnabled()){
+		if (p != null) {
+			if (p.isEnabled()) {
 				return true;
 			}
-		}else{
+		} else {
 			return false;
 		}
 		return false;
+	}
+
+	public static String join(String separator, Object... items)
+	{
+		StringBuffer result = new StringBuffer();
+
+		for (Object item : items)
+		{
+			if (result.length() > 0)
+				result.append(separator);
+			result.append(item);
+		}
+
+		return result.toString();
 	}
 
 }

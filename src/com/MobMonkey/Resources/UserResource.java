@@ -219,10 +219,8 @@ public class UserResource extends ResourceHelper {
 	public static Date extractDob(String dob) {
 		Date dobDate = null;
 		try {
-			dobDate = DOB_FORMATTER.parse(dob);
-		} catch (ParseException e) {
-			LOG.error("Unable to extract dob", e);
-		} catch (NullPointerException e) {
+			dobDate = new Date(Long.parseLong(dob));
+		} catch (Exception e) {
 			return null;
 		}
 		return dobDate;
@@ -243,10 +241,9 @@ public class UserResource extends ResourceHelper {
 		String statusDescription = String
 				.format("One or more params invalid [%s]",
 						String.format(
-								"First(String), Last(String), Date of birth(%s), Gender(1 or 0), Password(String)",
-								DOB_FORMAT));
-		response.status(Response.Status.OK).entity(
-				new Status(SUCCESS, statusDescription, email));
+								"firstName(String), lastName(String), birthday(String), Gender(1 or 0), Password(String)"));
+		response.status(Response.Status.BAD_REQUEST).entity(
+				new Status(FAIL_STAT, statusDescription, email));
 	}
 
 	/**
