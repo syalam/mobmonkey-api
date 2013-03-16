@@ -92,17 +92,19 @@ public class SignInResource extends ResourceHelper {
 				MobMonkeyApiConstants.PARTNER_ID, headers);
 		String password = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.AUTH, headers);
-		if (birthday == null
-				|| !UserResource.isValidString(firstName, lastName)
-				|| !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE,
-						gender)) {
-			// fail if params missing or invalid
-			ResponseBuilder responseBuilder = Response.noContent();
-			UserResource.requiredParamsMissing(responseBuilder, email);
-			return responseBuilder.build();
-		}
+		
 
 		if (useOAuth) {
+			if (birthday == null
+					|| !UserResource.isValidString(firstName, lastName)
+					|| !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE,
+							gender)) {
+				// fail if params missing or invalid
+				ResponseBuilder responseBuilder = Response.noContent();
+				UserResource.requiredParamsMissing(responseBuilder, email);
+				return responseBuilder.build();
+			}
+			
 			Oauth ou = (Oauth) super.load(Oauth.class, provider,
 					providerUserName);
 
