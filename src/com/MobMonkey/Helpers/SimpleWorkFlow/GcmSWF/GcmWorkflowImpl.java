@@ -10,7 +10,7 @@ public class GcmWorkflowImpl implements GcmWorkflow{
 	GcmActivitiesImpl client = new GcmActivitiesImpl();
 	
 	@Override
-	@Execute(version = "1.6")
+	@Execute(version = "1.12")
 	public void sendNotification(String registration_id, String message, int badgeCount) {
 		// TODO Auto-generated method stub
 		try {

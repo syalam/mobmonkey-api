@@ -143,7 +143,7 @@ public class ResourceHelper {
 		startWorkflowExecutionRequest.setTaskList(tasks);
 		WorkflowType workflowType = new WorkflowType();
 		workflowType.setName("GcmWorkflow.sendNotification");
-		workflowType.setVersion("1.6");
+		workflowType.setVersion("1.12");
 		startWorkflowExecutionRequest.setWorkflowType(workflowType);
 		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
 				.toString());

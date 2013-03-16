@@ -81,7 +81,8 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("providerUserName") String providerUserName,
 			//
 			@QueryParam("firstName") String firstName,
-			@QueryParam("lastName") String lastName, @QueryParam("birthday") String birthday,
+			@QueryParam("lastName") String lastName,
+			@QueryParam("birthday") String birthday,
 			@QueryParam("gender") int gender) {
 
 		Date dob = UserResource.extractDob(birthday);
@@ -149,7 +150,8 @@ public class SignInResource extends ResourceHelper {
 						// if they pass the test
 
 						if (birthday != null
-								|| UserResource.isValidString(firstName, lastName)
+								|| UserResource.isValidString(firstName,
+										lastName)
 								|| UserResource.isInRange(
 										UserResource.MALE_FEMALE_RANGE, gender)) {
 
@@ -160,7 +162,6 @@ public class SignInResource extends ResourceHelper {
 							user.setFirstName(firstName);
 							user.setLastName(lastName);
 							user.setGender(gender);
-							user.setVerified(false);
 							super.save(user, ou.geteMailAddress(), partnerId);
 						}
 						if (!addDevice(providerUserName, deviceId, type)) {
@@ -173,9 +174,10 @@ public class SignInResource extends ResourceHelper {
 						}
 						return Response
 								.ok()
-								.entity(new Status("Success",
-										"User successfully signed in & updated", "200"))
-								.build();
+								.entity(new Status(
+										"Success",
+										"User successfully signed in & updated",
+										"200")).build();
 					}
 				}
 			} else if (FACEBOOK.equalsIgnoreCase(provider)) {
@@ -243,7 +245,7 @@ public class SignInResource extends ResourceHelper {
 						user.setVerified(false);
 						super.save(user, ou.geteMailAddress(), partnerId);
 					}
-					
+
 					if (!addDevice(providerUserName, deviceId, type)) {
 						return Response
 								.status(500)
@@ -313,6 +315,10 @@ public class SignInResource extends ResourceHelper {
 
 		String partnerId = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.PARTNER_ID, headers);
+		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER,
+				headers);
+		String auth = UserResource.getHeaderParam(MobMonkeyApiConstants.AUTH,
+				headers);
 
 		if (!EmailValidator.validate(eMailAddress)) {
 			return Response
@@ -340,15 +346,20 @@ public class SignInResource extends ResourceHelper {
 			User user = (User) load(User.class, ou.geteMailAddress(), partnerId);
 
 			if (user == null) {
+				// no user object in system, lets see if the temporary twitter
+				// object exists
 				user = (User) load(User.class, provider + ":"
 						+ providerUserName, partnerId);
 				delete(user, provider + ":" + providerUserName, partnerId);
+				// create a new object with real email address
 				user.seteMailAddress(eMailAddress);
 				user.setVerified(false);
 				save(user, user.geteMailAddress(), user.getPartnerId());
 
 				Verify verify = new Verify(UUID.randomUUID().toString(),
 						partnerId, eMailAddress, user.getDateRegistered());
+				verify.setProvider(provider);
+				verify.setProviderUserName(providerUserName);
 				super.save(verify, verify.getVerifyID(), verify.getPartnerId());
 
 				new UserResource().mailer.sendMail(
@@ -357,6 +368,24 @@ public class SignInResource extends ResourceHelper {
 						String.format(THANK_YOU_FOR_REGISTERING,
 								verify.getPartnerId(), verify.getVerifyID()));
 
+			} else {
+				// a user has already registered with this email address
+				// we need credentials in the header
+				if (email != null && auth != null) {
+					if (user.geteMailAddress().toLowerCase()
+							.equals(email.toLowerCase())
+							&& user.getPassword().equals(auth)
+							&& user.isVerified()) {
+						ou.seteMailVerified(true);
+						super.save(ou, provider, providerUserName);
+					}else{
+						return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "The credentials provided in the header do not match the database.", "")).build();
+						
+					}
+
+				}else{
+					return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "A user with that email exists.  If you intend on linking these accounts, please provide the MobMonkey-user and MobMonkey-auth parameters in the header", "")).build();
+				}
 			}
 
 			if (!addDevice(eMailAddress, deviceId, type)) {

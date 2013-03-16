@@ -18,6 +18,10 @@ public class Verify {
 	private String partnerId;
 	private String eMailAddress;
 	private String oauthToken;
+	
+	
+	private String provider;
+	private String providerUserName;
 	private Date sentDate;
 	private Date recvDate;
 	
@@ -83,5 +87,20 @@ public class Verify {
 	public void setOauthToken(String oauthToken) {
 		this.oauthToken = oauthToken;
 	}
-	
+	@DynamoDBAttribute
+	public String getProvider() {
+		return provider;
+	}
+
+	public void setProvider(String provider) {
+		this.provider = provider;
+	}
+	@DynamoDBAttribute
+	public String getProviderUserName() {
+		return providerUserName;
+	}
+
+	public void setProviderUserName(String providerUserName) {
+		this.providerUserName = providerUserName;
+	}
 }
