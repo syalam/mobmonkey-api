@@ -37,6 +37,7 @@ public class User implements Serializable {
 	@JsonIgnore private Date firstInappropriateStrike;
 	@JsonIgnore private boolean admin;
 	@JsonIgnore private boolean suspended;
+	@JsonIgnore private boolean paidSubscriber;
 
 	@DynamoDBHashKey
 	public String geteMailAddress() {
@@ -235,6 +236,15 @@ public class User implements Serializable {
 
 	public void setSuspended(boolean suspended) {
 		this.suspended = suspended;
+	}
+
+	@DynamoDBAttribute
+	public boolean isPaidSubscriber() {
+		return paidSubscriber;
+	}
+
+	public void setPaidSubscriber(boolean paidSubscriber) {
+		this.paidSubscriber = paidSubscriber;
 	}
 	
 }

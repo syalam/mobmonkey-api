@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -25,11 +26,13 @@ import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.LocationMedia;
 import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.MediaLite;
+import com.MobMonkey.Models.MobMonkeyApiConstants;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
 import com.MobMonkey.Models.Statistics;
 import com.MobMonkey.Models.Status;
+import com.MobMonkey.Models.Throttle;
 import com.MobMonkey.Models.Trending;
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.*;
@@ -381,9 +384,24 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getMediaInJSON(@QueryParam("locationId") String locationId,
+	public Response getMediaInJSON(@Context HttpHeaders headers, @QueryParam("locationId") String locationId,
 			@QueryParam("providerId") String providerId) {
 
+		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER,
+				headers);
+		String partnerId = UserResource.getHeaderParam(
+				MobMonkeyApiConstants.PARTNER_ID, headers);
+		
+		//first lets see if user is a paid user
+		User user = (User)super.load(User.class, email, partnerId);
+		if(!user.isPaidSubscriber()){
+			//no pay, no play!
+			//lets check the throttler
+			if(!super.throttler(email, partnerId)){
+				return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "You have reached the maximum number of requests for a free subscription.", "")).build();
+			}
+		}
+		
 		// Query location media table for date range today - 3 days.
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
@@ -429,6 +447,13 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 		result.setMedia(media);
+		
+		//dont forget to throttle!
+		Throttle t = new Throttle();
+		t.setId("throttle" + email + ":" + partnerId);
+		t.setHitType("Media");
+		t.setHitDate(new Date());
+		super.save(t, t.getId(), t.getHitDate());
 
 		return Response.ok().entity(result).build();
 	}
@@ -636,6 +661,14 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			super.save(user, m.geteMailAddress(), partnerId);
 		}
 
+		//add a throttle entry for the original requestor
+		Throttle t = new Throttle();
+		t.setId("throttle" + origRequestor + ":" + partnerId);
+		t.setHitType("Request");
+		t.setHitDate(new Date());
+		
+		super.save(t, t.getId(), t.getHitDate().toString());
+		
 		results.put("origRequestor", origRequestor);
 		results.put("locationId", locationId);
 		results.put("providerId", providerId);

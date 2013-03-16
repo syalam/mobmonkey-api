@@ -105,10 +105,26 @@ public class RequestMediaResource extends ResourceHelper {
 	public Response createRequestMediaInJSON(
 			@PathParam("mediaType") String mediaTypeS, RequestMedia r,
 			@Context HttpHeaders headers) {
-		// TODO implement a request tracking system to determine the number of
-		// requests made by a user
-		// create an attribute called displayAd and return true based on a
-		// predetermined value
+
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
+				0);
+
+		// first lets see if user is a paid user
+		User user = (User) super.load(User.class, username, partnerId);
+		if (!user.isPaidSubscriber()) {
+			// no pay, no play!
+			// lets check the throttler
+			if (!super.throttler(username, partnerId)) {
+				return Response
+						.status(Response.Status.FORBIDDEN)
+						.entity(new Status(
+								"FAILURE",
+								"You have reached the maximum number of requests for a free subscription.",
+								"")).build();
+			}
+		}
+		
 		Date now = new Date();
 
 		int mediaType = 0;
@@ -122,15 +138,10 @@ public class RequestMediaResource extends ResourceHelper {
 			mediaType = 4;
 
 		// Get username & PartnerId from header
-		String username = headers.getRequestHeader("MobMonkey-user").get(0);
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
-				0);
 
 		// TODO Has user verified their email? Need to move this to a helper
 		// class, we're going to use it a bunch
-		
-		User user = (User) load(User.class, username, partnerId);
-		
+
 		Location coords = new Location();
 		// so lets reverse lookup some coords if they havent proivded them
 		if (r.getProviderId() != null && r.getLocationId() != null) {
@@ -322,7 +333,7 @@ public class RequestMediaResource extends ResourceHelper {
 		return rm;
 
 	}
-	
+
 	public void assignRequestMedia(String origRequestor, RequestMediaLite rm)
 			throws IOException {
 		Object[] workflowInput = new Object[] { origRequestor, rm };

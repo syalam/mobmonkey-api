@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
@@ -16,11 +17,17 @@ import org.apache.log4j.Logger;
 import com.MobMonkey.Helpers.MobMonkeyCache;
 import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.Partner;
+import com.MobMonkey.Models.Throttle;
 import com.MobMonkey.Models.User;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBMapper;
+import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
+import com.amazonaws.services.dynamodb.model.AttributeValue;
+import com.amazonaws.services.dynamodb.model.ComparisonOperator;
+import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.elasticache.AmazonElastiCacheClient;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.simpleworkflow.AmazonSimpleWorkflow;
@@ -55,7 +62,11 @@ public class ResourceHelper {
 	public static final SimpleDateFormat DOB_FORMATTER = new SimpleDateFormat(
 			DOB_FORMAT, Locale.ENGLISH); // August 1 1960
 	public static final int[] MALE_FEMALE_RANGE = { 0, 1 };
-
+	static SimpleDateFormat dateFormatter = new SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
+	static final int MaxHitsIn24Hours = 5;
+	static final int MaxHitsIn1Month = 30;
+	
 	public ResourceHelper() {
 		InputStream credentialsStream = getClass().getClassLoader()
 				.getResourceAsStream(AWS_CREDENTIALS_FILE);
@@ -351,6 +362,41 @@ public class ResourceHelper {
 		}
 
 		return result.toString();
+	}
+	
+	public boolean throttler(String eMailAddress, String partnerId){
+		String _1MonthAgo = dateFormatter.format(new Date().getTime() - (30L * 24L * 60L * 60L * 1000L));
+		Date _1DayAgo = new Date(new Date().getTime() - (24L * 60L * 60L * 1000L));
+		String hashKey = eMailAddress + ":" + partnerId;
+		String throttleKey = "throttle" + hashKey;
+		DynamoDBQueryExpression query = new DynamoDBQueryExpression(new AttributeValue().withS(throttleKey));
+		query.setRangeKeyCondition(new Condition().withComparisonOperator(ComparisonOperator.GT)
+				.withAttributeValueList(new AttributeValue().withS(_1MonthAgo)));
+		
+		PaginatedQueryList<Throttle> results = mapper().query(Throttle.class, query);
+			
+		//check the cache first.. dont wanna go to dynamodb if we dont have to!
+		Object o = this.getFromCache(throttleKey);
+		if(o != null){
+			return false;
+		}
+		if(results.size() > MaxHitsIn1Month){
+			this.storeInCache(throttleKey, 60*60*12 , "true");
+			return false;
+		}
+		int hitCount = 1;
+		for(Throttle t : results){
+			if(hitCount == MaxHitsIn24Hours){
+				this.storeInCache(throttleKey, 60*30 , "true");
+				return false;
+			}
+			if(t.getHitDate().compareTo(_1DayAgo) > 0){
+				//within 24 hours, update hitcount
+				hitCount++;
+			}
+		}
+		return true;
+			
 	}
 
 }
