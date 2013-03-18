@@ -66,13 +66,12 @@ public class RequestApiFilter extends ResourceHelper implements
 
 		// If the request path is to verify an email, let them on through
 		if (req.getRequestUri().getPath().toLowerCase()
-				.matches(".*/rest/verify.*$")) {
+				.matches(".*/rest/verify.*$") || req.getRequestUri().getPath().toLowerCase()
+				.matches(".*/rest/search/location$") || req.getRequestUri().getPath().toLowerCase()
+				.matches(".*/rest/axis.*$")) {
 			return true;
 		}
-		if (req.getRequestUri().getPath().toLowerCase()
-				.matches(".*/rest/search/location$")) {
-			return true;
-		}
+		
 
 		// If the request path is to signup a partner, I let them through for
 		// now.

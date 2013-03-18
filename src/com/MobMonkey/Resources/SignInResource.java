@@ -92,19 +92,9 @@ public class SignInResource extends ResourceHelper {
 				MobMonkeyApiConstants.PARTNER_ID, headers);
 		String password = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.AUTH, headers);
-		
 
 		if (useOAuth) {
-			if (birthday == null
-					|| !UserResource.isValidString(firstName, lastName)
-					|| !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE,
-							gender)) {
-				// fail if params missing or invalid
-				ResponseBuilder responseBuilder = Response.noContent();
-				UserResource.requiredParamsMissing(responseBuilder, email);
-				return responseBuilder.build();
-			}
-			
+
 			Oauth ou = (Oauth) super.load(Oauth.class, provider,
 					providerUserName);
 
@@ -123,10 +113,6 @@ public class SignInResource extends ResourceHelper {
 					User user = new User();
 					user.seteMailAddress(provider + ":" + providerUserName);
 					user.setPartnerId(partnerId);
-					user.setBirthday(dob);
-					user.setFirstName(firstName);
-					user.setLastName(lastName);
-					user.setGender(gender);
 					user.setVerified(false);
 					save(user, provider + ":" + providerUserName,
 							user.getPartnerId());
@@ -311,9 +297,11 @@ public class SignInResource extends ResourceHelper {
 			@QueryParam("oauthToken") String token,
 			@QueryParam("deviceType") String type,
 			@QueryParam("deviceId") String deviceId,
-			@QueryParam("eMailAddress") String eMailAddress
-
-	) {
+			@QueryParam("eMailAddress") String eMailAddress,
+			@QueryParam("firstName") String firstName,
+			@QueryParam("lastName") String lastName,
+			@QueryParam("birthday") String birthday,
+			@QueryParam("gender") int gender) {
 
 		String partnerId = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.PARTNER_ID, headers);
@@ -321,14 +309,22 @@ public class SignInResource extends ResourceHelper {
 				headers);
 		String auth = UserResource.getHeaderParam(MobMonkeyApiConstants.AUTH,
 				headers);
-
+		Date dob = UserResource.extractDob(birthday);
 		if (!EmailValidator.validate(eMailAddress)) {
 			return Response
 					.status(500)
 					.entity(new Status("Failure",
 							"Invalid email address specified", "500")).build();
 		}
-
+		if (birthday == null
+				|| !UserResource.isValidString(firstName, lastName)
+				|| !UserResource.isInRange(UserResource.MALE_FEMALE_RANGE,
+						gender)) {
+			// fail if params missing or invalid
+			ResponseBuilder responseBuilder = Response.noContent();
+			UserResource.requiredParamsMissing(responseBuilder, email);
+			return responseBuilder.build();
+		}
 		Oauth ou = (Oauth) super.load(Oauth.class, provider, providerUserName);
 		if (ou == null) {
 			return Response
@@ -356,6 +352,10 @@ public class SignInResource extends ResourceHelper {
 				// create a new object with real email address
 				user.seteMailAddress(eMailAddress);
 				user.setVerified(false);
+				user.setBirthday(dob);
+				user.setFirstName(firstName);
+				user.setLastName(lastName);
+				user.setGender(gender);
 				save(user, user.geteMailAddress(), user.getPartnerId());
 
 				Verify verify = new Verify(UUID.randomUUID().toString(),
@@ -380,13 +380,23 @@ public class SignInResource extends ResourceHelper {
 							&& user.isVerified()) {
 						ou.seteMailVerified(true);
 						super.save(ou, provider, providerUserName);
-					}else{
-						return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "The credentials provided in the header do not match the database.", "")).build();
-						
+					} else {
+						return Response
+								.status(Response.Status.FORBIDDEN)
+								.entity(new Status(
+										"FAILURE",
+										"The credentials provided in the header do not match the database.",
+										"")).build();
+
 					}
 
-				}else{
-					return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "A user with that email exists.  If you intend on linking these accounts, please provide the MobMonkey-user and MobMonkey-auth parameters in the header", "")).build();
+				} else {
+					return Response
+							.status(Response.Status.FORBIDDEN)
+							.entity(new Status(
+									"FAILURE",
+									"A user with that email exists.  If you intend on linking these accounts, please provide the MobMonkey-user and MobMonkey-auth parameters in the header",
+									"")).build();
 				}
 			}
 
