@@ -175,23 +175,23 @@ public class LocationCategoryResource extends ResourceHelper {
 
 	}
 
-	@GET
-	@Path("/all")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Response getAllCategoriesInJSON() {
-
-		// Move the catId's and parents into memached for ultra performance
-
-		DynamoDBScanExpression queryExpression = new DynamoDBScanExpression();
-
-		queryExpression.addFilterCondition("categoryId", new Condition()
-				.withComparisonOperator(ComparisonOperator.NOT_CONTAINS)
-				.withAttributeValueList(new AttributeValue().withS("MMCAT")));
-		PaginatedScanList<LocationCategory> results = super.mapper().scan(
-				LocationCategory.class, queryExpression);
-
-		return Response.ok().entity(results).build();
-	}
+//	@GET
+//	@Path("/all")
+//	@Produces(MediaType.APPLICATION_JSON)
+//	public Response getAllCategoriesInJSON() {
+//
+//		// Move the catId's and parents into memached for ultra performance
+//
+//		DynamoDBScanExpression queryExpression = new DynamoDBScanExpression();
+//
+//		queryExpression.addFilterCondition("categoryId", new Condition()
+//				.withComparisonOperator(ComparisonOperator.NOT_CONTAINS)
+//				.withAttributeValueList(new AttributeValue().withS("MMCAT")));
+//		PaginatedScanList<LocationCategory> results = super.mapper().scan(
+//				LocationCategory.class, queryExpression);
+//
+//		return Response.ok().entity(results).build();
+//	}
 
 	@POST
 	@Produces(MediaType.APPLICATION_JSON)

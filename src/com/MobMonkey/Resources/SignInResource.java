@@ -138,9 +138,9 @@ public class SignInResource extends ResourceHelper {
 						// if they pass the test
 
 						if (birthday != null
-								|| UserResource.isValidString(firstName,
+								&& UserResource.isValidString(firstName,
 										lastName)
-								|| UserResource.isInRange(
+								&& UserResource.isInRange(
 										UserResource.MALE_FEMALE_RANGE, gender)) {
 
 							User user = (User) super.load(User.class,
