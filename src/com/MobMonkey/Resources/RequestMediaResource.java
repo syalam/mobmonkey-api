@@ -112,7 +112,8 @@ public class RequestMediaResource extends ResourceHelper {
 
 		// first lets see if user is a paid user
 		User user = (User) super.load(User.class, username, partnerId);
-		if (!user.isPaidSubscriber()) {
+		
+		if (!user.isPaidSubscriber() && !super.isStaging) {
 			// no pay, no play!
 			// lets check the throttler
 			if (!super.throttler(username, partnerId)) {

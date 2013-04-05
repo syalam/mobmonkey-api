@@ -66,6 +66,7 @@ public class ResourceHelper {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	static final int MaxHitsIn24Hours = 5;
 	static final int MaxHitsIn1Month = 30;
+	final boolean isStaging = true;
 	
 	public ResourceHelper() {
 		InputStream credentialsStream = getClass().getClassLoader()
