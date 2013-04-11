@@ -21,6 +21,7 @@ import javax.ws.rs.core.*;
 
 import com.MobMonkey.Helpers.ApplePNSHelper;
 import com.MobMonkey.Helpers.NotificationHelper;
+import com.MobMonkey.Helpers.ZendeskHelper;
 import com.MobMonkey.Models.AssignedRequest;
 import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.LocationMedia;
@@ -705,7 +706,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			@QueryParam("mediaId") String mediaId, @Context HttpHeaders headers) {
 		String username = headers.getRequestHeader("MobMonkey-user").get(0);
 		Media m = new Media();
-
+		
+		ZendeskHelper zd = new ZendeskHelper();
+		String id = zd.createTicket("http://www.mobmonkey.com", "mediaId", "requestId");
+		zd.updateTicket(id, "inappropriate");
 		try {
 			m = (Media) super.load(Media.class, requestId, mediaId);
 			if (!m.getOriginalRequestor().toLowerCase()
@@ -728,13 +732,14 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		if (m.getRequestType().equals("0")) {
 			try {
 
-				m.setAccepted(true);
+				m.setFlaggedAsInappropriate(true);
+				
 				super.save(m, m.getRequestId(), m.getMediaId());
-
+			
 				return Response
 						.ok()
 						.entity(new Status("Success",
-								"Successfully accepted media", "")).build();
+								"Successfully flagged media as inappropriate. It will be reviewed and confirmed by our inappropriate content specialists", "")).build();
 
 			} catch (Exception exc) {
 				return Response

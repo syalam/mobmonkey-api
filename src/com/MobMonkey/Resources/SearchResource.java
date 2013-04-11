@@ -54,7 +54,9 @@ public class SearchResource extends ResourceHelper {
 	@Path("/location")
 	public Response findLocationsInJSON(Location loc,
 			@Context HttpHeaders headers,
-			@DefaultValue("-1") @QueryParam("mediaType") String mediaType) {
+			@DefaultValue("-1") @QueryParam("mediaType") String mediaType,
+			@DefaultValue("10") @QueryParam("maxResults") int maxResults,
+			@DefaultValue("1") @QueryParam("pageNum") int pageNum) {
 
 		// Location now has a count attribute that will look like this:
 		// "monkeys=1,images=3,videos=2,livestreaming=false"
@@ -112,11 +114,23 @@ public class SearchResource extends ResourceHelper {
 
 		}
 
-		// NOT NEEDED by Reyaads
-		// List<Location> bookmarkedLocations = this.AssignBookmarks(
-		// locations, user.geteMailAddress());
 
-		return Response.ok().entity(locations).build();
+		Map<String, Object> pagedResponse = new HashMap<String, Object>();
+
+		double pages = (double) locations.size() / (double) maxResults;
+		int numOfPages = (int) Math.ceil(pages);
+		int startPosition = (pageNum - 1) * maxResults;
+		int tmp = (int) (((pages - (pageNum - 1)) < 1) ? Math
+				.ceil((pages - (pageNum - 1)) * 10) : maxResults);
+		int endPosition = startPosition + tmp;
+		pagedResponse.put("numberOfPages", numOfPages);
+		pagedResponse.put("page", pageNum);
+		pagedResponse.put("totalItems", locations.size());
+		if (locations.size() > 0) {
+			pagedResponse.put("defaultTexts",
+					locations.subList(startPosition, endPosition));
+		}
+		return Response.ok().entity(pagedResponse).build();
 
 	}
 
