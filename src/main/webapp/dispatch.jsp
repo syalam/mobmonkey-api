@@ -7,16 +7,19 @@
 <title>Dispatch Livestreaming Camera</title>
 </head>
 <body>
-<center>
+
 <h1>Fill out the form entirely</h1>
 <form id="dispatch" action="livestreaming" method="post">
     <p>
-        MAC: <input name="mac"><br>
-        OAK: <input name="oak"><br>
+        Requestor's email address: <input name="email"><br>
+        Live streaming RequestID: <input name="requestId"><br>
+        RTSP Camera URL: <input name="url"> (rtsp://user:pass@hostname:port/axis-media/media.amp))<br>
+        
         <input type="submit" value="Submit">
     </p>
-    <p>Result: <span id="result">${resp}</span></p>
+    <p>Result: ${resp} <br>
+    Camera URL: <span id="result"><a href="${url}">${url}</a></span></p>
 </form>
-</center>
+
 </body>
 </html>

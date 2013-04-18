@@ -152,7 +152,7 @@ public final class SearchHelper extends ResourceHelper {
 			int monkeys = 0;
 
 			// Let's see if there are any users checked in the vicinity
-			monkeys = UserCountAtLocation(loc);
+			monkeys = UserCountAtLocation(loc, eMailAddress);
 
 			// how about media
 			Map<String, Integer> media = MediaCountAtLocation(loc);
@@ -186,7 +186,7 @@ public final class SearchHelper extends ResourceHelper {
 	}
 
 	@SuppressWarnings("unchecked")
-	public int UserCountAtLocation(Location loc) {
+	public int UserCountAtLocation(Location loc, String email) {
 		int count = 0;
 
 		Map<String, CheckIn> checkIn = new HashMap<String, CheckIn>();
@@ -215,13 +215,16 @@ public final class SearchHelper extends ResourceHelper {
 		}
 
 		for (CheckIn c : checkIn.values()) {
-			new Locator();
-			if (loc.getLongitude() != null && loc.getLatitude() != null
-					&& c.getLatitude() != null && c.getLongitude() != null) {
+			if (!c.geteMailAddress().equals(email)) {
+				new Locator();
+				if (loc.getLongitude() != null && loc.getLatitude() != null
+						&& c.getLatitude() != null && c.getLongitude() != null) {
 
-				if (Locator.isInVicinity(loc.getLatitude(), loc.getLongitude(),
-						c.getLatitude(), c.getLongitude(), 250)) {
-					count++;
+					if (Locator.isInVicinity(loc.getLatitude(),
+							loc.getLongitude(), c.getLatitude(),
+							c.getLongitude(), 250)) {
+						count++;
+					}
 				}
 			}
 		}

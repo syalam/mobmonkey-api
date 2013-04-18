@@ -31,7 +31,7 @@
 	</servlet>
 	<servlet>
 		<servlet-name>livestreaming-servlet</servlet-name>
-		<servlet-class>com.MobMonkey.Helpers.AxisServlet</servlet-class>
+		<servlet-class>com.MobMonkey.Helpers.CameraServlet</servlet-class>
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>jersey-servlet</servlet-name>
