@@ -1,5 +1,6 @@
 package com.MobMonkey.Resources;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -19,6 +20,11 @@ import com.MobMonkey.Models.User;
 
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
+import com.amazonaws.services.simpleworkflow.flow.DataConverter;
+import com.amazonaws.services.simpleworkflow.flow.JsonDataConverter;
+import com.amazonaws.services.simpleworkflow.model.StartWorkflowExecutionRequest;
+import com.amazonaws.services.simpleworkflow.model.TaskList;
+import com.amazonaws.services.simpleworkflow.model.WorkflowType;
 
 @Path("/requestmedia")
 public class RequestMediaResource extends ResourceHelper {
@@ -99,10 +105,27 @@ public class RequestMediaResource extends ResourceHelper {
 	public Response createRequestMediaInJSON(
 			@PathParam("mediaType") String mediaTypeS, RequestMedia r,
 			@Context HttpHeaders headers) {
-		// TODO implement a request tracking system to determine the number of
-		// requests made by a user
-		// create an attribute called displayAd and return true based on a
-		// predetermined value
+
+		String username = headers.getRequestHeader("MobMonkey-user").get(0);
+		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
+				0);
+
+		// first lets see if user is a paid user
+		User user = (User) super.load(User.class, username, partnerId);
+		
+		if (!user.isPaidSubscriber() && !super.isStaging) {
+			// no pay, no play!
+			// lets check the throttler
+			if (!super.throttler(username, partnerId)) {
+				return Response
+						.status(Response.Status.FORBIDDEN)
+						.entity(new Status(
+								"FAILURE",
+								"You have reached the maximum number of requests for a free subscription.",
+								"")).build();
+			}
+		}
+		
 		Date now = new Date();
 
 		int mediaType = 0;
@@ -116,29 +139,22 @@ public class RequestMediaResource extends ResourceHelper {
 			mediaType = 4;
 
 		// Get username & PartnerId from header
-		String username = headers.getRequestHeader("MobMonkey-user").get(0);
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId").get(
-				0);
 
 		// TODO Has user verified their email? Need to move this to a helper
 		// class, we're going to use it a bunch
-		User user = new User();
-		if (headers.getRequestHeader("OauthToken") != null) {
-			user.seteMailAddress(username);
-			user.setPartnerId(partnerId);
-		}
+
 		Location coords = new Location();
 		// so lets reverse lookup some coords if they havent proivded them
 		if (r.getProviderId() != null && r.getLocationId() != null) {
 			new Locator();
 			coords = new Locator().reverseLookUp(r.getProviderId(),
 					r.getLocationId());
-			if(coords == null){
+			if (coords == null) {
 				return Response
 						.status(500)
 						.entity("Location not found in factual or MobMonkey's location database.")
 						.build();
-				
+
 			}
 			if (coords.getLatitude() != null && coords.getLongitude() != null) {
 				r.setLatitude(coords.getLatitude());
@@ -185,11 +201,9 @@ public class RequestMediaResource extends ResourceHelper {
 
 			super.save(rm, r.geteMailAddress(), r.getRequestId());
 
-				
-
 		} else {
 			r.setRequestType(0);
-			if(!(r.getDuration() > 0)){
+			if (!(r.getDuration() > 0)) {
 				return Response
 						.status(500)
 						.entity(new Status("Failure",
@@ -202,21 +216,20 @@ public class RequestMediaResource extends ResourceHelper {
 		// user officially makes a request.. lets increment his request value
 		// TODO move the number of requests to caching
 		// also make all requests JSON
-//		user.setNumberOfRequests(user.getNumberOfRequests() + 1);
-//		super.mapper().save(user);
+		// user.setNumberOfRequests(user.getNumberOfRequests() + 1);
+		// super.mapper().save(user);
 
 		// Check to see if there are users by and assign them the request
-		List<String> eMailAddresses = new Locator().findMonkeysNearBy(
-				r.getLatitude(), r.getLongitude(), r.getRadiusInYards());
-		CheckInResource cir = new CheckInResource();
-		for (String eMail : eMailAddresses) {
-			if (!eMail.toLowerCase().equals(r.geteMailAddress().toLowerCase())) {
-				cir.AssignRequest(eMail, convertToRML(r));
-			}
+
+		try {
+			assignRequestMedia(r.geteMailAddress(), convertToRML(r));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			logger.error(e.getMessage());
 		}
 
 		this.clearCountCache(r.geteMailAddress());
-		
+
 		// Trending metric!
 		Trending t = new Trending();
 		t.setLocationId(r.getLocationId());
@@ -234,7 +247,6 @@ public class RequestMediaResource extends ResourceHelper {
 		else
 			status.setDescription("DisplayAd=false");
 
-	
 		return Response.ok().entity(status).build();
 
 	}
@@ -256,6 +268,7 @@ public class RequestMediaResource extends ResourceHelper {
 		newReq.setLatitude(r.getLatitude());
 		newReq.setLongitude(r.getLongitude());
 		newReq.setLocationName(r.getNameOfLocation());
+		newReq.setRadiusInYards(r.getRadiusInYards());
 
 		if (r.isRecurring())
 			newReq.setRequestType(1);
@@ -319,6 +332,26 @@ public class RequestMediaResource extends ResourceHelper {
 		rm.setMediaType(r.getMediaType());
 
 		return rm;
+
+	}
+
+	public void assignRequestMedia(String origRequestor, RequestMediaLite rm)
+			throws IOException {
+		Object[] workflowInput = new Object[] { origRequestor, rm };
+		DataConverter converter = new JsonDataConverter();
+		StartWorkflowExecutionRequest startWorkflowExecutionRequest = new StartWorkflowExecutionRequest();
+		startWorkflowExecutionRequest.setInput(converter.toData(workflowInput));
+		startWorkflowExecutionRequest.setDomain("MobMonkey");
+		TaskList tasks = new TaskList();
+		tasks.setName("AssignRequestMedia");
+		startWorkflowExecutionRequest.setTaskList(tasks);
+		WorkflowType workflowType = new WorkflowType();
+		workflowType.setName("AssignRequestMediaWorkflow.assignRequestMedia");
+		workflowType.setVersion("1.1");
+		startWorkflowExecutionRequest.setWorkflowType(workflowType);
+		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
+				.toString());
+		this.swfClient().startWorkflowExecution(startWorkflowExecutionRequest);
 
 	}
 

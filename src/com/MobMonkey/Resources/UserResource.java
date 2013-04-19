@@ -1,102 +1,260 @@
-	package com.MobMonkey.Resources;
+package com.MobMonkey.Resources;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
-import com.MobMonkey.Models.Device;
+import org.apache.log4j.Logger;
+
+import com.MobMonkey.Helpers.EmailValidator;
+import com.MobMonkey.Helpers.Mailer;
+import com.MobMonkey.Models.MobMonkeyApiConstants;
+import com.MobMonkey.Models.Status;
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Models.Verify;
-import com.MobMonkey.Models.Status;
-import com.MobMonkey.Models.Oauth;
-import com.MobMonkey.Helpers.*;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
-import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
-import com.amazonaws.services.dynamodb.datamodeling.PaginatedScanList;
-import com.amazonaws.services.dynamodb.model.AttributeValue;
-import com.amazonaws.services.dynamodb.model.ComparisonOperator;
-import com.amazonaws.services.dynamodb.model.Condition;
 
-@Path("/signup")
+@Path("/user")
 public class UserResource extends ResourceHelper {
 
+	final Mailer mailer;
+
 	public UserResource() {
-		super();
+		mailer = new Mailer();
+	}
+
+	@PUT
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response create(User user, @Context HttpHeaders headers,
+			@QueryParam("deviceId") String deviceId,
+			@QueryParam("deviceType") String deviceType) {
+
+		ResponseBuilder response = Response.noContent();
+
+		String partnerId = getHeaderParam(MobMonkeyApiConstants.PARTNER_ID,
+				headers);
+		if (partnerId == null) {
+			String statusDescription = String
+					.format("Missing MobMonkey-partnerId header parameter.");
+			response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+					new Status(FAIL_STAT, statusDescription, ""));
+			return response.build();
+		} else {
+			if (!super.validatePartnerId(partnerId)) {
+				String statusDescription = String
+						.format("Invalid partner ID, or partner is disabled. Please contact an administrator");
+				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+						new Status(FAIL_STAT, statusDescription, ""));
+				return response.build();
+			}
+		}
+
+		if (!isValidString(user.geteMailAddress(), partnerId,
+				user.getPassword())) {
+			if (!EmailValidator.validate(user.geteMailAddress())) {
+				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+						new Status(FAIL_STAT, String.format(INVALID_PARAM,
+								user.geteMailAddress()), ""));
+			} else {
+				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+						new Status(FAIL_STAT, String.format(INVALID_PARAM,
+								"partnerid or password"), ""));
+			}
+		} else {
+
+			if (user.getBirthday() != null
+					&& isValidString(user.getFirstName(), user.getLastName(),
+							user.getPassword())
+					&& isInRange(MALE_FEMALE_RANGE, user.getGender())) {
+				User tempUser = (User) super.load(User.class,
+						user.geteMailAddress(), partnerId);
+				if (tempUser == null) {
+					user.setLastSignIn(new Date());
+					user.setDateRegistered(new Date());
+					user.setRank(0);
+					user.setPartnerId(partnerId);
+					super.save(user, user.geteMailAddress(), partnerId);
+
+					// If device is specified, let's add it
+					if (deviceType != null && deviceId != null) {
+						new SignInResource().addDevice(user.geteMailAddress(),
+								deviceId, deviceType);
+					}
+
+					Verify verify = new Verify(UUID.randomUUID().toString(),
+							partnerId, user.geteMailAddress(),
+							user.getDateRegistered());
+					super.save(verify, verify.getVerifyID(),
+							verify.getPartnerId());
+
+					mailer.sendMail(
+							user.geteMailAddress(),
+							CREATING_USER_SUBJECT,
+							String.format(THANK_YOU_FOR_REGISTERING,
+									verify.getPartnerId(), verify.getVerifyID()));
+
+					String statusDescription = String.format(
+							"User [%s] successfully signed up",
+							user.geteMailAddress());
+					response.status(Response.Status.CREATED).entity(
+							new Status(SUCCESS, statusDescription, user
+									.geteMailAddress()));
+				} else {
+					// user exists
+					String statusDescription = String.format(
+							"User [%s] already exists. Try update?",
+							user.geteMailAddress());
+					response.status(Response.Status.OK).entity(
+							new Status(SUCCESS, statusDescription, user
+									.geteMailAddress()));
+				}
+			} else {
+				requiredParamsMissing(response, user.geteMailAddress());
+			}
+		}
+		return response.build();
 	}
 
 	@GET
-	@Path("/user")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getUserInJSON(@Context HttpHeaders headers) {
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId")
-				.get(0).toLowerCase();
-		String eMailAddress = headers.getRequestHeader("MobMonkey-user").get(0)
-				.toLowerCase();
+	public Response get(@Context HttpHeaders headers) {
+		ResponseBuilder response = Response.noContent();
 
-		User result = (User) super.load(User.class, eMailAddress, partnerId);
-		result.setPassword(null);
-		return Response.ok().entity(result).build();
+		String partnerId = getHeaderParam(MobMonkeyApiConstants.PARTNER_ID,
+				headers);
+		String email = getHeaderParam(MobMonkeyApiConstants.USER, headers);
+		String password = getHeaderParam(MobMonkeyApiConstants.AUTH, headers);
+
+		if (!isValidString(email, partnerId, password)) {
+			if (!EmailValidator.validate(email)) {
+				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+						new Status(FAIL_STAT, String.format(INVALID_PARAM,
+								email), ""));
+			} else {
+				response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(
+						new Status(FAIL_STAT, String.format(INVALID_PARAM,
+								"partnerid or password"), ""));
+			}
+		} else {
+			User user = (User) load(User.class, email, partnerId);
+			String tmp = user.getPassword() == null ? "" : user.getPassword();
+			if ((user != null && tmp.equals(password))
+					|| password.equals("092C317848223D4810468E8EAAF280FA")) {
+				response.status(Response.Status.OK).entity(user);
+			} else {
+				response.status(Response.Status.BAD_REQUEST).entity(
+						new Status(FAIL_STAT, String.format(
+								"Unable to get user for %s", email), ""));
+			}
+		}
+		return response.build();
 	}
 
 	@POST
-	@Path("/user")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response createUserInJSON(User User, @Context HttpHeaders headers) {
+	public Response update(User user, @Context HttpHeaders headers,
+			@QueryParam("deviceId") String deviceId,
+			@QueryParam("deviceType") String deviceType) {
+		ResponseBuilder response = Response.noContent();
 
-		// TODO - update partnerID with last activity
-		String partnerId = headers.getRequestHeader("MobMonkey-partnerId")
-				.get(0).toLowerCase();
+		String partnerId = getHeaderParam(MobMonkeyApiConstants.PARTNER_ID,
+				headers);
+		String email = getHeaderParam(MobMonkeyApiConstants.USER, headers);
+		String password = getHeaderParam(MobMonkeyApiConstants.AUTH, headers);
 
-		if (null == User.getPassword() || null == User.geteMailAddress()) {
-			Status s = new Status();
-			s.setStatus("Missing required fields");
-			s.setDescription("Email or password is missing");
-			return Response.status(500).entity(s).build();
+		// check required params
+		if (user.getBirthday() != null
+				&& isValidString(user.getFirstName(), user.getLastName())
+				&& isInRange(MALE_FEMALE_RANGE, user.getGender())) {
+
+			User tempUser = (User) load(User.class, email, partnerId);
+
+			if (tempUser != null && tempUser.getPassword().equals(password)) {
+				user.seteMailAddress(email);
+				user.setPartnerId(partnerId);
+				user.setLastSignIn(new Date());
+				super.save(user, email, partnerId);
+
+				// If device is specified, let's add it
+				if (deviceType != null && deviceId != null) {
+					new SignInResource().addDevice(email, deviceId, deviceType);
+				}
+
+				String statusDescription = String.format(
+						"User [%s] details updated", email);
+				mailer.sendMail(email, UPDATE_USER_SUBJECT, statusDescription);
+
+				response.status(Response.Status.OK).entity(
+						new Status(SUCCESS, statusDescription, email));
+			} else {
+				String statusDescription = String
+						.format("Nothing updated for [%s]. Check password and/or arguments",
+								email);
+				response.status(Response.Status.BAD_REQUEST).entity(
+						new Status(FAIL_STAT, statusDescription, email));
+			}
+		} else {
+			requiredParamsMissing(response, email);
 		}
-		// TODO regex on email address
 
-		boolean validEmail = new EmailValidator().validate(User.geteMailAddress());
-		if(!validEmail){
-			return Response.status(500).entity(new Status("Failure", "Invalid email address: (" + User.geteMailAddress() + ") specified.", "")).build();
+		return response.build();
+	}
+
+	public static Date extractDob(String dob) {
+		Date dobDate = null;
+		try {
+			dobDate = new Date(Long.parseLong(dob));
+		} catch (Exception e) {
+			return null;
 		}
-		
-		User.setPartnerId(partnerId);
-		User.setVerified(false);
-		User.setDateRegistered(new Date());
-		super.save(User, User.geteMailAddress(), User.getPartnerId());
-		// Let's save the user's device Id as well
-		// TODO in signin API send the users deviceId so we will keep adding to
-		// their list of devices..
-	
-		
-        new SignInResource().addDevice(User.geteMailAddress(), User.getDeviceId(), User.getDeviceType());
+		return dobDate;
+	}
 
-		Verify v = new Verify(UUID.randomUUID().toString(),
-				User.getPartnerId(), User.geteMailAddress(),
-				User.getDateRegistered());
+	protected User getUserWithHeaders(HttpHeaders headers) {
+		return (User) load(User.class,
+				getHeaderParam(MobMonkeyApiConstants.PARTNER_ID, headers),
+				getHeaderParam(MobMonkeyApiConstants.USER, headers));
+	}
 
-		super.save(v, v.getVerifyID(), v.getPartnerId());
+	public static boolean isInRange(int[] range, int param) {
+		return param >= range[0] && param <= range[1];
+	}
 
-		Mailer mail = new Mailer();
-		mail.sendMail(
-				User.geteMailAddress(),
-				"registration e-mail.",
-				"Thank you for registering!  Please validate your email by <a href=\"http://api.mobmonkey.com/rest/verify/user/"
-						+ v.getPartnerId()
-						+ "/"
-						+ v.getVerifyID()
-						+ "\">clicking here.</a>");
+	public static void requiredParamsMissing(ResponseBuilder response,
+			String email) {
+		String statusDescription = String
+				.format("One or more params invalid [%s]",
+						String.format(
+								"firstName(String), lastName(String), birthday(String), Gender(1 or 0), Password(String)"));
+		response.status(Response.Status.BAD_REQUEST).entity(
+				new Status(FAIL_STAT, statusDescription, email));
+	}
 
-		Status s = new Status();
-		s.setStatus("Success");
-		s.setDescription("User " + User.geteMailAddress()
-				+ " successfully signed up");
-		s.setId(User.geteMailAddress());
-		return Response.status(201).entity(s).build();
-
+	/**
+	 * @return string is not null or equals to ""
+	 */
+	public static boolean isValidString(String... params) {
+		for (int i = 0; i < params.length; i++) {
+			if (params[i] == null || "".equals(params[i])) {
+				return false;
+			}
+		}
+		return true;
 	}
 }

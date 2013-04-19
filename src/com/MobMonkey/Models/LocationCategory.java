@@ -1,13 +1,19 @@
 package com.MobMonkey.Models;
 
+import java.io.Serializable;
+
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBHashKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBTable;
 
 @DynamoDBTable( tableName="LocationCategory")
-public class LocationCategory {
+public class LocationCategory implements Serializable{
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -8971134676313436098L;
 	private String categoryId;
 	private String parents;
 	private String en;
@@ -32,7 +38,7 @@ public class LocationCategory {
 		this.categoryId = categoryId;
 	}
 
-	@DynamoDBRangeKey
+	@DynamoDBAttribute
 	public String getParents() {
 		return parents;
 	}

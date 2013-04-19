@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -25,11 +26,16 @@ import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.LocationMedia;
 import com.MobMonkey.Models.Media;
 import com.MobMonkey.Models.MediaLite;
+import com.MobMonkey.Models.MobMonkeyApiConstants;
 import com.MobMonkey.Models.RecurringRequestMedia;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.RequestMediaLite;
+import com.MobMonkey.Models.Statistics;
 import com.MobMonkey.Models.Status;
+import com.MobMonkey.Models.Throttle;
 import com.MobMonkey.Models.Trending;
+import com.MobMonkey.Models.User;
+import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.*;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
@@ -38,6 +44,13 @@ import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.amazonaws.services.simpleworkflow.flow.ActivityWorker;
+import com.amazonaws.services.simpleworkflow.flow.DataConverter;
+import com.amazonaws.services.simpleworkflow.flow.JsonDataConverter;
+import com.amazonaws.services.simpleworkflow.flow.WorkflowWorker;
+import com.amazonaws.services.simpleworkflow.model.StartWorkflowExecutionRequest;
+import com.amazonaws.services.simpleworkflow.model.TaskList;
+import com.amazonaws.services.simpleworkflow.model.WorkflowType;
 
 @Path("/media")
 public class MediaResource extends ResourceHelper implements Serializable {
@@ -45,6 +58,10 @@ public class MediaResource extends ResourceHelper implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 6763705967945152547L;
+	private static final int IMAGE = 1;
+	private static final int VIDEO = 2;
+	private static final int LIVESTREAMING = 3;
+	private static final int TEXT = 4;
 	static SimpleDateFormat dateFormatter = new SimpleDateFormat(
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 
@@ -112,12 +129,18 @@ public class MediaResource extends ResourceHelper implements Serializable {
 						username, requestId);
 				if (rm != null) {
 					super.delete(m, m.getRequestId(), m.getMediaId());
-					LocationMedia lm = (LocationMedia) super.load(LocationMedia.class,
+					LocationMedia lm = (LocationMedia) super.load(
+							LocationMedia.class,
 							rm.getLocationId() + ":" + rm.getProviderId(),
-							m.getUploadedDate().toString());
-					super.delete(lm,
-							rm.getLocationId() + ":" + rm.getProviderId(),
-							m.getUploadedDate().toString());
+							m.getUploadedDate());
+					try {
+						super.delete(lm,
+								rm.getLocationId() + ":" + rm.getProviderId(),
+								m.getUploadedDate().toString());
+					} catch (Exception exc) {
+						// TODO: well we could find the locationMedia in the
+						// database.. need to log this
+					}
 					rm.setFulfilledDate(null);
 					rm.setRequestFulfilled(false);
 					rm.setScheduleDate(new Date());
@@ -182,7 +205,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 				m.setAccepted(true);
 				super.save(m, requestId, mediaId);
-				
+
 				return Response
 						.ok()
 						.entity(new Status("Success",
@@ -220,61 +243,52 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String originalRequestor = username;
 		String locationId = "";
 		String providerId = "";
-		media.setMediaId(UUID.randomUUID().toString());
-		String mediaURL = "";
+		String resp = "";
 
-		media.seteMailAddress(username);
-		media.setUploadedDate(now);
-		media.setOriginalRequestor(originalRequestor); // for livestreaming
-		media.setAccepted(false);
-
-		if (requestType.equals("image")) {
-			media.setMediaType(1);
-			mediaURL = uploadToAmazonS3(media);
-			if (!mediaURL.startsWith("Error")) {
-				media.setMediaURL(mediaURL);
-			} else {
-				return Response
-						.status(500)
-						.entity(new Status("Error", mediaURL.split(":")[1], ""))
-						.build();
-			}
-
-		} else if (requestType.equals("video")) {
-			media.setMediaType(2);
-			mediaURL = uploadToAmazonS3(media);
-			if (!mediaURL.startsWith("Error")) {
-				media.setMediaURL(mediaURL);
-			} else {
-				return Response
-						.status(500)
-						.entity(new Status("Error", mediaURL.split(":")[1], ""))
-						.build();
-			}
-		} else if (requestType.equals("livestreaming")) {
-			media.setMediaType(3);
+		if (requestType.toLowerCase().equals("image")) {
+			media.setMediaType(IMAGE);
+		} else if (requestType.toLowerCase().equals("video")) {
+			media.setMediaType(VIDEO);
+		} else if (requestType.toLowerCase().equals("livestreaming")) {
+			media.setMediaType(LIVESTREAMING);
 			media.setRequestType("0");
-		} else if (requestType.equals("text")) {
-			media.setMediaType(4);
-
-		}
-
-		else {
+		} else if (requestType.toLowerCase().equals("text")) {
+			media.setMediaType(TEXT);
+			resp = media.getText();
+		} else {
 			return Response
 					.status(500)
 					.entity(new Status("Error", requestType
 							+ " is not a supported endpoint.", "")).build();
 		}
 
+		media.setMediaId(UUID.randomUUID().toString());
+		media.seteMailAddress(username);
+		media.setOriginalRequestor(originalRequestor); // for livestreaming
+
 		Map<String, String> reqDetails = new HashMap<String, String>();
 
-		reqDetails = getRequestDetails(media);
+		if (requestType.toLowerCase().equals("image")
+				|| requestType.toLowerCase().equals("video")) {
+			reqDetails = getRequestDetails(media);
+			if (reqDetails.containsKey("Error")) {
+				return Response
+						.status(500)
+						.entity(new Status("Error", reqDetails.get("Error"), ""))
+						.build();
+			}
+			media.setMediaURL(reqDetails.get("url"));
+			media.setOriginalRequestor(reqDetails.get("origRequestor"));
+		}
 
-		media.setOriginalRequestor(reqDetails.get("origRequestor"));
+		media.setUploadedDate(now);
+		media.setAccepted(false);
+
 		if (reqDetails.containsKey("Error"))
 			return Response.status(500)
 					.entity(new Status("Error", reqDetails.get("Error"), ""))
 					.build();
+
 		locationId = reqDetails.get("locationId");
 		providerId = reqDetails.get("providerId");
 
@@ -284,38 +298,37 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 		super.save(media, media.getRequestId(), media.getMediaId());
 
-		
-		super.clearCountCache(media
-				.getOriginalRequestor());
+		super.clearCountCache(media.getOriginalRequestor());
 		HashMap<String, Integer> counts = new InboxResource().getCounts(media
 				.getOriginalRequestor());
-		
-		int badgeCount = counts.get("fulfilledUnreadCount") + counts.get("assignedUnreadRequests");
-		
+
+		int badgeCount = counts.get("fulfilledUnreadCount")
+				+ counts.get("assignedUnreadRequests");
+
 		// Send notification to apple device
 		NotificationHelper noteHelper = new NotificationHelper();
-		String[] deviceIds = noteHelper.getUserDevices(media
+		Device[] deviceIds = noteHelper.getUserDevices(media
 				.getOriginalRequestor());
 
 		String message = "Your " + getMediaType(media.getMediaType())
 				+ " request at " + reqDetails.get("nameOfLocation")
 				+ " has been fulfilled.";
 
-		super.sendAPNS(deviceIds, message, badgeCount);
+		super.sendNotification(deviceIds, message, badgeCount);
 
 		super.storeInCache(media.getRequestId() + ":" + media.getMediaId(),
 				259200, media);
 
 		// Add to the LocationMedia table for others to retrieve
-		if (media.getMediaType() != 4) {
+		if (media.getMediaType() != TEXT) {
+			resp = media.getMediaURL();
 			LocationMedia lm = new LocationMedia();
 			lm.setLocationProviderId(locationId + ":" + providerId);
 			lm.setUploadedDate(media.getUploadedDate());
 			lm.setRequestId(media.getRequestId());
 			lm.setMediaId(media.getMediaId());
 
-			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate()
-					.toString());
+			super.save(lm, lm.getLocationProviderId(), lm.getUploadedDate());
 
 			// Trending
 			Trending t = new Trending();
@@ -325,13 +338,6 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			t.setProviderId(providerId);
 			super.save(t, t.getType(), t.getTimeStamp().toString());
 
-		}
-
-		String resp = "";
-		if (media.getMediaType() == 4) {
-			resp = media.getText();
-		} else {
-			resp = media.getMediaURL();
 		}
 
 		return Response
@@ -349,22 +355,53 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		deviceIds[0] = deviceId;
 		String message = "This is a test. Sent on: " + (new Date()).toString();
 
-		String result;
+		String result = "success.";
+
 		try {
-			result = super.sendAPNS(deviceIds, message, 31337);
+			super.sendAPNS(deviceIds, message, 69);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
-			result = "Failure.";
+			result = e.getMessage();
 		}
 
 		return Response.ok().entity("Result: " + result).build();
 	}
 
+	@POST
+	@Path("/testGCM")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response testGCMInJSON(@QueryParam("deviceId") String deviceId)
+			throws SecurityException, InstantiationException,
+			IllegalAccessException, NoSuchMethodException {
+		try {
+			super.sendGCM(deviceId, "testing", 20);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return Response.ok().entity("Result: ").build();
+	}
+
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getMediaInJSON(@QueryParam("locationId") String locationId,
+	public Response getMediaInJSON(@Context HttpHeaders headers, @QueryParam("locationId") String locationId,
 			@QueryParam("providerId") String providerId) {
 
+		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER,
+				headers);
+		String partnerId = UserResource.getHeaderParam(
+				MobMonkeyApiConstants.PARTNER_ID, headers);
+		
+		//first lets see if user is a paid user
+		User user = (User)super.load(User.class, email, partnerId);
+		if(!user.isPaidSubscriber() && !super.isStaging){
+			//no pay, no play!
+			//lets check the throttler
+			if(!super.throttler(email, partnerId)){
+				return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "You have reached the maximum number of requests for a free subscription.", "")).build();
+			}
+		}
+		
 		// Query location media table for date range today - 3 days.
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
@@ -400,7 +437,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 					locMedia.getMediaId());
 			if (m == null) {
 				// Media was removed, remove from LocMedia
-				super.delete(locMedia, locMedia.getLocationProviderId(), locMedia.getUploadedDate().toString());
+				super.delete(locMedia, locMedia.getLocationProviderId(),
+						locMedia.getUploadedDate().toString());
 			} else {
 				MediaLite ml = this.convertMediaToMediaLite(m);
 				media.add(ml);
@@ -409,18 +447,25 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 		result.setMedia(media);
+		
+		//dont forget to throttle!
+		Throttle t = new Throttle();
+		t.setId("throttle" + email + ":" + partnerId);
+		t.setHitType("Media");
+		t.setHitDate(new Date());
+		super.save(t, t.getId(), t.getHitDate());
 
 		return Response.ok().entity(result).build();
 	}
 
 	private String getMediaType(int typeId) {
-		if (typeId == 1)
+		if (typeId == IMAGE)
 			return "image";
-		if (typeId == 2)
+		if (typeId == VIDEO)
 			return "video";
-		if (typeId == 3)
+		if (typeId == LIVESTREAMING)
 			return "livestreaming";
-		if (typeId == 4)
+		if (typeId == TEXT)
 			return "text";
 		else
 			return "unknown";
@@ -437,11 +482,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String prefix = "";
 		String ext = "";
 		String bucket = "";
-		if (m.getMediaType() == 1) {
+		if (m.getMediaType() == IMAGE) {
 			prefix = "img-";
 			bucket = "mobmonkeyimages";
 		}
-		if (m.getMediaType() == 2) {
+		if (m.getMediaType() == VIDEO) {
 			prefix = "vod-";
 			bucket = "mobmonkeyvod";
 		}
@@ -481,11 +526,11 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		super.s3cli().putObject(putObjectRequest);
 		String url = "";
 
-		if (m.getMediaType() == 1) {
+		if (m.getMediaType() == IMAGE) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
 
-		} else if (m.getMediaType() == 2) {
+		} else if (m.getMediaType() == VIDEO) {
 			url = "https://s3.amazonaws.com/" + bucket + "/" + mediaFileName;
 
 		}
@@ -500,9 +545,13 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String locationId = "";
 		String providerId = "";
 		String nameOfLocation = "";
+		String partnerId = "";
+		String url = "";
+
+		int countOfMediaUploaded = 0;
 
 		AssignedRequest assReq = new AssignedRequest();
-		if (m.getMediaType() != 3) {
+		if (m.getMediaType() != LIVESTREAMING) {
 			assReq = (AssignedRequest) super.load(AssignedRequest.class,
 					m.geteMailAddress(), m.getRequestId());
 			if (assReq == null) {
@@ -519,17 +568,30 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			if (rrm.equals(null)) {
 				results.put("Error",
 						"Request does not exist, removing assignment");
-				super.delete(assReq,
-						m.geteMailAddress(), m.getRequestId());
+				super.delete(assReq, m.geteMailAddress(), m.getRequestId());
+				return results;
+			}
+
+			if (rrm.getCountOfMediaUploaded() >= 9) {
+				results.put("Error",
+						"The maximum number of media have been uploaded for this request");
+				return results;
+			}
+
+			url = uploadToAmazonS3(m);
+			if (url.startsWith("Error")) {
+				results.put("Error", url.split(":")[1]);
 				return results;
 			}
 			rrm.setRequestId(m.getRequestId());
 			rrm.setRequestFulfilled(true);
-			rrm.setFulfilledDate(m.getUploadedDate());
+			rrm.setFulfilledDate(new Date());
+			partnerId = rrm.getPartnerId();
 			locationId = rrm.getLocationId();
 			providerId = rrm.getProviderId();
 			nameOfLocation = rrm.getNameOfLocation();
-
+			countOfMediaUploaded = rrm.getCountOfMediaUploaded();
+			rrm.setCountOfMediaUploaded(countOfMediaUploaded + 1);
 			super.save(rrm, rrm.geteMailAddress(), rrm.getRequestId());
 
 			// Update the cache
@@ -538,34 +600,80 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			RequestMedia rm = (RequestMedia) super.load(RequestMedia.class,
 					origRequestor, m.getRequestId());
 			if (rm == null) {
-				if (m.getMediaType() != 3) {
+				if (m.getMediaType() != LIVESTREAMING) {
 					results.put("Error",
 							"Request is no longer assigned to user");
-					super.delete(assReq,
-							m.geteMailAddress(), m.getRequestId());
+					super.delete(assReq, m.geteMailAddress(), m.getRequestId());
 					return results;
 				}
 			}
 
+			if (rm.getCountOfMediaUploaded() >= 9) {
+				results.put("Error",
+						"The maximum number of media have been uploaded for this request");
+				return results;
+			}
+
+			url = uploadToAmazonS3(m);
+			if (url.startsWith("Error")) {
+				results.put("Error", url.split(":")[1]);
+				return results;
+			}
+
 			rm.setRequestFulfilled(true);
-			rm.setFulfilledDate(m.getUploadedDate());
+			rm.setFulfilledDate(new Date());
+			partnerId = rm.getPartnerId();
 			locationId = rm.getLocationId();
 			providerId = rm.getProviderId();
 			nameOfLocation = rm.getNameOfLocation();
+			countOfMediaUploaded = rm.getCountOfMediaUploaded();
+			rm.setCountOfMediaUploaded(countOfMediaUploaded + 1);
 			rm.setRequestId(m.getRequestId());
 			super.save(rm, rm.geteMailAddress(), rm.getRequestId());
 		}
 
 		try {
-			super.delete(assReq, assReq.geteMailAddress(), assReq.getRequestId());
+			super.delete(assReq, assReq.geteMailAddress(),
+					assReq.getRequestId());
 		} catch (Exception exc) {
 
 		}
 
+		if (countOfMediaUploaded < 3) {
+			User user = (User) super.load(User.class, m.geteMailAddress(),
+					partnerId);
+			switch (countOfMediaUploaded) {
+			case 0:
+				user.setRank(user.getRank() + 3);
+				Statistics stats = new Statistics();
+				stats.setStatisticId("1ST2RESP:" + m.geteMailAddress() + ":"
+						+ partnerId);
+				stats.setDate(new Date());
+				super.save(stats, stats.getStatisticId(), stats.getDate());
+				break;
+			case 1:
+				user.setRank(user.getRank() + 2);
+				break;
+			case 2:
+				user.setRank(user.getRank() + 1);
+				break;
+			}
+			super.save(user, m.geteMailAddress(), partnerId);
+		}
+
+		//add a throttle entry for the original requestor
+		Throttle t = new Throttle();
+		t.setId("throttle" + origRequestor + ":" + partnerId);
+		t.setHitType("Request");
+		t.setHitDate(new Date());
+		
+		super.save(t, t.getId(), t.getHitDate().toString());
+		
 		results.put("origRequestor", origRequestor);
 		results.put("locationId", locationId);
 		results.put("providerId", providerId);
 		results.put("nameOfLocation", nameOfLocation);
+		results.put("url", url);
 		return results;
 	}
 
@@ -581,7 +689,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		ml.setContentType(m.getContentType());
 		ml.setText(m.getText());
 
-		if (m.getMediaType() == 3) {
+		if (m.getMediaType() == LIVESTREAMING) {
 			ml.setExpiryDate(null);
 		}
 
@@ -622,7 +730,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 				m.setAccepted(true);
 				super.save(m, m.getRequestId(), m.getMediaId());
-				
+
 				return Response
 						.ok()
 						.entity(new Status("Success",

@@ -295,7 +295,7 @@ public class FactualHelper extends ResourceHelper {
 				String parents = (job.has("parents") == true) ? job.get(
 						"parents").toString() : "0";
 
-				locCat.setParents(parents.replaceAll("\"", ""));
+				locCat.setParents(parents.replaceAll("\\[", "").replaceAll("\\]", "").replaceAll("\"", ""));
 
 				JsonObject labels = parser.parse(job.get("labels").toString())
 						.getAsJsonObject();

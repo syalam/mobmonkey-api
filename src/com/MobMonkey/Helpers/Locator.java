@@ -197,10 +197,10 @@ public final class Locator extends ResourceHelper {
 
 	}
 
-	public List<String> findMonkeysNearBy(String latitude, String longitude,
+	public HashMap<CheckIn, Double> findMonkeysNearBy(String latitude, String longitude,
 			int radiusInYards) {
 
-		List<String> results = new ArrayList<String>();
+		HashMap<CheckIn, Double> results = new HashMap<CheckIn, Double>();
 		Object o = super.getFromCache("CheckInData");
 		if (o != null) {
 			try {
@@ -210,7 +210,8 @@ public final class Locator extends ResourceHelper {
 				for (CheckIn c : checkIn.values()) {
 					if (Locator.isInVicinity(latitude, longitude,
 							c.getLatitude(), c.getLongitude(), radiusInYards)) {
-						results.add(c.geteMailAddress());
+						results.put(c, Locator.distanceInYards(latitude, longitude,
+								c.getLatitude(), c.getLongitude(), radiusInYards));
 					}
 				}
 
@@ -225,7 +226,8 @@ public final class Locator extends ResourceHelper {
 			for (CheckIn c : checkIn) {
 				if (Locator.isInVicinity(latitude, longitude, c.getLatitude(),
 						c.getLongitude(), radiusInYards)) {
-					results.add(c.geteMailAddress());
+					results.put(c, Locator.distanceInYards(latitude, longitude,
+							c.getLatitude(), c.getLongitude(), radiusInYards));
 				}
 			}
 		}
@@ -284,17 +286,10 @@ public final class Locator extends ResourceHelper {
 
 	public static boolean isInVicinity(String requestLat, String requestLong,
 			String userLat, String userLong, int radiusInYards) {
+		double radiusInkm = radiusInYards * .0009144; // convert yards to KM
+		
 		try {
-			int R = 6371; // Earth's radius in km
-			double radiusInkm = radiusInYards * .0009144; // convert yards to KM
-			Double rLat = Math.toRadians(Double.parseDouble(requestLat));
-			Double rLong = Math.toRadians(Double.parseDouble(requestLong));
-			Double uLat = Math.toRadians(Double.parseDouble(userLat));
-			Double uLong = Math.toRadians(Double.parseDouble(userLong));
-
-			Double x = (uLong - rLong) * Math.cos((rLat + uLat) / 2);
-			Double y = (uLat - rLat);
-			Double d = Math.sqrt(x * x + y * y) * R;
+		    Double d = distanceInYards(requestLat, requestLong, userLat, userLong, radiusInYards);
 			if (d <= radiusInkm)
 				return true;
 			else
@@ -303,6 +298,21 @@ public final class Locator extends ResourceHelper {
 			return false;
 		}
 		
+	}
+	
+	public static Double distanceInYards(String requestLat, String requestLong,
+			String userLat, String userLong, int radiusInYards){
+		int R = 6371; // Earth's radius in km
+		
+		Double rLat = Math.toRadians(Double.parseDouble(requestLat));
+		Double rLong = Math.toRadians(Double.parseDouble(requestLong));
+		Double uLat = Math.toRadians(Double.parseDouble(userLat));
+		Double uLong = Math.toRadians(Double.parseDouble(userLong));
+
+		Double x = (uLong - rLong) * Math.cos((rLat + uLat) / 2);
+		Double y = (uLat - rLat);
+		Double d = Math.sqrt(x * x + y * y) * R;
+		return d;
 	}
 
 }

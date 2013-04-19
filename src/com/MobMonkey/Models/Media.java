@@ -31,8 +31,8 @@ public class Media implements Serializable {
 	private boolean accepted;
 	private boolean flaggedAsInappropriate;
 	private boolean confirmedInappropriate;
-	@JsonIgnore
-	private String originalRequestor;
+	@JsonIgnore private String originalRequestor;
+	
 
 	public Media() {
 	}

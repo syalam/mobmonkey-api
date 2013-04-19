@@ -15,7 +15,7 @@ public class NotificationHelper extends ResourceHelper {
 	}
 
 	@SuppressWarnings("unchecked")
-	public String[] getUserDevices(String eMailAddress) {
+	public Device[] getUserDevices(String eMailAddress) {
 
 		List<Device> results = new ArrayList<Device>();
 		results = (List<Device>) super.getFromCache("DEV" + eMailAddress);
@@ -30,11 +30,8 @@ public class NotificationHelper extends ResourceHelper {
 					results.subList(0, results.size()));
 		}
 
-		String[] deviceIds = new String[results.size()];
-
-		for (int i = 0; i < deviceIds.length; i++) {
-			deviceIds[i] = results.get(i).getDeviceId().toString();
-		}
+		
+		Device[] deviceIds = results.toArray(new Device[results.size()]);
 
 		return deviceIds;
 	}

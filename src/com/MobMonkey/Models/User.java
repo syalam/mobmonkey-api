@@ -2,6 +2,9 @@ package com.MobMonkey.Models;
 
 import java.io.Serializable;
 import java.util.Date;
+
+import org.codehaus.jackson.annotate.JsonIgnore;
+
 import com.amazonaws.services.dynamodb.datamodeling.*;
 
 @DynamoDBTable(tableName = "User")
@@ -12,12 +15,8 @@ public class User implements Serializable {
 	 */
 	private static final long serialVersionUID = 7724538794944214988L;
 
-	public User()
-	{
-	}
 	private String partnerId;
 	private String eMailAddress;
-	private String notificationId;
 	private String password;
 	private String firstName;
 	private String lastName;
@@ -27,15 +26,19 @@ public class User implements Serializable {
 	private String city;
 	private String state;
 	private String zip;
-	private boolean verified;
+	@JsonIgnore private boolean verified;
 	private boolean acceptedtos;
-	private Date dateRegistered;
-	private int numberOfRequests;
-	private String deviceId;
-	private String deviceType;
+	@JsonIgnore private Date dateRegistered;
+	@JsonIgnore private int numberOfRequests;
 	private Date lastSignIn;
-	private boolean admin;
-	
+	@JsonIgnore private int rank;
+	@JsonIgnore private Date lastRankUpdate;
+	@JsonIgnore private int inappropriateStrikes;
+	@JsonIgnore private Date firstInappropriateStrike;
+	@JsonIgnore private boolean admin;
+	@JsonIgnore private boolean suspended;
+	@JsonIgnore private boolean paidSubscriber;
+
 	@DynamoDBHashKey
 	public String geteMailAddress() {
 		return eMailAddress;
@@ -62,15 +65,6 @@ public class User implements Serializable {
 
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	@DynamoDBAttribute
-	public String getNotificationId() {
-		return notificationId;
-	}
-
-	public void setNotificationId(String notificationId) {
-		this.notificationId = notificationId;
 	}
 	
 	@DynamoDBAttribute
@@ -181,22 +175,6 @@ public class User implements Serializable {
 		this.numberOfRequests = numberOfRequests;
 	}
 
-	public String getDeviceId() {
-		return deviceId;
-	}
-
-	public void setDeviceId(String deviceId) {
-		this.deviceId = deviceId;
-	}
-
-	public String getDeviceType() {
-		return deviceType;
-	}
-
-	public void setDeviceType(String deviceType) {
-		this.deviceType = deviceType;
-	}
-
 	@DynamoDBAttribute
 	public Date getLastSignIn() {
 		return lastSignIn;
@@ -204,6 +182,42 @@ public class User implements Serializable {
 
 	public void setLastSignIn(Date lastSignIn) {
 		this.lastSignIn = lastSignIn;
+	}
+
+	@DynamoDBAttribute
+	public int getRank() {
+		return rank;
+	}
+
+	public void setRank(int rank) {
+		this.rank = rank;
+	}
+
+	@DynamoDBAttribute
+	public Date getLastRankUpdate() {
+		return lastRankUpdate;
+	}
+
+	public void setLastRankUpdate(Date lastRankUpdate) {
+		this.lastRankUpdate = lastRankUpdate;
+	}
+
+	@DynamoDBAttribute
+	public int getInappropriateStrikes() {
+		return inappropriateStrikes;
+	}
+
+	public void setInappropriateStrikes(int inappropriateStrikes) {
+		this.inappropriateStrikes = inappropriateStrikes;
+	}
+
+	@DynamoDBAttribute
+	public Date getFirstInappropriateStrike() {
+		return firstInappropriateStrike;
+	}
+
+	public void setFirstInappropriateStrike(Date firstInappropriateStrike) {
+		this.firstInappropriateStrike = firstInappropriateStrike;
 	}
 
 	@DynamoDBAttribute
@@ -215,6 +229,22 @@ public class User implements Serializable {
 		this.admin = admin;
 	}
 
-	
+	@DynamoDBAttribute
+	public boolean isSuspended() {
+		return suspended;
+	}
+
+	public void setSuspended(boolean suspended) {
+		this.suspended = suspended;
+	}
+
+	@DynamoDBAttribute
+	public boolean isPaidSubscriber() {
+		return paidSubscriber;
+	}
+
+	public void setPaidSubscriber(boolean paidSubscriber) {
+		this.paidSubscriber = paidSubscriber;
+	}
 	
 }

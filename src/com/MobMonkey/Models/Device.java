@@ -18,7 +18,14 @@ public class Device implements Serializable {
 	private String deviceType;
 	
 	
-	public Device(){
+	public Device() {
+		this(null, null, null);
+	}
+
+	public Device(String email, String deviceId, String deviceTypeName){
+		this.eMailAddress = email;
+		this.deviceId = deviceId;
+		this.deviceType = deviceTypeName;
 	}
 
 	@DynamoDBHashKey
