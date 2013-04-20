@@ -66,7 +66,7 @@ public class ResourceHelper {
 			"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 	static final int MaxHitsIn24Hours = 5;
 	static final int MaxHitsIn1Month = 30;
-	final boolean isStaging = true;
+	final boolean isStaging = false;
 	
 	public ResourceHelper() {
 		InputStream credentialsStream = getClass().getClassLoader()
@@ -134,7 +134,7 @@ public class ResourceHelper {
 		startWorkflowExecutionRequest.setTaskList(tasks);
 		WorkflowType workflowType = new WorkflowType();
 		workflowType.setName("ApnsWorkflow.sendNotification");
-		workflowType.setVersion("1.7");
+		workflowType.setVersion("1.8");
 		startWorkflowExecutionRequest.setWorkflowType(workflowType);
 		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
 				.toString());

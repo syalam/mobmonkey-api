@@ -10,7 +10,7 @@ public class ApnsWorkflowImpl implements ApnsWorkflow{
 	ApnsActivitiesImpl client = new ApnsActivitiesImpl();
 	
 	@Override
-	@Execute(version = "1.7")
+	@Execute(version = "1.8")
 	public void sendNotification(String[] deviceIds, String message, int badgeCount) {
 		// TODO Auto-generated method stub
 		try {

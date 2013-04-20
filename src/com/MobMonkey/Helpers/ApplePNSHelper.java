@@ -13,7 +13,7 @@ import javapns.notification.ResponsePacket;
 
 public final class ApplePNSHelper {
 
-	private static String keyStoreFile = "DevCertificates.p12";
+	private static String keyStoreFile = "ProdCertificates.p12";
 	private static String keyStorePass = "mm";
 
 	private static Logger logger = Logger.getRootLogger();

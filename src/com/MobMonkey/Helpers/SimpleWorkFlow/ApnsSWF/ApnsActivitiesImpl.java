@@ -9,12 +9,12 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.ActivityRegistrati
 public class ApnsActivitiesImpl implements ApnsActivities {
 	
 	@Override
-	@Activity(name = "ApnsSendNotification", version = "1.7")
+	@Activity(name = "ApnsSendNotification", version = "1.8")
 	@ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 30, defaultTaskStartToCloseTimeoutSeconds = 10)
 	public void sendNotification(String[] deviceIds, String message,
 			int badgeCount) throws Exception {
 		
-		String result = ApplePNSHelper.testSend(deviceIds, message);
+		ApplePNSHelper.send(deviceIds, message, badgeCount);
 	
 	}
 
