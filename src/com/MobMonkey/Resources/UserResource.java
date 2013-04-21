@@ -216,6 +216,19 @@ public class UserResource extends ResourceHelper {
 		return response.build();
 	}
 
+	@Path("/paidsubscription")
+	@POST
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateAsPaidSubscriberInJSON(
+			@QueryParam("email") String email,
+			@QueryParam("partnerId") String partnerId) {
+		User u = (User)super.load(User.class, email, partnerId);
+		
+		u.setPaidSubscriber(true);
+		super.save(u, email, partnerId);
+		return Response.ok().entity(new Status("Success", "Successfully upgraded user to paid subscription", "")).build();
+	}
+
 	public static Date extractDob(String dob) {
 		Date dobDate = null;
 		try {
@@ -240,8 +253,7 @@ public class UserResource extends ResourceHelper {
 			String email) {
 		String statusDescription = String
 				.format("One or more params invalid [%s]",
-						String.format(
-								"firstName(String), lastName(String), birthday(String), Gender(1 or 0), Password(String)"));
+						String.format("firstName(String), lastName(String), birthday(String), Gender(1 or 0), Password(String)"));
 		response.status(Response.Status.BAD_REQUEST).entity(
 				new Status(FAIL_STAT, statusDescription, email));
 	}
