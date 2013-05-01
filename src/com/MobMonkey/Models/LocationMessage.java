@@ -21,6 +21,7 @@ public class LocationMessage implements Serializable {
 	@JsonIgnore private String locprovId;
 	private String messageId;
 	private String message;
+	private String messageUrl;
 	private Date modifiedDate;
 	
 	public LocationMessage(){
@@ -61,5 +62,14 @@ public class LocationMessage implements Serializable {
 
 	public void setModifiedDate(Date modifiedDate) {
 		this.modifiedDate = modifiedDate;
+	}
+
+	@DynamoDBAttribute
+	public String getMessageUrl() {
+		return messageUrl;
+	}
+
+	public void setMessageUrl(String messageUrl) {
+		this.messageUrl = messageUrl;
 	}
 }

@@ -40,6 +40,7 @@ public class Location implements Serializable {
 	private int livestreaming;
 	private int rank;
 	private String message;
+	private String messageUrl;
 	private List<RequestMedia> requests;
 	private MediaLite media;
 
@@ -264,6 +265,15 @@ public class Location implements Serializable {
 
 	public void setMessage(String message) {
 		this.message = message;
+	}
+
+	@DynamoDBIgnore
+	public String getMessageUrl() {
+		return messageUrl;
+	}
+
+	public void setMessageUrl(String messageUrl) {
+		this.messageUrl = messageUrl;
 	}
 
 	@DynamoDBIgnore

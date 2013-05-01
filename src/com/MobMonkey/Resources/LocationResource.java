@@ -169,6 +169,16 @@ public class LocationResource extends ResourceHelper {
 							"")).build();
 
 		}
+		LocationProvider lp = (LocationProvider) super.load(LocationProvider.class, providerId);
+		if(lp == null){
+			return Response
+					.status(500)
+					.entity(new Status(
+							"Failure",
+							"Invalid location provider ID",
+							"")).build();
+
+		}
 
 		locMsg.setMessageId(UUID.randomUUID().toString());
 		locMsg.setModifiedDate(new Date());

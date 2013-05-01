@@ -73,6 +73,7 @@ public final class SearchHelper extends ResourceHelper {
 				String randomKey = keys.get(random.nextInt(keys.size()));
 				LocationMessage value = map.get(randomKey);
 				location.setMessage(value.getMessage());
+				location.setMessageUrl(value.getMessageUrl());
 			}
 			results.add(location);
 		}
