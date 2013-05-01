@@ -250,8 +250,8 @@ public class TrendingResource extends ResourceHelper {
 						count++;
 						sortedList.add(loc);
 						if (count == 11) {
-							sortedList = new SearchHelper().PopulateCounts(
-									sortedList, eMailAddress);
+					//		sortedList = new SearchHelper().PopulateCounts(
+						//			sortedList, eMailAddress);
 							return sortedList;
 						}
 					}
@@ -260,8 +260,8 @@ public class TrendingResource extends ResourceHelper {
 				}
 			}
 		}
-
-		return new SearchHelper().PopulateCounts(sortedList, eMailAddress);
+		return sortedList;
+		//return new SearchHelper().PopulateCounts(sortedList, eMailAddress);
 
 	}
 
