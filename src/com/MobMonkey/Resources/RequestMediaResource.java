@@ -185,7 +185,7 @@ public class RequestMediaResource extends ResourceHelper {
 		r.setMediaType(mediaType);
 		r.setRequestDate(now);
 		r.setMarkAsRead(false);
-		r.setRadiusInYards(50);
+		r.setRadiusInYards(30);
 		if (r.getScheduleDate() == null) {
 			r.setScheduleDate(now);
 		}

@@ -223,7 +223,7 @@ public final class SearchHelper extends ResourceHelper {
 
 					if (Locator.isInVicinity(loc.getLatitude(),
 							loc.getLongitude(), c.getLatitude(),
-							c.getLongitude(), 50)) {
+							c.getLongitude(), 30)) {
 						count++;
 					}
 				}
