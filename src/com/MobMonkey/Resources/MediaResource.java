@@ -36,11 +36,15 @@ import com.MobMonkey.Models.Throttle;
 import com.MobMonkey.Models.Trending;
 import com.MobMonkey.Models.User;
 import com.MobMonkey.Helpers.SimpleWorkFlow.GcmSWF.*;
+import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
 import com.amazonaws.services.dynamodb.model.AttributeValue;
 import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 import com.amazonaws.services.dynamodb.model.Condition;
+import com.amazonaws.services.elastictranscoder.model.CreateJobOutput;
+import com.amazonaws.services.elastictranscoder.model.CreateJobRequest;
+import com.amazonaws.services.elastictranscoder.model.JobInput;
 import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -269,7 +273,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		Map<String, String> reqDetails = new HashMap<String, String>();
 
 		if (requestType.toLowerCase().equals("image")
-				|| requestType.toLowerCase().equals("video")) {
+				|| requestType.toLowerCase().equals("video")
+				|| requestType.toLowerCase().equals("text")) {
 			reqDetails = getRequestDetails(media);
 			if (reqDetails.containsKey("Error")) {
 				return Response
@@ -278,6 +283,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 						.build();
 			}
 			media.setMediaURL(reqDetails.get("url"));
+			media.setThumbURL(reqDetails.get("thumb"));
 			media.setOriginalRequestor(reqDetails.get("origRequestor"));
 		}
 
@@ -384,24 +390,30 @@ public class MediaResource extends ResourceHelper implements Serializable {
 
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getMediaInJSON(@Context HttpHeaders headers, @QueryParam("locationId") String locationId,
+	public Response getMediaInJSON(@Context HttpHeaders headers,
+			@QueryParam("locationId") String locationId,
 			@QueryParam("providerId") String providerId) {
 
 		String email = UserResource.getHeaderParam(MobMonkeyApiConstants.USER,
 				headers);
 		String partnerId = UserResource.getHeaderParam(
 				MobMonkeyApiConstants.PARTNER_ID, headers);
-		
-		//first lets see if user is a paid user
-		User user = (User)super.load(User.class, email, partnerId);
-		if(!user.isPaidSubscriber() && !super.isStaging){
-			//no pay, no play!
-			//lets check the throttler
-			if(!super.throttler(email, partnerId)){
-				return Response.status(Response.Status.FORBIDDEN).entity(new Status("FAILURE", "You have reached the maximum number of requests for a free subscription.", "")).build();
+
+		// first lets see if user is a paid user
+		User user = (User) super.load(User.class, email, partnerId);
+		if (!user.isPaidSubscriber() && !super.isStaging) {
+			// no pay, no play!
+			// lets check the throttler
+			if (!super.throttler(email, partnerId)) {
+				return Response
+						.status(Response.Status.FORBIDDEN)
+						.entity(new Status(
+								"FAILURE",
+								"You have reached the maximum number of requests for a free subscription.",
+								"")).build();
 			}
 		}
-		
+
 		// Query location media table for date range today - 3 days.
 		dateFormatter.setTimeZone(TimeZone.getTimeZone("GMT"));
 
@@ -447,8 +459,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 
 		result.setMedia(media);
-		
-		//dont forget to throttle!
+
+		// dont forget to throttle!
 		Throttle t = new Throttle();
 		t.setId("throttle" + email + ":" + partnerId);
 		t.setHitType("Media");
@@ -478,7 +490,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		return expiryDate;
 	}
 
-	private String uploadToAmazonS3(Media m) {
+	private String[] uploadToAmazonS3(Media m) {
+		String[] result = new String[2];
 		String prefix = "";
 		String ext = "";
 		String bucket = "";
@@ -488,7 +501,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		}
 		if (m.getMediaType() == VIDEO) {
 			prefix = "vod-";
-			bucket = "mobmonkeyvod";
+			bucket = "vodstaging";
 		}
 		try {
 			if (m.getContentType().toLowerCase().equals("image/jpg")
@@ -504,11 +517,15 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				ext = ".mpeg";
 			else if (m.getContentType().toLowerCase().equals("video/quicktime"))
 				ext = ".mov";
-			else
-				return "Error:Unsupported content type provided: "
+			else {
+				result[0] = "Error:Unsupported content type provided: "
 						+ m.getContentType();
+				return result;
+			}
+
 		} catch (Exception exc) {
-			return "Error:Missing the ContentType attribute";
+			result[0] = "Error:Missing the ContentType attribute";
+			return result;
 		}
 		String mediaFileName = prefix + m.getMediaId() + ext;
 
@@ -529,13 +546,38 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		if (m.getMediaType() == IMAGE) {
 			url = "https://s3-us-west-1.amazonaws.com/" + bucket + "/"
 					+ mediaFileName;
+			result[0] = url;
 
 		} else if (m.getMediaType() == VIDEO) {
-			url = "https://s3.amazonaws.com/" + bucket + "/" + mediaFileName;
+			url = "http://wowza-cloudfront.mobmonkey.com/vod/mp4:" + prefix
+					+ m.getMediaId() + ".mp4/playlist.m3u8";
 
+			// Lets also kick of transcoding job
+			CreateJobRequest createJobRequest = new CreateJobRequest();
+
+			JobInput input = new JobInput();
+			input.setKey(mediaFileName);
+			input.setAspectRatio("auto");
+			input.setContainer("mp4");
+			input.setFrameRate("auto");
+			input.setResolution("auto");
+			input.setInterlaced("auto");
+
+			CreateJobOutput output = new CreateJobOutput();
+			output.setKey(prefix + m.getMediaId() + ".mp4");
+			output.setThumbnailPattern("thumb-" + m.getMediaId() + "{count}");
+			output.setPresetId("1351620000000-000010");
+			output.setRotate("0");
+			createJobRequest.setInput(input);
+			createJobRequest.setOutput(output);
+
+			createJobRequest.setPipelineId("1368054103962-07bb85");
+			super.transClient().createJob(createJobRequest);
+			result[0] = url;
+			result[1] = "https://s3.amazonaws.com/mobmonkeyvod/" + "thumb-" + m.getMediaId() + "00001.png";
 		}
 
-		return url;
+		return result;
 
 	}
 
@@ -546,7 +588,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String providerId = "";
 		String nameOfLocation = "";
 		String partnerId = "";
-		String url = "";
+		String[] url = new String[2];
 
 		int countOfMediaUploaded = 0;
 
@@ -579,8 +621,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			}
 
 			url = uploadToAmazonS3(m);
-			if (url.startsWith("Error")) {
-				results.put("Error", url.split(":")[1]);
+			if (url[0].startsWith("Error")) {
+				results.put("Error", url[0].split(":")[1]);
 				return results;
 			}
 			rrm.setRequestId(m.getRequestId());
@@ -614,10 +656,13 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				return results;
 			}
 
-			url = uploadToAmazonS3(m);
-			if (url.startsWith("Error")) {
-				results.put("Error", url.split(":")[1]);
-				return results;
+			if (m.getMediaType() != TEXT) {
+				url = uploadToAmazonS3(m);
+
+				if (url[0].startsWith("Error")) {
+					results.put("Error", url[0].split(":")[1]);
+					return results;
+				}
 			}
 
 			rm.setRequestFulfilled(true);
@@ -661,25 +706,27 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			super.save(user, m.geteMailAddress(), partnerId);
 		}
 
-		//add a throttle entry for the original requestor
+		// add a throttle entry for the original requestor
 		Throttle t = new Throttle();
 		t.setId("throttle" + origRequestor + ":" + partnerId);
 		t.setHitType("Request");
 		t.setHitDate(new Date());
-		
+
 		super.save(t, t.getId(), t.getHitDate().toString());
-		
+
 		results.put("origRequestor", origRequestor);
 		results.put("locationId", locationId);
 		results.put("providerId", providerId);
 		results.put("nameOfLocation", nameOfLocation);
-		results.put("url", url);
+		results.put("url", url[0]);
+		results.put("thumb", url[1]);
 		return results;
 	}
 
 	public MediaLite convertMediaToMediaLite(Media m) {
 		MediaLite ml = new MediaLite();
 		ml.setMediaURL(m.getMediaURL());
+		ml.setThumbURL(m.getThumbURL());
 		ml.setRequestId(m.getRequestId());
 		ml.setMediaId(m.getMediaId());
 		ml.setAccepted(m.isAccepted());

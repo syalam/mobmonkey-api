@@ -12,6 +12,7 @@ public class MediaLite implements Serializable {
 	 */
 	private static final long serialVersionUID = 3746229667638415329L;
 	private String MediaURL;
+	private String ThumbURL;
 	private String mediaId;
 	private String requestId;
 	private Date expiryDate;
@@ -31,6 +32,14 @@ public class MediaLite implements Serializable {
 
 	public void setMediaURL(String mediaURL) {
 		MediaURL = mediaURL;
+	}
+
+	public String getThumbURL() {
+		return ThumbURL;
+	}
+
+	public void setThumbURL(String thumbURL) {
+		ThumbURL = thumbURL;
 	}
 
 	public String getMediaId() {

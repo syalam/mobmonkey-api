@@ -215,6 +215,7 @@ public class SearchResource extends ResourceHelper {
 									loc.getLocationId())) {
 						MediaLite media = new MediaLite();
 						media.setMediaURL(m.getMediaURL());
+						media.setThumbURL(m.getThumbURL());
 						Date expiryDate = new Date();
 						expiryDate.setTime(m.getUploadedDate().getTime()
 								+ threedays);
@@ -232,7 +233,7 @@ public class SearchResource extends ResourceHelper {
 									loc.getLocationId())) {
 						MediaLite media = new MediaLite();
 						media.setMediaURL(m.getMediaURL());
-
+						media.setThumbURL(m.getThumbURL());
 						// TODO if the mediaType = 3, we have livestreaming and
 						// it never expires..
 						Date expiryDate = new Date();

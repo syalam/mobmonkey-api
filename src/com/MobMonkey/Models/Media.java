@@ -26,6 +26,7 @@ public class Media implements Serializable {
 	private String eMailAddress;
 	private String mediaData;
 	private String mediaURL;
+	private String thumbURL;
 	private String text;
 	private Date uploadedDate;
 	private boolean accepted;
@@ -107,6 +108,15 @@ public class Media implements Serializable {
 
 	public void setMediaURL(String mediaURL) {
 		this.mediaURL = mediaURL;
+	}
+
+	@DynamoDBAttribute()
+	public String getThumbURL() {
+		return thumbURL;
+	}
+
+	public void setThumbURL(String thumbURL) {
+		this.thumbURL = thumbURL;
 	}
 
 	@DynamoDBAttribute()

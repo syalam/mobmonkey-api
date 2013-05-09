@@ -19,6 +19,7 @@ import com.MobMonkey.Models.Device;
 import com.MobMonkey.Models.Partner;
 import com.MobMonkey.Models.Throttle;
 import com.MobMonkey.Models.User;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.PropertiesCredentials;
 import com.amazonaws.services.dynamodb.AmazonDynamoDBClient;
@@ -29,7 +30,9 @@ import com.amazonaws.services.dynamodb.model.AttributeValue;
 import com.amazonaws.services.dynamodb.model.ComparisonOperator;
 import com.amazonaws.services.dynamodb.model.Condition;
 import com.amazonaws.services.elasticache.AmazonElastiCacheClient;
+import com.amazonaws.services.elastictranscoder.AmazonElasticTranscoderClient;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.Region;
 import com.amazonaws.services.simpleworkflow.AmazonSimpleWorkflow;
 import com.amazonaws.services.simpleworkflow.AmazonSimpleWorkflowClient;
 import com.amazonaws.services.simpleworkflow.flow.DataConverter;
@@ -45,6 +48,7 @@ public class ResourceHelper {
 	private DynamoDBMapper mapper;
 	private AmazonElastiCacheClient ecCli;
 	private AmazonSimpleWorkflow swfClient;
+    private AmazonElasticTranscoderClient transClient;
 	static final Logger logger = Logger.getRootLogger();
 	static final String AWS_CREDENTIALS_FILE = "AwsCredentials.properties";
 	static final String AWS_CRED_ERROR_NOT_FOUND = String.format(
@@ -86,6 +90,12 @@ public class ResourceHelper {
 
 			swfClient = new AmazonSimpleWorkflowClient(credentials);
 			swfClient.setEndpoint("http://swf.us-west-1.amazonaws.com");
+			
+			transClient = new AmazonElasticTranscoderClient(credentials);
+	
+			transClient.setEndpoint("elastictranscoder.us-west-1.amazonaws.com");
+	
+		
 
 		} else {
 			logger.error(AWS_CRED_ERROR_NOT_FOUND);
@@ -122,6 +132,9 @@ public class ResourceHelper {
 		return swfClient;
 	}
 
+	public AmazonElasticTranscoderClient transClient(){
+		return transClient;
+	}
 	public void sendAPNS(String[] deviceIds, String message, int badge)
 			throws IOException {
 		Object[] workflowInput = new Object[] { deviceIds, message, badge };

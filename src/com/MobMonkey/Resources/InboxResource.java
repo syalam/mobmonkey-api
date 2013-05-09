@@ -286,6 +286,7 @@ public class InboxResource extends ResourceHelper {
 
 						MediaLite ml = new MediaLite();
 						ml.setMediaURL(m.getMediaURL());
+						ml.setThumbURL(m.getThumbURL());
 						ml.setRequestId(m.getRequestId());
 						ml.setMediaId(m.getMediaId());
 						ml.setAccepted(m.isAccepted());
