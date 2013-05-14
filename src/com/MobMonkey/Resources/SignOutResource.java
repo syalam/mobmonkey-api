@@ -39,18 +39,25 @@ public class SignOutResource extends ResourceHelper {
 		} else if (type.toLowerCase().equals("android")) {
 			d.setDeviceType("Android");
 		} else {
-			return Response.status(500).entity(new Status("Failure", "You must specify a device type (Android or iOS)", "")).build();
+			return Response
+					.status(500)
+					.entity(new Status("Failure",
+							"You must specify a device type (Android or iOS)",
+							"")).build();
 		}
-		
+
 		d.setDeviceId(deviceId);
 
-		
 		super.mapper().delete(d);
-		return Response.ok().entity(new Status("Success", "Successfully signed out", "")).build();
+
+		// also delete cached list
+
+		super.deleteFromCache("DEV" + user.geteMailAddress());
+
+		return Response.ok()
+				.entity(new Status("Success", "Successfully signed out", ""))
+				.build();
 
 	}
-	
-	
-	
+
 }
- 
