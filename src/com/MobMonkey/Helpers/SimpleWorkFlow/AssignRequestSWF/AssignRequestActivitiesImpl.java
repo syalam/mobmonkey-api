@@ -24,7 +24,7 @@ public class AssignRequestActivitiesImpl extends ResourceHelper implements
 	private final int MAX_INAPPROPRIATE_STRIKES = 3;
 
 	@Override
-	@Activity(name = "AssignRequest", version = "1.2")
+	@Activity(name = "AssignRequest", version = "1.3")
 	@ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 30, defaultTaskStartToCloseTimeoutSeconds = 10)
 	public void assignRequest(String eMailAddress, String latitude,
 			String longitude) throws Exception {
@@ -85,12 +85,12 @@ public class AssignRequestActivitiesImpl extends ResourceHelper implements
 					+ super.MediaType(req.getMediaType()) + " at "
 					+ req.getLocationName();
 
-			super.sendNotification(deviceIds, msg, badgeCount);
+			super.sendNotification(eMailAddress, deviceIds, msg, badgeCount);
 		}
 	}
 
 	@Override
-	@Activity(name = "AssignRequestMedia", version = "1.6")
+	@Activity(name = "AssignRequestMedia", version = "1.7")
 	@ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 30, defaultTaskStartToCloseTimeoutSeconds = 10)
 	public void assignRequestMedia(String origRequestor, RequestMediaLite rm) {
 

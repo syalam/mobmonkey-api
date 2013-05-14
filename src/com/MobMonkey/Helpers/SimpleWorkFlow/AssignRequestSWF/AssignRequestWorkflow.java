@@ -12,7 +12,7 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.WorkflowRegistrati
 public interface AssignRequestWorkflow {
 
 	
-    @Execute(version = "1.1")
+    @Execute(version = "1.3")
     void assignRequest(String eMailAddress, String latitude,
 			String longitude);
 

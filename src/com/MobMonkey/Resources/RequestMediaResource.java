@@ -348,7 +348,7 @@ public class RequestMediaResource extends ResourceHelper {
 		startWorkflowExecutionRequest.setTaskList(tasks);
 		WorkflowType workflowType = new WorkflowType();
 		workflowType.setName("AssignRequestMediaWorkflow.assignRequestMedia");
-		workflowType.setVersion("1.1");
+		workflowType.setVersion("1.3");
 		startWorkflowExecutionRequest.setWorkflowType(workflowType);
 		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
 				.toString());

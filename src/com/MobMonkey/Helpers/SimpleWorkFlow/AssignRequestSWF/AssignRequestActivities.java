@@ -8,15 +8,15 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.ActivityRegistrati
 /**
  * Contract for file processing activities
  */
-@Activities(version="1.2")
+@Activities(version="1.3")
 @ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 60, defaultTaskStartToCloseTimeoutSeconds = 60)
 public interface AssignRequestActivities {
 	
-	@Activity(name = "AssignRequest", version = "1.2")
+	@Activity(name = "AssignRequest", version = "1.3")
 	@ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 30, defaultTaskStartToCloseTimeoutSeconds = 10)
     public void assignRequest(String eMailAddress, String latitude, String longitude) throws Exception;
     
-	@Activity(name = "AssignRequestMedia", version = "1.6")
+	@Activity(name = "AssignRequestMedia", version = "1.7")
 	@ActivityRegistrationOptions(defaultTaskScheduleToStartTimeoutSeconds = 30, defaultTaskStartToCloseTimeoutSeconds = 10)
 	public void assignRequestMedia(String origRequestor, RequestMediaLite rm);
 	

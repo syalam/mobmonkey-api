@@ -122,7 +122,7 @@ public class CheckInResource extends ResourceHelper implements Serializable {
 		startWorkflowExecutionRequest.setTaskList(tasks);
 		WorkflowType workflowType = new WorkflowType();
 		workflowType.setName("AssignRequestWorkflow.assignRequest");
-		workflowType.setVersion("1.1");
+		workflowType.setVersion("1.3");
 		startWorkflowExecutionRequest.setWorkflowType(workflowType);
 		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
 				.toString());

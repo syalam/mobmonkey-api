@@ -5,6 +5,9 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
+import com.MobMonkey.Models.Device;
+import com.MobMonkey.Resources.ResourceHelper;
+
 import javapns.*;
 import javapns.communication.exceptions.CommunicationException;
 import javapns.communication.exceptions.KeystoreException;
@@ -18,7 +21,7 @@ public final class ApplePNSHelper {
 
 	private static Logger logger = Logger.getRootLogger();
 
-	public static void send(String[] devices, String msg, int badge) {
+	public static void send(String eMailAddress, String[] devices, String msg, int badge) {
 
 		// TODO sanitize the Id's before sending them
 
@@ -32,7 +35,7 @@ public final class ApplePNSHelper {
 
 			List<PushedNotification> notifications = Push.combined(msg, badge,
 					"", keyStore, keyStorePass, false, devices);
-
+       
 			for (PushedNotification notification : notifications) {
 				if (notification.isSuccessful()) {
 					/* Apple accepted the notification and should deliver it */
@@ -48,6 +51,11 @@ public final class ApplePNSHelper {
 					logger.warn("Exception from Apple: "
 							+ theProblem.getMessage());
 
+					ResourceHelper rh = new ResourceHelper();
+					Device d = (Device) rh.load(Device.class, eMailAddress, invalidToken);
+					if(d != null){
+						rh.delete(d, eMailAddress, invalidToken);
+					}
 					/*
 					 * If the problem was an error-response packet returned by
 					 * Apple, get it

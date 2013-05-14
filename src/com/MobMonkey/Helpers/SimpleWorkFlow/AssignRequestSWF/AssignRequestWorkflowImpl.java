@@ -12,7 +12,7 @@ public class AssignRequestWorkflowImpl implements AssignRequestWorkflow{
 	
 
 	@Override
-	@Execute(version = "1.1")
+	@Execute(version = "1.3")
 	public void assignRequest(String eMailAddress, String latitude, String longitude) {
 
 		try {

@@ -135,9 +135,9 @@ public class ResourceHelper {
 	public AmazonElasticTranscoderClient transClient(){
 		return transClient;
 	}
-	public void sendAPNS(String[] deviceIds, String message, int badge)
+	public void sendAPNS(String eMailAddress, String[] deviceIds, String message, int badge)
 			throws IOException {
-		Object[] workflowInput = new Object[] { deviceIds, message, badge };
+		Object[] workflowInput = new Object[] { eMailAddress, deviceIds, message, badge };
 		DataConverter converter = new JsonDataConverter();
 		StartWorkflowExecutionRequest startWorkflowExecutionRequest = new StartWorkflowExecutionRequest();
 		startWorkflowExecutionRequest.setInput(converter.toData(workflowInput));
@@ -147,7 +147,7 @@ public class ResourceHelper {
 		startWorkflowExecutionRequest.setTaskList(tasks);
 		WorkflowType workflowType = new WorkflowType();
 		workflowType.setName("ApnsWorkflow.sendNotification");
-		workflowType.setVersion("1.8");
+		workflowType.setVersion("1.10");
 		startWorkflowExecutionRequest.setWorkflowType(workflowType);
 		startWorkflowExecutionRequest.setWorkflowId(UUID.randomUUID()
 				.toString());
@@ -176,7 +176,7 @@ public class ResourceHelper {
 
 	}
 
-	public void sendNotification(Device[] devices, String message,
+	public void sendNotification(String eMailAddress, Device[] devices, String message,
 			int badgeCount) {
 		for (Device d : devices) {
 			if (d.getDeviceType().toLowerCase().equals("ios")) {
@@ -184,7 +184,7 @@ public class ResourceHelper {
 				deviceId[0] = d.getDeviceId();
 
 				try {
-					this.sendAPNS(deviceId, message, badgeCount);
+					this.sendAPNS(eMailAddress, deviceId, message, badgeCount);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					logger.error(e.getMessage());

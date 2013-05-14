@@ -11,7 +11,7 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.WorkflowRegistrati
 @WorkflowRegistrationOptions(defaultExecutionStartToCloseTimeoutSeconds = 60)
 public interface AssignRequestMediaWorkflow {
     
-    @Execute(version = "1.1")
+    @Execute(version = "1.3")
     void assignRequestMedia(String origRequestor, RequestMediaLite rm);
 
 }

@@ -320,7 +320,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 				+ " request at " + reqDetails.get("nameOfLocation")
 				+ " has been fulfilled.";
 
-		super.sendNotification(deviceIds, message, badgeCount);
+		super.sendNotification(media.getOriginalRequestor(), deviceIds, message, badgeCount);
 
 		super.storeInCache(media.getRequestId() + ":" + media.getMediaId(),
 				259200, media);
@@ -364,7 +364,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 		String result = "success.";
 
 		try {
-			super.sendAPNS(deviceIds, message, 69);
+			super.sendAPNS("test", deviceIds, message, 69);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			result = e.getMessage();
@@ -549,8 +549,8 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			result[0] = url;
 
 		} else if (m.getMediaType() == VIDEO) {
-			url = "http://wowza-cloudfront.mobmonkey.com/vod/mp4:" + prefix
-					+ m.getMediaId() + ".mp4/playlist.m3u8";
+			url = "http://vod-cdn.mobmonkey.com/" + prefix
+					+ m.getMediaId() + ".mp4";
 
 			// Lets also kick of transcoding job
 			CreateJobRequest createJobRequest = new CreateJobRequest();
@@ -574,7 +574,7 @@ public class MediaResource extends ResourceHelper implements Serializable {
 			createJobRequest.setPipelineId("1368054103962-07bb85");
 			super.transClient().createJob(createJobRequest);
 			result[0] = url;
-			result[1] = "https://s3.amazonaws.com/mobmonkeyvod/" + "thumb-" + m.getMediaId() + "00001.png";
+			result[1] = "http://vod-cdn.mobmonkey.com/" + "thumb-" + m.getMediaId() + "00001.png";
 		}
 
 		return result;

@@ -11,7 +11,6 @@ import com.amazonaws.services.simpleworkflow.flow.annotations.WorkflowRegistrati
 public interface ApnsWorkflow {
 
 	
-    @Execute(version = "1.8")
-    void sendNotification(String[] deviceIds, String message, int badgeCount);
-
+    @Execute(version = "1.10")
+    void sendNotification(String eMailAddress, String[] deviceIds, String message, int badgeCount);
 }
