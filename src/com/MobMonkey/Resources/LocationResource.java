@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -26,6 +27,7 @@ import com.MobMonkey.Models.LocationMessage;
 import com.MobMonkey.Models.LocationProvider;
 import com.MobMonkey.Models.RequestMedia;
 import com.MobMonkey.Models.Status;
+import com.MobMonkey.Models.User;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodb.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodb.datamodeling.PaginatedQueryList;
@@ -42,21 +44,23 @@ public class LocationResource extends ResourceHelper {
 	@PUT
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response createLocationInJSON(Location loc) {
+	public Response createLocationInJSON(Location loc,
+			@Context HttpHeaders headers) {
 
 		LocationProvider locprov = (LocationProvider) super.load(
 				LocationProvider.class, loc.getProviderId());
 
+		User user = super.getUser(headers);
 		// Right now we are only accepting new locations for MobMonkey
 		if (!locprov.getName().toLowerCase().equals("mobmonkey"))
 			return Response
 					.status(500)
-					.entity("Cannot accept location data for the provider you specified.")
+					.entity(new Status("Failure", "Cannot accept location data for the provider you specified.", ""))
 					.build();
 
 		try {
 			loc.setLocationId(UUID.randomUUID().toString());
-
+			loc.setSubmitterEmail(user.geteMailAddress());
 			super.save(loc, loc.getLocationId(), loc.getProviderId());
 			@SuppressWarnings("unchecked")
 			List<Location> o = (List<Location>) super
@@ -65,16 +69,117 @@ public class LocationResource extends ResourceHelper {
 				o.add(loc);
 				super.storeInCache("MobMonkeyLocationData", 259200, o);
 			}
-			
 
 		} catch (Exception exc) {
 			return Response
 					.status(500)
-					.entity("Error creating the location specified: "
-							+ exc.getMessage().toString() + ".").build();
+					.entity(new Status("Failure", "Error creating the location specified: ", "")).build();
 		}
 
 		return Response.ok().entity(loc).build();
+
+	}
+
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response updateLocationInJSON(Location loc,
+			@Context HttpHeaders headers) {
+
+		LocationProvider locprov = (LocationProvider) super.load(
+				LocationProvider.class, loc.getProviderId());
+
+		User user = super.getUser(headers);
+		// Right now we are only accepting new locations for MobMonkey
+		if (!locprov.getName().toLowerCase().equals("mobmonkey"))
+			return Response
+					.status(500)
+					.entity(new Status("Failure", "Cannot accept location data for the provider you specified.", ""))
+					.build();
+
+		try {
+			Location oldLoc = (Location) super.load(Location.class,
+					loc.getLocationId(), loc.getProviderId());
+			if(oldLoc == null){
+				return Response
+						.status(500)
+						.entity(new Status("Failure", "Location not found in database. Please check locationId and providerId attributes in body.", ""))
+						.build();
+
+			}
+			if (oldLoc.getSubmitterEmail().toLowerCase()
+					.equals(user.geteMailAddress())) {
+				loc.setSubmitterEmail(user.geteMailAddress());
+
+				super.save(loc, loc.getLocationId(), loc.getProviderId());
+			} else {
+				return Response
+						.status(500)
+						.entity(new Status("Failure","Cannot update location. You are not the original submitter.",""))
+						.build();
+			}
+			@SuppressWarnings("unchecked")
+			List<Location> o = (List<Location>) super
+					.getFromCache("MobMonkeyLocationData");
+			if (o != null) {
+				o.add(loc);
+				super.storeInCache("MobMonkeyLocationData", 259200, o);
+			}
+
+		} catch (Exception exc) {
+			return Response
+					.status(500)
+					.entity(new Status("Failure", "Error creating the location specified", "")).build();
+		}
+
+		return Response.ok().entity(loc).build();
+
+	}
+
+	@DELETE
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response deleteLocationInJSON(
+			@QueryParam("locationId") String locationId,
+			@QueryParam("providerId") String providerId,
+			@Context HttpHeaders headers) {
+
+		User user = super.getUser(headers);
+
+		try {
+			Location oldLoc = (Location) super.load(Location.class, locationId,
+					providerId);
+			if (oldLoc == null) {
+				return Response.status(500).entity(new Status("Failure", "Location not found.", ""))
+						.build();
+			} else {
+				if (oldLoc.getSubmitterEmail().toLowerCase()
+						.equals(user.geteMailAddress())) {
+					
+
+					super.delete(oldLoc, locationId, providerId);
+				} else {
+					return Response
+							.status(500)
+							.entity(new Status("Failure", "Cannot update location. You are not the original submitter.", ""))
+							.build();
+				}
+			}
+			@SuppressWarnings("unchecked")
+			List<Location> o = (List<Location>) super
+					.getFromCache("MobMonkeyLocationData");
+			if (o != null) {
+				o.remove(oldLoc);
+				super.storeInCache("MobMonkeyLocationData", 259200, o);
+			}
+
+		} catch (Exception exc) {
+			return Response
+					.status(500)
+					.entity(new Status("Failure","Error creating the location specified", "")).build();
+		}
+
+		return Response.ok().entity(new Status("Success", "Successfully deleted location.", "")).build();
 
 	}
 
@@ -166,16 +271,6 @@ public class LocationResource extends ResourceHelper {
 					.entity(new Status(
 							"Failure",
 							"You must provide: locationId, providerId, and message.",
-							"")).build();
-
-		}
-		LocationProvider lp = (LocationProvider) super.load(LocationProvider.class, providerId);
-		if(lp == null){
-			return Response
-					.status(500)
-					.entity(new Status(
-							"Failure",
-							"Invalid location provider ID",
 							"")).build();
 
 		}
