@@ -18,6 +18,7 @@ public class Location implements Serializable {
 	private String locationId;
 	private String providerId;
 	private String submitterEmail;
+	private String messageUrl;
 	private String name;
 	private String categoryIds;
 	private String categoryLabels;
@@ -73,6 +74,14 @@ public class Location implements Serializable {
 
 	public void setSubmitterEmail(String submitterEmail) {
 		this.submitterEmail = submitterEmail;
+	}
+	@DynamoDBAttribute
+	public String getMessageUrl() {
+		return messageUrl;
+	}
+
+	public void setMessageUrl(String messageUrl) {
+		this.messageUrl = messageUrl;
 	}
 
 	@DynamoDBAttribute
