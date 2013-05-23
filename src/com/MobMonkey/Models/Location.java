@@ -17,7 +17,11 @@ public class Location implements Serializable {
 	private static final long serialVersionUID = -8818817512015525776L;
 	private String locationId;
 	private String providerId;
+	private String parentLocationId;
+	private String parentProviderId;
+	private String sublocationIds;
 	private String submitterEmail;
+	private String messageUrl;
 	private String name;
 	private String categoryIds;
 	private String categoryLabels;
@@ -67,12 +71,48 @@ public class Location implements Serializable {
 	}
 	
 	@DynamoDBAttribute
+	public String getParentLocationId() {
+		return parentLocationId;
+	}
+
+	public void setParentLocationId(String parentLocationId) {
+		this.parentLocationId = parentLocationId;
+	}
+
+	@DynamoDBAttribute
+	public String getParentProviderId() {
+		return parentProviderId;
+	}
+
+	public void setParentProviderId(String parentProviderId) {
+		this.parentProviderId = parentProviderId;
+	}
+
+	@DynamoDBAttribute
+	public String getSublocationIds() {
+		return sublocationIds;
+	}
+
+	public void setSublocationIds(String sublocationIds) {
+		this.sublocationIds = sublocationIds;
+	}
+
+	
+	@DynamoDBAttribute
 	public String getSubmitterEmail() {
 		return submitterEmail;
 	}
 
 	public void setSubmitterEmail(String submitterEmail) {
 		this.submitterEmail = submitterEmail;
+	}
+	@DynamoDBAttribute
+	public String getMessageUrl() {
+		return messageUrl;
+	}
+
+	public void setMessageUrl(String messageUrl) {
+		this.messageUrl = messageUrl;
 	}
 
 	@DynamoDBAttribute
